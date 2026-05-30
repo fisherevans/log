@@ -1,0 +1,51 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+    const posts = await getCollection('posts', ({ data }) => !data.draft);
+    const tags = [...new Set(posts.flatMap((p) => p.data.tags))];
+    return tags.map((tag) => ({
+        params: { tag },
+        props: {
+            tag,
+            posts: posts.filter((p) => p.data.tags.includes(tag))
+                .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+        },
+    }));
+}
+
+const { tag, posts } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+    <head><BaseHead title={`Tag: ${tag} · ${SITE_TITLE}`} description={`Posts tagged ${tag}`} /></head>
+    <body>
+        <Header />
+        <main>
+            <p><a href="/tags/">← all tags</a></p>
+            <h1>#{tag}</h1>
+            <ul>
+                {posts.map((post) => (
+                    <li>
+                        <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                        <span class="date"> · <FormattedDate date={post.data.date} /></span>
+                    </li>
+                ))}
+            </ul>
+        </main>
+        <Footer />
+        <style>
+            main { width: 720px; max-width: 100%; padding: 0 1em; }
+            ul { list-style: none; padding: 0; }
+            li { padding: 0.5em 0; border-bottom: 1px solid rgb(var(--gray-light)); }
+            li a { color: rgb(var(--black)); text-decoration: none; }
+            li a:hover { color: rgb(var(--accent)); }
+            .date { color: rgb(var(--gray)); font-size: 0.85em; }
+        </style>
+    </body>
+</html>

@@ -1,0 +1,38 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft && data.project);
+const projectCounts = new Map<string, number>();
+for (const post of posts) {
+    const p = post.data.project!;
+    projectCounts.set(p, (projectCounts.get(p) ?? 0) + 1);
+}
+const projects = [...projectCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+<!doctype html>
+<html lang="en">
+    <head><BaseHead title={`Projects · ${SITE_TITLE}`} description="All projects" /></head>
+    <body>
+        <Header />
+        <main>
+            <h1>Projects</h1>
+            <ul class="project-list">
+                {projects.map(([project, count]) => (
+                    <li><a href={`/projects/${project}/`}>{project}</a> <span class="count">({count})</span></li>
+                ))}
+            </ul>
+        </main>
+        <Footer />
+        <style>
+            main { width: 720px; max-width: 100%; padding: 0 1em; }
+            .project-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.5em; }
+            .project-list li a { padding: 0.4em 0.9em; border-radius: 8px; background: rgb(var(--gray-light)); text-decoration: none; color: rgb(var(--gray-dark)); }
+            .project-list li a:hover { background: rgb(var(--accent)); color: white; }
+            .count { color: rgb(var(--gray)); font-size: 0.85em; }
+        </style>
+    </body>
+</html>

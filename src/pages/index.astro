@@ -1,0 +1,56 @@
+---
+import { Image } from 'astro:assets';
+import { getCollection } from 'astro:content';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import FormattedDate from '../components/FormattedDate.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+        <style>
+            main { width: 960px; max-width: 100%; }
+            .intro { margin: 0 0 2rem 0; color: rgb(var(--gray-dark)); }
+            ul { display: flex; flex-direction: column; gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
+            li a { display: block; padding: 1em; border-radius: 12px; background: white; box-shadow: var(--box-shadow); text-decoration: none; color: rgb(var(--gray-dark)); transition: 0.2s ease; }
+            li a:hover { transform: translateY(-2px); }
+            .title { margin: 0 0 0.25em 0; font-size: 1.4rem; color: rgb(var(--black)); }
+            .description { margin: 0.25em 0; color: rgb(var(--gray)); }
+            .date { font-size: 0.85em; color: rgb(var(--gray)); }
+            .meta { display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.5em; font-size: 0.8em; }
+            .meta span { padding: 0.1em 0.6em; border-radius: 999px; background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+            @media (max-width: 720px) { main { width: 100%; padding: 0 1em; } }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <p class="intro">{SITE_DESCRIPTION}</p>
+            <ul>
+                {posts.map((post) => (
+                    <li>
+                        <a href={`/posts/${post.id}/`}>
+                            <h2 class="title">{post.data.title}</h2>
+                            {post.data.description && <p class="description">{post.data.description}</p>}
+                            <p class="date"><FormattedDate date={post.data.date} /></p>
+                            {(post.data.project || post.data.tags.length > 0) && (
+                                <div class="meta">
+                                    {post.data.project && <span>{post.data.project}</span>}
+                                    {post.data.tags.map((tag) => <span>{tag}</span>)}
+                                </div>
+                            )}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        </main>
+        <Footer />
+    </body>
+</html>
