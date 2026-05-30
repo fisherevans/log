@@ -31,7 +31,7 @@ content:
         type: date
         required: true
         options:
-          format: 'YYYY-MM-DD'
+          format: 'yyyy-MM-dd'
       - name: description
         label: Description (used in RSS + summary listings)
         type: text
@@ -53,7 +53,7 @@ content:
         label: Updated Date (optional)
         type: date
         options:
-          format: 'YYYY-MM-DD'
+          format: 'yyyy-MM-dd'
       - name: draft
         label: Draft (hide from listings + RSS)
         type: boolean
