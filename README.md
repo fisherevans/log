@@ -19,7 +19,7 @@ Frontmatter for posts in `src/content/posts/`:
 
 ```yaml
 title: string                  # required
-date: date (YYYY-MM-DD)        # required
+date: date (yyyy-MM-dd)        # required - lowercase tokens! Pages CMS uses date-fns
 description: string?           # optional
 project: string?               # optional, populates /projects/<project>/
 tags: string[]                 # default [], populates /tags/<tag>/
@@ -69,7 +69,9 @@ Output dir: `dist`.
 2. `npm run dev` for live preview.
 3. `git push` → CF Pages auto-deploys.
 
-## Origin
+## Operations
+
+This repo is the source of truth for content. Everything else (CF Pages project, R2 bucket, B2 backup, Pages CMS install, redirect rules) is documented in [nottingham-cloud / systems/log.md](https://github.com/fisherevans/nottingham-cloud/blob/main/systems/log.md) with explicit recreate-from-zero runbooks. The infra-side bootstrap (CF Pages create, R2 bucket attach, etc.) and recovery playbook live there.
 
 Built as part of [`nottingham-cloud` milestone 4](https://github.com/fisherevans/nottingham-cloud/milestone/4)
 — see issues #68 through #81 for the full setup pipeline.
