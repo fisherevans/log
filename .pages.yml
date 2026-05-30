@@ -1,0 +1,77 @@
+## Pages CMS configuration. See https://pagescms.org/docs/configuration/
+## This file is the single source of truth Pages CMS reads when you
+## open the repo at app.pagescms.org.
+
+media:
+  ## Local fallback for in-repo media. The intended media flow is the bot's
+  ## `!upload` command in #ops which pushes to R2 and returns a
+  ## media.fisher.sh URL - paste that URL directly into the post body.
+  ## This input/output is only for occasional small images that don't go
+  ## through R2 (favicons, etc.).
+  input: src/assets/uploads
+  output: /assets/uploads
+
+content:
+  - name: posts
+    label: Posts
+    path: src/content/posts
+    type: collection
+    format: yaml-frontmatter
+    filename: '{primary}.md'
+    view:
+      fields: [title, date, project, tags, draft]
+      sort: [{ field: date, direction: desc }]
+    fields:
+      - name: title
+        label: Title
+        type: string
+        required: true
+      - name: date
+        label: Date
+        type: date
+        required: true
+        options:
+          format: 'YYYY-MM-DD'
+      - name: description
+        label: Description (used in RSS + summary listings)
+        type: text
+      - name: project
+        label: Project (groups under /projects/<project>/)
+        type: string
+      - name: tags
+        label: Tags (groups under /tags/<tag>/)
+        type: string
+        list: true
+      - name: hasVideo
+        label: Has Video
+        type: boolean
+        default: false
+      - name: heroImage
+        label: Hero Image (optional)
+        type: image
+      - name: updatedDate
+        label: Updated Date (optional)
+        type: date
+        options:
+          format: 'YYYY-MM-DD'
+      - name: draft
+        label: Draft (hide from listings + RSS)
+        type: boolean
+        default: false
+      - name: body
+        label: Body
+        type: rich-text
+
+  - name: about
+    label: About page
+    path: src/pages/about.astro
+    type: file
+    fields:
+      - name: body
+        label: Page content (warning - this is an Astro file, edit with care)
+        type: code
+        options:
+          language: astro
+
+settings:
+  primary: posts
