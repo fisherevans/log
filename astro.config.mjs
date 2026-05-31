@@ -2,34 +2,18 @@
 
 import mdx from '@astrojs/mdx';
 import sitemap from '@astrojs/sitemap';
-import { defineConfig, fontProviders } from 'astro/config';
+import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://log.fisher.sh',
-	integrations: [mdx(), sitemap()],
-	fonts: [
-		{
-			provider: fontProviders.local(),
-			name: 'Atkinson',
-			cssVariable: '--font-atkinson',
-			fallbacks: ['sans-serif'],
-			options: {
-				variants: [
-					{
-						src: ['./src/assets/fonts/atkinson-regular.woff'],
-						weight: 400,
-						style: 'normal',
-						display: 'swap',
-					},
-					{
-						src: ['./src/assets/fonts/atkinson-bold.woff'],
-						weight: 700,
-						style: 'normal',
-						display: 'swap',
-					},
-				],
-			},
-		},
-	],
+    site: 'https://log.fisher.sh',
+    integrations: [mdx(), sitemap()],
+    markdown: {
+        // Shiki theme tuned for the warm dark palette in src/styles/global.css.
+        // Background is overridden in CSS so only the token colors matter.
+        shikiConfig: {
+            theme: 'vitesse-dark',
+            wrap: false,
+        },
+    },
 });

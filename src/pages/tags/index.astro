@@ -16,24 +16,38 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeC
 ---
 <!doctype html>
 <html lang="en">
-    <head><BaseHead title={`Tags · ${SITE_TITLE}`} description="All tags" /></head>
+    <head><BaseHead title={`tags · ${SITE_TITLE}`} description="all tags" /></head>
     <body>
         <Header />
         <main>
-            <h1>Tags</h1>
+            <h1>tags</h1>
             <ul class="tag-list">
                 {tags.map(([tag, count]) => (
-                    <li><a href={`/tags/${tag}/`}>{tag}</a> <span class="count">({count})</span></li>
+                    <li>
+                        <a class="chip" href={`/tags/${tag}/`}>{tag}</a>
+                        <span class="count">{count}</span>
+                    </li>
                 ))}
             </ul>
         </main>
         <Footer />
         <style>
-            main { width: 720px; max-width: 100%; padding: 0 1em; }
-            .tag-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.75em; }
-            .tag-list li a { padding: 0.4em 0.9em; border-radius: 999px; background: rgb(var(--gray-light)); text-decoration: none; color: rgb(var(--gray-dark)); }
-            .tag-list li a:hover { background: rgb(var(--accent)); color: white; }
-            .count { color: rgb(var(--gray)); font-size: 0.85em; }
+            .tag-list {
+                display: flex; flex-wrap: wrap; gap: 0.6em 0.85em;
+                list-style: none; padding: 0; margin: 0;
+            }
+            .tag-list li {
+                padding: 0;
+                display: inline-flex;
+                align-items: baseline;
+                gap: 0.4em;
+            }
+            .tag-list li::before { content: none; }
+            .count {
+                color: var(--muted);
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.75em;
+            }
         </style>
     </body>
 </html>

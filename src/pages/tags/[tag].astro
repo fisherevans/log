@@ -23,29 +23,44 @@ const { tag, posts } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
-    <head><BaseHead title={`Tag: ${tag} · ${SITE_TITLE}`} description={`Posts tagged ${tag}`} /></head>
+    <head><BaseHead title={`tag: ${tag} · ${SITE_TITLE}`} description={`posts tagged ${tag}`} /></head>
     <body>
         <Header />
         <main>
-            <p><a href="/tags/">← all tags</a></p>
-            <h1>#{tag}</h1>
-            <ul>
+            <p class="back"><a href="/tags/">← all tags</a></p>
+            <h1><span class="hash">#</span>{tag}</h1>
+            <ul class="post-list">
                 {posts.map((post) => (
                     <li>
-                        <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-                        <span class="date"> · <FormattedDate date={post.data.date} /></span>
+                        <a class="title-link" href={`/posts/${post.id}/`}>{post.data.title}</a>
+                        <span class="date"><FormattedDate date={post.data.date} /></span>
                     </li>
                 ))}
             </ul>
         </main>
         <Footer />
         <style>
-            main { width: 720px; max-width: 100%; padding: 0 1em; }
-            ul { list-style: none; padding: 0; }
-            li { padding: 0.5em 0; border-bottom: 1px solid rgb(var(--gray-light)); }
-            li a { color: rgb(var(--black)); text-decoration: none; }
-            li a:hover { color: rgb(var(--accent)); }
-            .date { color: rgb(var(--gray)); font-size: 0.85em; }
+            .back { font-size: 0.9em; margin-bottom: 1.5em; }
+            .hash { color: var(--accent); font-weight: 800; }
+            .post-list { list-style: none; padding: 0; margin: 0; }
+            .post-list li {
+                padding: 0.85em 0;
+                border-bottom: 1px solid var(--rule);
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 1em;
+                flex-wrap: wrap;
+            }
+            .post-list li::before { content: none; }
+            .title-link { color: var(--fg); }
+            .date {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+                white-space: nowrap;
+            }
         </style>
     </body>
 </html>

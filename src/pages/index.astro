@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
@@ -16,37 +15,75 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
     <head>
         <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
         <style>
-            main { width: 960px; max-width: 100%; }
-            .intro { margin: 0 0 2rem 0; color: rgb(var(--gray-dark)); }
-            ul { display: flex; flex-direction: column; gap: 1.25rem; list-style: none; margin: 0; padding: 0; }
-            li a { display: block; padding: 1em; border-radius: 12px; background: white; box-shadow: var(--box-shadow); text-decoration: none; color: rgb(var(--gray-dark)); transition: 0.2s ease; }
-            li a:hover { transform: translateY(-2px); }
-            .title { margin: 0 0 0.25em 0; font-size: 1.4rem; color: rgb(var(--black)); }
-            .description { margin: 0.25em 0; color: rgb(var(--gray)); }
-            .date { font-size: 0.85em; color: rgb(var(--gray)); }
-            .meta { display: flex; flex-wrap: wrap; gap: 0.4em; margin-top: 0.5em; font-size: 0.8em; }
-            .meta span { padding: 0.1em 0.6em; border-radius: 999px; background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-            @media (max-width: 720px) { main { width: 100%; padding: 0 1em; } }
+            .intro {
+                margin: 0 0 2.5rem;
+                color: var(--muted);
+                font-style: italic;
+                font-size: 1.05em;
+            }
+            .post-list { display: flex; flex-direction: column; gap: 0; list-style: none; margin: 0; padding: 0; }
+            .post-list li {
+                padding: 1.25em 0;
+                border-bottom: 1px solid var(--rule);
+            }
+            .post-list li:first-child { padding-top: 0.5em; }
+            .post-list li:last-child { border-bottom: none; }
+            .post-list li::before { content: none; }
+            .post-list .title-link {
+                color: var(--fg);
+                border-bottom: 1px dotted transparent;
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 20;
+                font-size: 1.5rem;
+                line-height: 1.2;
+            }
+            .post-list .title-link:hover {
+                color: var(--hover);
+                background-color: var(--hover-bg);
+                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+                border-bottom: 1px solid var(--hover);
+            }
+            .post-list .description {
+                margin: 0.4em 0 0;
+                color: var(--fg);
+                opacity: 0.85;
+            }
+            .post-list .row-meta {
+                margin-top: 0.5em;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5em 1em;
+                align-items: baseline;
+                font-size: 0.85em;
+            }
+            .post-list .date {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+            }
+            .post-list .chips { display: flex; flex-wrap: wrap; gap: 0.35em; }
         </style>
     </head>
     <body>
         <Header />
         <main>
             <p class="intro">{SITE_DESCRIPTION}</p>
-            <ul>
+            <ul class="post-list">
                 {posts.map((post) => (
                     <li>
-                        <a href={`/posts/${post.id}/`}>
-                            <h2 class="title">{post.data.title}</h2>
-                            {post.data.description && <p class="description">{post.data.description}</p>}
-                            <p class="date"><FormattedDate date={post.data.date} /></p>
+                        <a class="title-link" href={`/posts/${post.id}/`}>{post.data.title}</a>
+                        {post.data.description && <p class="description">{post.data.description}</p>}
+                        <div class="row-meta">
+                            <span class="date"><FormattedDate date={post.data.date} /></span>
                             {(post.data.project || post.data.tags.length > 0) && (
-                                <div class="meta">
-                                    {post.data.project && <span>{post.data.project}</span>}
-                                    {post.data.tags.map((tag) => <span>{tag}</span>)}
-                                </div>
+                                <span class="chips">
+                                    {post.data.project && <a class="chip" href={`/projects/${post.data.project}/`}>{post.data.project}</a>}
+                                    {post.data.tags.map((tag) => <a class="chip" href={`/tags/${tag}/`}>{tag}</a>)}
+                                </span>
                             )}
-                        </a>
+                        </div>
                     </li>
                 ))}
             </ul>
