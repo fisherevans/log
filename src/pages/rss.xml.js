@@ -1,4 +1,5 @@
 import { getCollection } from 'astro:content';
+import { postHref } from '../lib/posts.ts';
 import rss from '@astrojs/rss';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
@@ -13,7 +14,7 @@ export async function GET(context) {
             title: post.data.title,
             description: post.data.description ?? '',
             pubDate: post.data.date,
-            link: `/posts/${post.id}/`,
+            link: postHref(post),
             categories: post.data.tags,
         })),
     });
