@@ -15,6 +15,7 @@ content:
   - name: tags
     label: Tags
     path: src/content/tags
+    type: collection
     filename: "{slug}.yaml"
     format: yaml
     fields:
