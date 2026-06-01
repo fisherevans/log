@@ -24,8 +24,9 @@ const posts = defineCollection({
 
 // Tags collection. YAML files in src/content/tags/.
 // Each file provides optional name + description metadata for a tag slug.
+// Content Layer: the glob loader determines the collection kind - do NOT also
+// set `type` (that's the legacy API and fails the build under Astro 6).
 const tags = defineCollection({
-    type: 'data',
     loader: glob({ base: './src/content/tags', pattern: '**/*.yaml' }),
     schema: z.object({
         name: z.string(),
