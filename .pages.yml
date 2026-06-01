@@ -12,6 +12,20 @@ media:
   output: /assets/uploads
 
 content:
+  - name: tags
+    label: Tags
+    path: src/content/tags
+    filename: "{slug}.yaml"
+    format: yaml
+    fields:
+      - name: name
+        label: Name
+        type: string
+        required: true
+      - name: description
+        label: Description
+        type: string
+
   - name: posts
     label: Posts
     path: src/content/posts
@@ -19,7 +33,7 @@ content:
     format: yaml-frontmatter
     filename: '{primary}.md'
     view:
-      fields: [title, date, project, tags, draft]
+      fields: [title, date, tags, draft]
       sort: [{ field: date, direction: desc }]
     fields:
       - name: title
@@ -35,9 +49,6 @@ content:
       - name: description
         label: Description (used in RSS + summary listings)
         type: text
-      - name: project
-        label: Project (groups under /projects/<project>/)
-        type: string
       - name: tags
         label: Tags (groups under /tags/<tag>/)
         type: string
