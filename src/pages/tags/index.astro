@@ -6,6 +6,9 @@ import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
+const allTagMeta = await getCollection('tags');
+const tagMetaMap = Object.fromEntries(allTagMeta.map(t => [t.id, t.data]));
+
 const tagCounts = new Map<string, number>();
 for (const post of posts) {
     for (const tag of post.data.tags) {
@@ -24,8 +27,13 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeC
             <ul class="tag-list">
                 {tags.map(([tag, count]) => (
                     <li>
-                        <a class="chip" href={`/tags/${tag}/`}>{tag}</a>
-                        <span class="count">{count}</span>
+                        <div class="tag-row">
+                            <a class="chip" href={`/tags/${tag}/`}>{tag}</a>
+                            <span class="count">{count}</span>
+                        </div>
+                        {tagMetaMap[tag]?.description && (
+                            <p class="tag-description">{tagMetaMap[tag].description}</p>
+                        )}
                     </li>
                 ))}
             </ul>
@@ -33,20 +41,29 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeC
         <Footer />
         <style>
             .tag-list {
-                display: flex; flex-wrap: wrap; gap: 0.6em 0.85em;
                 list-style: none; padding: 0; margin: 0;
             }
             .tag-list li {
-                padding: 0;
+                padding: 0.65em 0;
+                border-bottom: 1px solid var(--rule);
+            }
+            .tag-list li:last-child { border-bottom: none; }
+            .tag-list li::before { content: none; }
+            .tag-row {
                 display: inline-flex;
                 align-items: baseline;
                 gap: 0.4em;
             }
-            .tag-list li::before { content: none; }
             .count {
                 color: var(--muted);
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.75em;
+            }
+            .tag-description {
+                margin: 0.25em 0 0;
+                color: var(--muted);
+                font-style: italic;
+                font-size: 0.9em;
             }
         </style>
     </body>
