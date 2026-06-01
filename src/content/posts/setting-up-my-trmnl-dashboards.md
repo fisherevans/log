@@ -4,7 +4,7 @@ date: 2026-06-01
 description: e-ink dashboards are cool
 tags:
   - smart-home
-  - trmnl
+  - trmnldash
 hasVideo: false
 updatedDate: 2026-06-01
 draft: false
