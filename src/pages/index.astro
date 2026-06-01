@@ -77,9 +77,8 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
                         {post.data.description && <p class="description">{post.data.description}</p>}
                         <div class="row-meta">
                             <span class="date"><FormattedDate date={post.data.date} /></span>
-                            {(post.data.project || post.data.tags.length > 0) && (
+                            {post.data.tags.length > 0 && (
                                 <span class="chips">
-                                    {post.data.project && <a class="chip" href={`/projects/${post.data.project}/`}>{post.data.project}</a>}
                                     {post.data.tags.map((tag) => <a class="chip" href={`/tags/${tag}/`}>{tag}</a>)}
                                 </span>
                             )}
