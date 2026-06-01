@@ -7,19 +7,29 @@ import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 
 export async function getStaticPaths() {
-    const posts = await getCollection('posts', ({ data }) => !data.draft);
-    const tags = [...new Set(posts.flatMap((p) => p.data.tags))];
-    return tags.map((tag) => ({
+    const allPosts = await getCollection('posts');
+    const allTagMeta = await getCollection('tags');
+    const tagMetaMap = Object.fromEntries(allTagMeta.map(t => [t.id, t.data]));
+
+    const tagMap = new Map<string, typeof allPosts>();
+    for (const post of allPosts) {
+        if (post.data.draft) continue;
+        for (const tag of post.data.tags) {
+            if (!tagMap.has(tag)) tagMap.set(tag, []);
+            tagMap.get(tag)!.push(post);
+        }
+    }
+    return [...tagMap.entries()].map(([tag, posts]) => ({
         params: { tag },
         props: {
-            tag,
-            posts: posts.filter((p) => p.data.tags.includes(tag))
-                .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+            posts: posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+            meta: tagMetaMap[tag] ?? null,
         },
     }));
 }
 
-const { tag, posts } = Astro.props;
+const { tag } = Astro.params;
+const { posts, meta } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -29,6 +39,7 @@ const { tag, posts } = Astro.props;
         <main>
             <p class="back"><a href="/tags/">← all tags</a></p>
             <h1><span class="hash">#</span>{tag}</h1>
+            {meta?.description && <p class="tag-description">{meta.description}</p>}
             <ul class="post-list">
                 {posts.map((post) => (
                     <li>
@@ -42,6 +53,11 @@ const { tag, posts } = Astro.props;
         <style>
             .back { font-size: 0.9em; margin-bottom: 1.5em; }
             .hash { color: var(--accent); font-weight: 800; }
+            .tag-description {
+                color: var(--muted);
+                font-style: italic;
+                margin: -0.5em 0 1.5em;
+            }
             .post-list { list-style: none; padding: 0; margin: 0; }
             .post-list li {
                 padding: 0.85em 0;
