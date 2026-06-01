@@ -22,6 +22,23 @@
     font-style: italic;
     font-display: swap;
 }
+
+@font-face {
+    font-family: 'Newsreader';
+    src: url('/fonts/Newsreader.woff2') format('woff2-variations'),
+         url('/fonts/Newsreader.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Newsreader';
+    src: url('/fonts/Newsreader-Italic.woff2') format('woff2-variations'),
+         url('/fonts/Newsreader-Italic.woff2') format('woff2');
+    font-weight: 200 800;
+    font-style: italic;
+    font-display: swap;
+}
 @font-face {
     font-family: 'DraftingMono';
     src: url('/fonts/DraftingMono-Regular.woff2') format('woff2');
@@ -94,7 +111,7 @@ html { -webkit-text-size-adjust: 100%; }
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Marauder', 'Georgia', 'Iowan Old Style', 'Charter', serif;
+    font-family: 'Newsreader', 'Georgia', 'Iowan Old Style', 'Charter', serif;
     font-weight: var(--weight-body);
     font-variation-settings: 'opsz' var(--opsz-body);
     font-synthesis: none;
@@ -120,6 +137,7 @@ main {
 }
 
 h1, h2, h3, h4, h5, h6 {
+    font-family: 'Marauder', 'Georgia', serif;
     color: var(--fg);
     line-height: 1.15;
     margin: 1.5em 0 0.5em;
