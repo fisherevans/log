@@ -8,7 +8,7 @@ import Header from '../components/Header.astro';
 
 type Props = CollectionEntry<'posts'>['data'];
 
-const { title, description, date, updatedDate, heroImage, project, tags } = Astro.props;
+const { title, description, date, updatedDate, heroImage, tags } = Astro.props;
 ---
 
 <html lang="en">
@@ -72,9 +72,8 @@ const { title, description, date, updatedDate, heroImage, project, tags } = Astr
                             </span>
                         )}
                     </div>
-                    {(project || (tags && tags.length > 0)) && (
+                    {(tags && tags.length > 0) && (
                         <div class="meta">
-                            {project && <a class="chip" href={`/projects/${project}/`}>{project}</a>}
                             {tags?.map((tag) => <a class="chip" href={`/tags/${tag}/`}>{tag}</a>)}
                         </div>
                     )}
