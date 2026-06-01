@@ -143,6 +143,10 @@ UI = r"""<!DOCTYPE html>
   .pane > h2 { margin: 0; padding: .3rem .75rem; background: #232020; color: #888;
     font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
   #editor { flex: 0 0 30%; border-right: 1px solid #333; }
+  #editor.collapsed { flex: 0 0 auto; }
+  #editor.collapsed textarea { display: none; }
+  .pane > h2.toggle { cursor: pointer; user-select: none; }
+  .pane > h2 .arrow { color: #6a635c; }
   #editor textarea { flex: 1; width: 100%; resize: none; border: none; outline: none;
     padding: .8rem; background: #1e1c1a; color: #e8dec8;
     font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.5; }
@@ -173,7 +177,7 @@ UI = r"""<!DOCTYPE html>
     </span>
   </div>
   <div class="cols">
-    <div class="pane" id="editor"><h2>markdown</h2><textarea id="md" spellcheck="false"></textarea></div>
+    <div class="pane" id="editor"><h2 id="md-head" class="toggle" title="collapse / expand the editor">markdown <span class="arrow" id="md-arrow">&#9662;</span></h2><textarea id="md" spellcheck="false"></textarea></div>
     <div class="pane" id="preview"><h2>preview &mdash; rendered as a blog post</h2><iframe id="frame"></iframe></div>
     <div class="pane" id="controls"><h2>theme tokens</h2><div id="control-list"></div></div>
   </div>
@@ -294,6 +298,11 @@ document.getElementById('export-site').addEventListener('click', () => {
 });
 
 mdEl.addEventListener('input', renderMd);
+document.getElementById('md-head').addEventListener('click', () => {
+  const e = document.getElementById('editor');
+  const collapsed = e.classList.toggle('collapsed');
+  document.getElementById('md-arrow').innerHTML = collapsed ? '&#9656;' : '&#9662;';
+});
 buildSiteControls();
 buildControls();
 buildFrame();
