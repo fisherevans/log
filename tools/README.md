@@ -1,33 +1,23 @@
 # tools
 
-## `theme-editor.html` — blog theme playground
+## `theme-editor.py` — blog theme editor (saves as you go)
 
-A self-contained page for tuning the blog's look. **Open it in a browser**
-(double-click / `file://`) — no server, no internet: the fonts, the markdown
-renderer ([marked](https://marked.js.org/)), and a copy of the blog's prose
-styles are all embedded.
-
-- **left** — a markdown kitchen-sink (headings, quotes, lists, a GFM table,
-  code, rules, links). Edit it to test your own content.
-- **middle** — live preview, rendered and styled exactly like a blog post
-  (it's an `<iframe>` carrying the blog's `global.css`, so the tool's own UI
-  can't leak in).
-- **right** — a control for every `:root` token in `global.css` (colors,
-  sizes, weights, optical sizes, bullets). Changes apply to the preview live.
-- the **site** section (top of the controls) edits `SITE_TITLE` and
-  `SITE_DESCRIPTION` (the italic tagline/headline on the homepage); they
-  preview live at the top of the post.
-- **Export :root** copies the tuned `:root` block — paste it over the `:root`
-  block in `src/styles/global.css`. **Export site text** copies the
-  `SITE_TITLE` / `SITE_DESCRIPTION` lines — paste them into `src/consts.ts`.
-
-Nothing is saved automatically; the page is a sandbox.
-
-### Regenerating
-
-`theme-editor.html` is generated from `src/styles/global.css` + `public/fonts/`.
-After you change the prose styles or add a token, re-sync it:
+A local editor for the blog's look. Run it from the repo root:
 
 ```sh
-python3 tools/build-theme-editor.py
+python3 tools/theme-editor.py        # opens http://localhost:4175
 ```
+
+- **left** — a markdown kitchen-sink (collapsible: click the `markdown` header).
+- **middle** — live preview, styled by the blog's *actual* `src/styles/global.css`
+  (it links the file live, so the preview always matches the blog).
+- **right** — a control for every `:root` token (colors, sizes, weights, optical
+  sizes, the code font size, bullets), plus a **site** section for `SITE_TITLE`
+  and `SITE_DESCRIPTION` (the italic homepage tagline).
+
+**Every change is written to disk as you make it** — token edits rewrite the
+first `:root` block in `src/styles/global.css`, the title/tagline rewrite
+`src/consts.ts`. No copy/paste, no separate save step; just `git commit` when
+you're happy. The markdown sample is preview-only and is never saved.
+
+`marked.min.js` is vendored here and served to the preview for markdown rendering.
