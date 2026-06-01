@@ -19,6 +19,7 @@ import re
 import socketserver
 import sys
 import tempfile
+import threading
 import webbrowser
 from pathlib import Path
 
@@ -28,6 +29,10 @@ CONSTS = ROOT / "src/consts.ts"
 FONTS = ROOT / "public/fonts"
 MARKED = ROOT / "tools/marked.min.js"
 DEFAULT_PORT = 4175
+
+# Serialize disk writes: the server is threaded, and a save is a read-modify-
+# write of a whole file, so two overlapping saves could otherwise lose an edit.
+_SAVE_LOCK = threading.Lock()
 
 
 def atomic_write(path: Path, data: str) -> None:
@@ -72,28 +77,30 @@ def read_site():
 
 
 def save_token(name: str, value: str) -> bool:
-    css = GLOBAL_CSS.read_text()
-    m = re.search(r":root \{.*?\}", css, re.S)            # the first :root block only
-    if not m:
-        return False
-    new_block, n = re.subn(rf"(--{re.escape(name)}:\s*)[^;]+;",
-                           lambda mm: mm.group(1) + value + ";", m.group(0), count=1)
-    if not n:
-        return False
-    atomic_write(GLOBAL_CSS, css[:m.start()] + new_block + css[m.end():])
-    return True
+    with _SAVE_LOCK:
+        css = GLOBAL_CSS.read_text()
+        m = re.search(r":root \{.*?\}", css, re.S)        # the first :root block only
+        if not m:
+            return False
+        new_block, n = re.subn(rf"(--{re.escape(name)}:\s*)[^;]+;",
+                               lambda mm: mm.group(1) + value + ";", m.group(0), count=1)
+        if not n:
+            return False
+        atomic_write(GLOBAL_CSS, css[:m.start()] + new_block + css[m.end():])
+        return True
 
 
 def save_site(key: str, value: str) -> bool:
     const = {"title": "SITE_TITLE", "description": "SITE_DESCRIPTION"}.get(key)
     if not const:
         return False
-    ts = CONSTS.read_text()
-    new, n = re.subn(rf'(export const {const}\s*=\s*")[^"]*(")',
-                     lambda mm: mm.group(1) + value.replace('"', '\\"') + mm.group(2), ts, count=1)
-    if n:
-        atomic_write(CONSTS, new)
-    return bool(n)
+    with _SAVE_LOCK:
+        ts = CONSTS.read_text()
+        new, n = re.subn(rf'(export const {const}\s*=\s*")[^"]*(")',
+                         lambda mm: mm.group(1) + value.replace('"', '\\"') + mm.group(2), ts, count=1)
+        if n:
+            atomic_write(CONSTS, new)
+        return bool(n)
 
 
 SAMPLE_MD = r"""# The quick brown fox
