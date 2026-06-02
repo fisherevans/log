@@ -32,22 +32,32 @@ import HeaderLink from './HeaderLink.astro';
         font-weight: 800;
         font-variation-settings: 'opsz' 14;
         font-size: 1.4rem;
-        color: var(--fg);
+        color: var(--accent);
         text-decoration: none;
         border-bottom: none;
         padding-bottom: 0;
-        background: transparent;
-        box-shadow: none;
+        background-color: transparent;
+        box-shadow: 0 0 0 0 transparent;
+        transition:
+            color 220ms ease-out,
+            background-color 220ms ease-out,
+            box-shadow 220ms ease-out;
     }
-    .brand:hover {
-        color: var(--accent);
-        background: transparent;
-        box-shadow: none;
+    .brand:hover, .brand:focus-visible {
+        color: var(--hover);
+        background-color: var(--hover-bg);
+        box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
         border-bottom: none;
+        outline: none;
     }
     .brand-suffix {
         color: var(--muted);
         font-weight: 600;
+        transition: color 220ms ease-out;
+    }
+    .brand:hover .brand-suffix,
+    .brand:focus-visible .brand-suffix {
+        color: var(--hover);
     }
     .nav-links {
         display: flex;
