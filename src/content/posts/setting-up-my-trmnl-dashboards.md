@@ -1,7 +1,8 @@
 ---
-title: Setting up my TRMNL dashboards
+title: Making my dream weather dashboard, irl
 date: 2026-06-01
-description: e-ink dashboards are cool
+description: I feel like e-ink consumer devices are finally happening. Today, I
+  setup my new TRMNL X.
 tags:
   - smart-home
   - trmnldash
@@ -13,7 +14,7 @@ I love the idea of e-ink devices: low power, low eye-strain, no doom scrolling.
 
 I've been noticing a flood of consumer e-ink devices lately; e-ink feels like it's finally escaping its "Kindle-only" niche. Today, I build a dashboard for my new TRMNL X.
 
-## exciting e-ink devices
+## Exciting e-ink devices
 
 Kindles, despite their vendor-locked nature, are what got me back into books. Ever since I fell in love with e-ink displays for reading, I've kept my eye on the consumer market. But for years, it's been more of the same old: devices designed to make you buy more things.
 
@@ -23,7 +24,7 @@ I purchased the original TRMNL a few years back and I've had it sitting on my of
 
 But recently I realized that I'd stopped looking at it - it wasn't helping me where I needed it. I had put it on my desk, next to my computer, where all of that information was already available. After the novelty wore off, I stopped checking in on it.
 
-## replacing what I have today
+## Replacing what I have today
 
 I recently picked up the newer, much larger TRMNL X. I had one goal in mind when purchasing it: replace the bright, gaudy, functionally limited weather station monitor we've been using for the past few years.
 
@@ -54,7 +55,7 @@ This is all information that could simply be visible, all the time.
 
 So let's do it.
 
-## building my dream weather dashboard
+## Building my dream weather dashboard
 
 The [TRMNL ecosystem](https://trmnl.com/) has a rich community marketplace for plugins, allowing you to connect third-party APIs and render data using a simple component library. But, as with most things, it's hard to get the display exactly how I want it, so I decided to roll my own.
 
@@ -81,11 +82,11 @@ A few details I'm particularly happy with:
 - Expected rainfall accumulation appears when precipitation is forecast.
 - Subtle background imagery helps distinguish cloud and precipitation graphs without adding too much visual clutter.
 
-## breathing new life in my old TRMNL
+## Breathing new life into my old TRMNL
 
 As I mentioned above, my smaller, original TRMNL device had been sitting on my desk getting ignored.
 
-With my new `trmnldash` project in hand, it got me thinking: where could I move it where it would be more useful? What data do I pull up on my phone or ask Alexa about time and time again?
+With my new `trmnldash` project in hand, it got me thinking: where could I move my smaller TRMNL where it would be more useful? Where do I pull out my phone to look the same thing up every day? Where do I ask Alexa the same question over and over again?
 
 My bathroom.
 
@@ -96,7 +97,7 @@ That's where. When we're getting ready for the day, Lisa and I are constantly fi
 - Who's bringing the kids to daycare today?
 - Do we have any appointments during the day? Social plans at night?
 
-It's silly, simple, everyday information. But if I can avoid asking "Alexa, what's the weather today?" only for me to get distracted with kids by the time it finally tells me the temperature then it's worth giving it a shot.
+It's silly, simple, everyday information. But I couldn't tell you the number of times I've asked "Alexa, what's the weather today?" only for me to get distracted with kids by the time it finally tells me the temperature. If I can avoid that at least once a day, then it's worth giving it a shot.
 
 So, I built another dashboard:
 
@@ -109,7 +110,7 @@ It's already proven surprisingly useful.
 
 Repurposing this device reinforced the idea that devices are only useful if they help you where you need the help. Putting information where decisions are actually made is hard. It's easy to get caught up in the "fun" parts of making and hacking - but ultimately the things I'm most proud of are the simplest.
 
-## what's next?
+## What's next?
 
 I'm excited about the future of consumer e-ink devices. I hope this is just the start.
 
