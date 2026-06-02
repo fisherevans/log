@@ -113,7 +113,7 @@ So, I built another dashboard:
 
 Both have already proven surprisingly useful.
 
-I spend way too much time hacking little things like this together. But few remain useful past their novelty period. In this rare instance, I'm certain both of these will be long-term "man, I'm glad I did that" items. Better yet, I think Lisa will also find them useful.
+I spend way too much time hacking little things like this together. But few remain useful past their novelty period. In this rare instance, I'm certain both of these will be long-term "man, I'm glad I did that" items. Better yet, Lisa has already expressed how "super helpful" it's been for her. So yeah, worth it.
 
 ## What's next?
 
