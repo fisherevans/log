@@ -16,7 +16,9 @@ I've been noticing a flood of consumer e-ink devices lately; e-ink feels like it
 
 ## Exciting e-ink devices
 
-Kindles, despite their vendor-locked nature, are what got me back into books. Ever since I fell in love with e-ink displays for reading, I've kept my eye on the consumer market. But for years, it's been more of the same old: devices designed to make you buy more things.
+Kindles, despite their vendor-locked nature, are what got me back into books. Having a digital medium that doesn't require blinding LEDs to function, that looks great in the light, is such a dream idea for me. I can be connected and have conveniences, without feeling like I'm plugged into the matrix.
+
+Since I fell in love with e-ink displays for reading, I've kept my eye on the consumer market. But for years, it's been more of the same old: devices designed to make you buy more things. Kind of antithetical to the reasons I like the idea of e-ink devices.
 
 But recently there have been a few devices to hit the market that have me excited: the [Boox Palma 2 Pro](https://shop.boox.com/products/palma2pro) is a fully featured $400, color e-ink cellphone; the [ET X4](https://www.youtube.com/watch?v=mQnF-LVgOLI) is a super cheap, palm-size book e-reader; and the [TRMNL X](https://trmnl.com/) is a large format ambient e-ink dashboard.
 
@@ -30,7 +32,7 @@ I recently picked up the newer, much larger TRMNL X. I had one goal in mind when
 
 ![some cheap-o amazon special of a weather station](https://media.fisher.sh/blog/2026/06/01/old-weather.jpg)
 
-The weather station sits right next to the sliding door to our backyard porch, a threshold we walk through a dozen times a day during the summer. Our current weather station is good enough to answer some basic "right now" questions:
+The weather station sits right next to the sliding door to our backyard porch, a threshold we walk through a dozen times a day during the summer. It's full of bright and colorful LEDs, and has terrible viewing angles. It functions well enough to answer some basic "right now" questions:
 
 - Is it warm enough to eat dinner outside?
 - Should I close the windows because it's hot and muggy outside?
@@ -86,7 +88,7 @@ A few details I'm particularly happy with:
 
 As I mentioned above, my smaller, original TRMNL device had been sitting on my desk getting ignored.
 
-With my new `trmnldash` project in hand, it got me thinking: where could I move my smaller TRMNL where it would be more useful? Where do I pull out my phone to look the same thing up every day? Where do I ask Alexa the same question over and over again?
+With my new `trmnldash` project in hand, it got me thinking: where could I move my smaller TRMNL where it would be more useful? Where do I pull out my phone to look up the same thing every day? Where do I ask Alexa the same questions over and over again?
 
 My bathroom.
 
@@ -96,6 +98,7 @@ That's where. When we're getting ready for the day, Lisa and I are constantly fi
 - Do we need to rush because Fisher has a 9 AM meeting?
 - Who's bringing the kids to daycare today?
 - Do we have any appointments during the day? Social plans at night?
+- What time is that dinner reservation tonight?
 
 It's silly, simple, everyday information. But I couldn't tell you the number of times I've asked "Alexa, what's the weather today?" only for me to get distracted with kids by the time it finally tells me the temperature. If I can avoid that at least once a day, then it's worth giving it a shot.
 
@@ -106,15 +109,15 @@ So, I built another dashboard:
 
 ![my new and improved bathroom dashboard](https://media.fisher.sh/blog/2026/06/01/new-og.jpg)
 
-It's already proven surprisingly useful.
+## Worth it?
 
-Repurposing this device reinforced the idea that devices are only useful if they help you where you need the help. Putting information where decisions are actually made is hard. It's easy to get caught up in the "fun" parts of making and hacking - but ultimately the things I'm most proud of are the simplest.
+Both have already proven surprisingly useful.
+
+I spend way too much time hacking little things like this together. But few remain useful past their novelty period. In this rare instance, I'm certain both of these will be long-term "man, I'm glad I did that" items. Better yet, I think Lisa will also find them useful.
 
 ## What's next?
 
-I'm excited about the future of consumer e-ink devices. I hope this is just the start.
-
-I have this romantic idea of replacing my daily-driver phone with an e-ink device:
+I'm excited about the future of consumer e-ink devices. I hope this is just the start. I have this romantic idea of replacing my daily-driver phone with an e-ink device:
 
 - No doom scrolling or videos
 - Easy access to texting, email, calendars, and other boring-but-important apps
@@ -124,11 +127,11 @@ I have this romantic idea of replacing my daily-driver phone with an e-ink devic
 
 But until the cameras improve, my iPhone isn't going anywhere.
 
-As for TRMNL, I may not be done yet. The project originally started as a way to repurpose old Amazon Kindles. Flash an ESP32 with their firmware and you can build a functionally equivalent dashboard device yourself.
+As for TRMNL, I may not be done yet. The TRMNL project originally started as a way to repurpose old Amazon Kindles. Flash an ESP32 with their firmware and you can build a functionally equivalent dashboard device yourself.
 
-So a third display might be in my future. Some ideas I'm considering:
+So a third display might be in my future. Here are some ideas I'm considering:
 
-- Top news headlines next to the coffee station
+- Top news headlines next to my coffee station
 - Smart home status on a bedside table:
   - Are there any open windows or doors downstairs?
   - Are the garage doors open?
