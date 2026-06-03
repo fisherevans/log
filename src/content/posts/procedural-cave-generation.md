@@ -1,27 +1,28 @@
 ---
-title: "Procedural Cave Generation"
+title: Procedural Cave Generation
 date: 2014-05-20
-description: A cellular-automata approach to procedurally generating organic cave systems for 2D games.
+description: A cellular-automata approach to procedurally generating organic
+  cave systems for 2D games.
 tags:
-  - procedural-generation
-  - game-development
+  - gamedev
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
 What's better than procedural generation with an organic twist?
 
 ![Procedural Cave Generation Banner Image](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/procedural-cave-generation-banner-image.png)
 
-In one of my [**previous**](http://fisherevans.com/blog/post/dungeon-generation) posts I used a method to generate random dungeons based on graphs. In my implementation the rooms were rectangles, connected by hallways that would turn at 90 degrees \- perfect for a dungeon. But caves have a different set of requirements:
+In one of my **[previous](http://fisherevans.com/blog/post/dungeon-generation)** posts I used a method to generate random dungeons based on graphs. In my implementation the rooms were rectangles, connected by hallways that would turn at 90 degrees  perfect for a dungeon. But caves have a different set of requirements:
 
-* Cave passages need to be fluid and have curves.  
-* Cave walls need to be rugged, not confined to the 90 degree X and Y grid.  
-* Cave passages need to have dynamic widths: some larger, some smaller.  
-* Caves need larger areas, "caverns".
+- Cave passages need to be fluid and have curves.  
+- Cave walls need to be rugged, not confined to the 90 degree X and Y grid.  
+- Cave passages need to have dynamic widths: some larger, some smaller.  
+- Caves need larger areas, "caverns".
 
-With these requirements in mind, I thought that if I randomly generate points on a grid and connected them with a [**Relative Neighborhood Graph**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) I could somehow morph the edges to create the curves and more "natural" walls.
+With these requirements in mind, I thought that if I randomly generate points on a grid and connected them with a **[Relative Neighborhood Graph](http://en.wikipedia.org/wiki/Relative_neighborhood_graph)** I could somehow morph the edges to create the curves and more "natural" walls.
 
-To start, I generated the random points. The process is pretty straightforward \- I have a predefined area within which I want the cave (defined by a width, height, and some padding).
+To start, I generated the random points. The process is pretty straightforward  I have a predefined area within which I want the cave (defined by a width, height, and some padding).
 
 ```java
 int x, y;
@@ -34,7 +35,7 @@ for (int pointId = 0; pointId < _pointCount; pointId++) {
 
 ![random points](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/random-points.png)
 
-Then I connected them with lines as an [**RNG**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) graph. In short, it's an undirected graph where you connect any two points (a, b) where there isn't a third point (c) that is closer to both (a) and (b) than (a) and (b) are to each other.
+Then I connected them with lines as an **[RNG](http://en.wikipedia.org/wiki/Relative_neighborhood_graph)** graph. In short, it's an undirected graph where you connect any two points (a, b) where there isn't a third point (c) that is closer to both (a) and (b) than (a) and (b) are to each other.
 
 ```java
 Point a, b, c; // the three points
@@ -63,9 +64,9 @@ for (int aid = 0; aid < _pointCount; aid++) {
 
 ![points connected via RNG](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/points-connected-via-rng.png)
 
-So, now I have a basis for a cave system. I've got loops and passage ways and it's not confined to 90 degree turns. There's one catch though: it's not very natural (yet). The passage ways are a uniform width and there is no "curviness" to the walls. So I started looking around. I was focused on biologic and organic growth. I thought I could let the cave "grow." I found [**Cellular Automaton**](http://en.wikipedia.org/wiki/Cellular_automaton); the basis of [**Conway's Game of Life**](http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life). From there I found a lot of great resources on the [**Procedural Content Generation Wiki**](http://pcg.wikidot.com/pcg-algorithm:caves), specifically [**this one**](http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels) by Jlund3. But it has its issues: you couldn't control the shapes of the cave and there were chances of pockets of air that weren't connected to each other.
+So, now I have a basis for a cave system. I've got loops and passage ways and it's not confined to 90 degree turns. There's one catch though: it's not very natural (yet). The passage ways are a uniform width and there is no "curviness" to the walls. So I started looking around. I was focused on biologic and organic growth. I thought I could let the cave "grow." I found **[Cellular Automaton](http://en.wikipedia.org/wiki/Cellular_automaton)**; the basis of **[Conway's Game of Life](http://en.wikipedia.org/wiki/Conway%27s_Game_of_Life)**. From there I found a lot of great resources on the **[Procedural Content Generation Wiki](http://pcg.wikidot.com/pcg-algorithm:caves)**, specifically **[this one](http://www.roguebasin.com/index.php?title=Cellular_Automata_Method_for_Generating_Random_Cave-Like_Levels)** by Jlund3. But it has its issues: you couldn't control the shapes of the cave and there were chances of pockets of air that weren't connected to each other.
 
-I ended up coming to the conclusion that I could treat my above image like a [**petri dish**](http://en.wikipedia.org/wiki/Petri_dish) and pretend the lines I drew of my graph were like lines of some kind of organic goop. Then after I gave it some time, the organic goop could grow and form more natural structures and pathways. From here on out the entire process is basically greyscale pixel manipulation. For the entrance and exit I drew some larger shapes to ensure they would grow to an adequate size for stairs or ladders. This was now my starting "petri dish."
+I ended up coming to the conclusion that I could treat my above image like a **[petri dish](http://en.wikipedia.org/wiki/Petri_dish)** and pretend the lines I drew of my graph were like lines of some kind of organic goop. Then after I gave it some time, the organic goop could grow and form more natural structures and pathways. From here on out the entire process is basically greyscale pixel manipulation. For the entrance and exit I drew some larger shapes to ensure they would grow to an adequate size for stairs or ladders. This was now my starting "petri dish."
 
 ![cave passages chosen](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/cave-passages-chosen.png)
 
@@ -143,4 +144,4 @@ And that's it. It's ready to be converted into a tile map. Here's a sample resul
 
 ![end result](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/end-result.png)
 
-*You can find the full source code [**here**](https://github.com/fisherevans/ProceduralGeneration/blob/master/src/com/fisherevans/proc_gen/caves/OrganicCaves.java).*
+*You can find the full source code **[here](https://github.com/fisherevans/ProceduralGeneration/blob/master/src/com/fisherevans/proc_gen/caves/OrganicCaves.java)**.*
