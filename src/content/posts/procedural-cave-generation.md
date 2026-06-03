@@ -5,6 +5,7 @@ description: A cellular-automata approach to procedurally generating organic
   cave systems for 2D games.
 tags:
   - gamedev
+  - procgen
 hasVideo: false
 updatedDate: 2026-06-03
 draft: false
