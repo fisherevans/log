@@ -1,21 +1,25 @@
 ---
-title: "Science vs. Technology"
+title: Science vs. Technology
 date: 2015-05-26
-description: "A small informal survey on whether people think science or technology is more important to society - and what the responses revealed."
+description: A small informal survey on whether people think science or
+  technology is more important to society - and what the responses revealed.
+tags:
+  - college
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
 I asked over a hundred people: What's more important to society: Science or Technology?
 
 ![Science vs. Technology Banner Image](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/science-vs-technology-banner-image.png)
 
-In my "Science, Technology and Society" course at [**VTC**](http://www.vtc.edu/) we were asked: What is [**Science**](http://en.wikipedia.org/wiki/Science)? What is [**Technology**](http://en.wikipedia.org/wiki/Technology)? And, how are they [**related**](http://en.wikipedia.org/wiki/History_of_science_and_technology)? It was apparent that everyone in the class had different opinions on their meanings and relation. I found the discussion afterwards and the related reading interesting enough that I wanted to find out what other people thought. So, I decided to send a survey around asking people to do as my class did; here are my findings.
+In my "Science, Technology and Society" course at **[VTC](http://www.vtc.edu/)** we were asked: What is **[Science](http://en.wikipedia.org/wiki/Science)**? What is **[Technology](http://en.wikipedia.org/wiki/Technology)**? And, how are they **[related](http://en.wikipedia.org/wiki/History_of_science_and_technology)**? It was apparent that everyone in the class had different opinions on their meanings and relation. I found the discussion afterwards and the related reading interesting enough that I wanted to find out what other people thought. So, I decided to send a survey around asking people to do as my class did; here are my findings.
 
 All of this was way back in January (of 2015), and I've only recently had the time (just graduated) to put some of the data together.
 
-*Just wanna see the data? Jump to the [**Results**](http://fisherevans.com/blog/post/science-vs-technology#results).*
+*Just wanna see the data? Jump to the **[Results](http://fisherevans.com/blog/post/science-vs-technology#results)**.*
 
-I compiled all of my data into an MS Excel spreadsheet for those of you who would like to look at it themselves. I will be referencing the difference sheets in this document throughout this post. You can download it: [**here**](http://fisherevans.com/files/posts/science-vs-technology/data.xlsx).
+I compiled all of my data into an MS Excel spreadsheet for those of you who would like to look at it themselves. I will be referencing the difference sheets in this document throughout this post. You can download it: **[here](http://fisherevans.com/files/posts/science-vs-technology/data.xlsx)**.
 
 ## **The Survey**
 
@@ -39,11 +43,11 @@ This question took the previous one, and abstracted it to the whole of humankind
 
 #### **(Optional) What is your gender?**
 
-This one was just to find the differences in responses based on gender. It was optional and not really necessary \- but sometimes it's fun to see the social differences between genders.
+This one was just to find the differences in responses based on gender. It was optional and not really necessary  but sometimes it's fun to see the social differences between genders.
 
 ### **Like a Virus**
 
-I created this survey with [**Google Forms**](http://www.google.com/forms/about/) and shared it on my [**Facebook**](https://www.facebook.com/fisherevans) asking my friends to fill it out and share it. I was only expecting a handful of responses but within a day my post was "shared" by multiple people, and I had people asking for my findings when I was done. I spent the following days waiting for the results to slow down to a point where I thought I had gotten a good enough sample size. By this time I knew I was going to have to do a full write up due to the final scale of this little project.
+I created this survey with **[Google Forms](http://www.google.com/forms/about/)** and shared it on my **[Facebook](https://www.facebook.com/fisherevans)** asking my friends to fill it out and share it. I was only expecting a handful of responses but within a day my post was "shared" by multiple people, and I had people asking for my findings when I was done. I spent the following days waiting for the results to slow down to a point where I thought I had gotten a good enough sample size. By this time I knew I was going to have to do a full write up due to the final scale of this little project.
 
 I released the survey at 9am on Wednesday (1/28/15), and closed submissions at 1pm on Saturday (1/31/15). Over that time I was able to gather 117 responses including 1 double submission and 1 "troll" submission. This left me with 115 unique, valid form responses. Awesome. Time to start doing something with all this data.
 
@@ -67,7 +71,7 @@ The final table structure for this database was small, but served its purpose. I
 
 ## **The Results**
 
-All of these results can be found within the various sheets in this [**MS Excel Spreadsheet**](http://fisherevans.com/files/posts/science-vs-technology/data.xlsx). (That also includes the SQL dump of the tables and the SQL queries used to find the results.)
+All of these results can be found within the various sheets in this **[MS Excel Spreadsheet](http://fisherevans.com/files/posts/science-vs-technology/data.xlsx)**. (That also includes the SQL dump of the tables and the SQL queries used to find the results.)
 
 Overall, about a third of the submissions were male, two thirds were female and a handful of submissions that didn't specify. Keep in mind that due to this, female submissions will look about 50% larger than males in the following charts, making it difficult to visually compare male to female data.
 
@@ -77,13 +81,13 @@ Overall, about a third of the submissions were male, two thirds were female and 
 
 ### **Influence**
 
-On average, when asked to rate the personal influence of Science and Technology, people said that science was rated at 7.9 and Technology at 8.5. Though the average was close, the standard deviation is far different between the two. The Science ratings were more evenly distributed in the 6-10 range, where Technology had an overwhelming peak right at 10\.
+On average, when asked to rate the personal influence of Science and Technology, people said that science was rated at 7.9 and Technology at 8.5. Though the average was close, the standard deviation is far different between the two. The Science ratings were more evenly distributed in the 6-10 range, where Technology had an overwhelming peak right at 10
 
 ![personal influence of science](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/personal-influence-of-science.png)
 
 ![personal influence of technology](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/personal-influence-of-technology.png)
 
-When rating Technology, the gender distribution was about even, but for Science there is a clear difference. Almost no males rated Science at a 10, where nearly half the female submissions rated it a 10\.
+When rating Technology, the gender distribution was about even, but for Science there is a clear difference. Almost no males rated Science at a 10, where nearly half the female submissions rated it a 10
 
 In general though, people considered Technology to be more influential in their lives. When asked which was more important to (the advancement of) the humankind though, Science came out well on top (if we consider "Equal" to be neutral.)
 
@@ -99,39 +103,39 @@ On average, surveyees used 3.5 words to describe each term. But there is also an
 
 #### **Science**
 
-According to the Merriam-Webster dictionary, [**Science**](http://www.merriam-webster.com/dictionary/science) is the "knowledge about or study of the natural world based on facts learned through experiments and observation." The top 5 words used to describe Science were: knowledge, fact, proof, test and explore. At least this little experiment shows that the social definition is pretty close to the technical definition.
+According to the Merriam-Webster dictionary, **[Science](http://www.merriam-webster.com/dictionary/science)** is the "knowledge about or study of the natural world based on facts learned through experiments and observation." The top 5 words used to describe Science were: knowledge, fact, proof, test and explore. At least this little experiment shows that the social definition is pretty close to the technical definition.
 
 ![science keywords weighted, sorted by total](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/science-keywords-weighted-sorted-by-total.png)
 
-*Weighted keywords describing Science ordered by overall usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/total.png).*
+*Weighted keywords describing Science ordered by overall usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/total.png)**.*
 
 Some interesting things emerge when you rank the words based on gendered usage however. Notice how one gender frequently uses words to describe Science that the other never does. For example, the top Science keyword for males was "understand," very few females used this word. On the flip side, the 2nd most used keyword for Science was "interesting." Not one male used that word in their description. The trend is visible for a lot of the words listed below.
 
 ![science keywords weighted, sorted by male](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/science-keywords-weighted-sorted-by-male.png)
 
-*Weighted keywords describing Science ordered by male usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/male.png).*
+*Weighted keywords describing Science ordered by male usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/male.png)**.*
 
-*![science keywords weighted, sorted by female](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/science-keywords-weighted-sorted-by-female.png)*
+![science keywords weighted, sorted by female](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/science-keywords-weighted-sorted-by-female.png)
 
-*Weighted keywords describing Science ordered by female usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/female.png).*
+*Weighted keywords describing Science ordered by female usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/science/non-weighted/female.png)**.*
 
 #### **Technology**
 
-[**Dictionary.com**](http://dictionary.reference.com/browse/technology) defines Technology as the knowledge involved with creation and use of technical means, or the application of such knowledge. I think this survey shows again that the social definition is pretty spot on with some of the top ranking words being: tool, application, science and make.
+**[Dictionary.com](http://dictionary.reference.com/browse/technology)** defines Technology as the knowledge involved with creation and use of technical means, or the application of such knowledge. I think this survey shows again that the social definition is pretty spot on with some of the top ranking words being: tool, application, science and make.
 
 ![technology keywords weighted, sorted by total](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-totle.png)
 
-*Weighted keywords describing Technology ordered by overall usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/total.png).*
+*Weighted keywords describing Technology ordered by overall usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/total.png)**.*
 
 Similar to Science, the gender distribution between Technology keywords is pretty interesting. Take a look at the top two keywords: application and tool. Both are dominated by one gender. There are few male dominated words for Technology, but a lot of the top 10 for female keywords were rarely used by males: future, make, life, advance, innovation, etc.
 
 ![technology keywords weighted, sorted by male](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-male.png)
 
-*Weighted keywords describing Technology ordered by male usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/male.png).*
+*Weighted keywords describing Technology ordered by male usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/male.png)**.*
 
-*![technology keywords weighted, sorted by female](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-female.png)*
+![technology keywords weighted, sorted by female](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-female.png)
 
-*Weighted keywords describing Technology ordered by female usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/female.png).*
+*Weighted keywords describing Technology ordered by female usage. View the non-weighted version **[here](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/female.png)**.*
 
 #### **Comparing Them**
 
@@ -147,4 +151,4 @@ If we take the intersection between the top 15 keywords for both Science and Tec
 
 I started this survey out of pure curiosity and ended up finding some pretty neat findings. I think if anything the cumulative results of this little social test reaffirmed my understanding of what both Science and Technology are, and how they relate. That being said, most information I found is purely subjective. None of this was professionally documented or obtained and my "findings" should be taken with a grain of salt.
 
-[**Cover Photo by Freepik**](http://www.freepik.com/free-vector/space-education-background_780903.htm)
+**[Cover Photo by Freepik](http://www.freepik.com/free-vector/space-education-background_780903.htm)**
