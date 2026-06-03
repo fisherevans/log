@@ -1,10 +1,14 @@
 ---
-title: "Rechargeable Glow-Disc Box"
+title: Rechargeable Glow-Disc Box
 date: 2021-11-23
-description: "A portable, rechargeable, UV-charging box for glow discs - with built-in red night-vision lights and a shoulder strap. Originally posted to /r/discgolf."
+description: A portable, rechargeable, UV-charging box for glow discs - with
+  built-in red night-vision lights and a shoulder strap. Originally posted to
+  /r/discgolf.
 tags:
   - disc-golf
+  - maker-stuff
 hasVideo: true
+updatedDate: 2026-06-03
 draft: false
 ---
 A portable, rechargeable UV-charging box for glow discs - with built-in red night-vision lights and a shoulder strap. Originally posted to [/r/discgolf](https://www.reddit.com/r/discgolf/comments/r0izbb/i_built_a_rechargeable_glowdiscbox/).
@@ -83,11 +87,3 @@ I bought a 3D printer recently, and this was its first big project. Almost all t
 
 ## Demo
 
-<iframe
-  src="https://www.youtube.com/embed/mqq64RV5tYo"
-  title="Rechargeable Glow-Disc Box"
-  loading="lazy"
-  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
-  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
-></iframe>
