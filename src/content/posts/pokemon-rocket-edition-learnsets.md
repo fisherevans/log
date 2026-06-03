@@ -6,13 +6,14 @@ description: A reference dump of the tweaked evolutions and level-up movesets in
   HexManiacAdvance.
 tags:
   - pokemon
+  - tools
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
-
 [Pokemon: Fire Red - Rocket Edition](https://rocket-edition.com) is a popular ROM-hack. As part of the hack, the pokemon evolutions and level-up move sets were heavily tweaked. For the life of me, I couldn't find a resource online that listed these changes, so I decided to post my own findings.
 
-[***Skip the how, and just bring me to the data!***](#explorer)
+***[Skip the how, and just bring me to the data!](#explorer)***
 
 ## Method
 
@@ -83,6 +84,7 @@ print("done")
 ```
 
 The output looked [something like this](https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/pokemon.json):
+
 ```json
 {
   "64": {
@@ -150,13 +152,6 @@ I hope it helps!
 
 Search by name, click to add a Pokemon to the comparison list, click again to remove. You can stack as many as you want side-by-side, and the URL hash tracks your selection so the "Open standalone" link preserves what you're looking at.
 
-<iframe
-  src="https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html"
-  title="Rocket Edition Pokedex"
-  loading="lazy"
-  style="width:100%;height:720px;border:1px solid var(--rule);border-radius:6px;background:#1c1a17;"
-></iframe>
 
-<p style="text-align:right;font-size:0.85em;margin-top:0.4em;">
-  <a href="https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html" target="_blank" rel="noopener">Open the explorer in its own tab ↗</a>
-</p>
+
+[Open the explorer in its own tab ↗](https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html)
