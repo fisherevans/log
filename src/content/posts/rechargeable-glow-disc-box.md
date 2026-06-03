@@ -5,7 +5,7 @@ description: "A portable, rechargeable, UV-charging box for glow discs - with bu
 tags:
   - disc-golf
 hasVideo: true
-draft: true
+draft: false
 ---
 A portable, rechargeable UV-charging box for glow discs - with built-in red night-vision lights and a shoulder strap. Originally posted to [/r/discgolf](https://www.reddit.com/r/discgolf/comments/r0izbb/i_built_a_rechargeable_glowdiscbox/).
 

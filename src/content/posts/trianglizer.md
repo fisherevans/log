@@ -5,7 +5,7 @@ description: "Rendering triangular pixel art in Godot."
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 A small experiment rendering triangular "pixel" art in Godot.
 

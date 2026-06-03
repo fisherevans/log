@@ -5,7 +5,7 @@ description: "Final leg of the Lost Relics of Kazar project: a 2D lighting engin
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 The final leg of LRK I worked on before shelving the project. The lighting engine writeup lives in a separate post: [2D Lighting and Shadows](/posts/2013/08/16/2d-lighting-and-shadows/). The videos below are the working demos.
 

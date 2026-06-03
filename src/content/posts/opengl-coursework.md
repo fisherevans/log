@@ -5,7 +5,7 @@ description: "Demos from homework assignments in my college Computer Graphics co
 tags:
   - college
 hasVideo: true
-draft: true
+draft: false
 ---
 Demos from homework assignments in my college Computer Graphics course.
 

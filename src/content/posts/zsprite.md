@@ -5,7 +5,7 @@ description: "A sprite editor I started building because I couldn't find one tha
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 A sprite editor I started building back when I couldn't find one that let me see tiles repeated as I edited them.
 

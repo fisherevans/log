@@ -6,7 +6,7 @@ tags:
   - procedural-generation
   - game-development
 hasVideo: false
-draft: true
+draft: false
 ---
 What's better than procedural generation with an organic twist?
 

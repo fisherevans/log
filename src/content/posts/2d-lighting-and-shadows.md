@@ -5,7 +5,7 @@ description: How I built dynamic 2D lighting and shadows for a Slick2D game usin
 tags:
   - game-development
 hasVideo: false
-draft: true
+draft: false
 ---
 Shadows make the world go 'round. Thankfully 2d shadow casting is pretty easy.
 

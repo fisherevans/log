@@ -5,7 +5,7 @@ description: "My first attempt at a side-scrolling, platforming, Smash-Bros-styl
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 Smash Bash was my first attempt at a side-scrolling, platforming, Smash-Bros-style game.
 

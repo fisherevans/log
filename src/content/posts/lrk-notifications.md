@@ -5,7 +5,7 @@ description: "Second leg of Lost Relics of Kazar: in-game notification system pl
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 Second leg of LRK work - in-game notification system plus the next round of adventure-mode progress.
 

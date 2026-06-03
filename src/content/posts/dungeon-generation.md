@@ -6,7 +6,7 @@ tags:
   - procedural-generation
   - game-development
 hasVideo: false
-draft: true
+draft: false
 ---
 I delve in the world of 'Procedurally Generated' map generation.
 

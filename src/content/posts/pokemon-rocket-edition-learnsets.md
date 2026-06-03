@@ -7,7 +7,7 @@ description: A reference dump of the tweaked evolutions and level-up movesets in
 tags:
   - pokemon
 hasVideo: false
-draft: true
+draft: false
 ---
 
 [Pokemon: Fire Red - Rocket Edition](https://rocket-edition.com) is a popular ROM-hack. As part of the hack, the pokemon evolutions and level-up move sets were heavily tweaked. For the life of me, I couldn't find a resource online that listed these changes, so I decided to post my own findings.

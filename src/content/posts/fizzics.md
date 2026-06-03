@@ -5,7 +5,7 @@ description: "A physics library I extracted out of Smash Bash and designed as it
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 Fizzics is a physics library I built for [Smash Bash](/posts/2014/03/18/smash-bash/), and designed as its own standalone library.
 

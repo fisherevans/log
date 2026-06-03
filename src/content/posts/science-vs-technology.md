@@ -3,7 +3,7 @@ title: "Science vs. Technology"
 date: 2015-05-26
 description: "A small informal survey on whether people think science or technology is more important to society - and what the responses revealed."
 hasVideo: false
-draft: true
+draft: false
 ---
 I asked over a hundred people: What's more important to society: Science or Technology?
 

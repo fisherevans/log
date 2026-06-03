@@ -5,7 +5,7 @@ description: "First leg of Lost Relics of Kazar: early adventure-mode demos and 
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 My first leg of work on Lost Relics of Kazar - early adventure-mode demos plus controller input.
 

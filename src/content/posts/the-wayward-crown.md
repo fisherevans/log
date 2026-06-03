@@ -5,7 +5,7 @@ description: "My first real game-dev project."
 tags:
   - game-development
 hasVideo: true
-draft: true
+draft: false
 ---
 My first real game-dev project.
 

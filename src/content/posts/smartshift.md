@@ -5,7 +5,7 @@ description: "Recording of my senior project for college: a web-based scheduling
 tags:
   - college
 hasVideo: true
-draft: true
+draft: false
 ---
 SmartShift was my senior project at VTC - a web-based scheduling assistant.
 

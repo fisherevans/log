@@ -4,7 +4,7 @@ date: 2024-03-18
 description: A Google Apps Script that mirrors events from multiple personal
   calendars into a work calendar as buffered "busy" blocks.
 hasVideo: false
-draft: true
+draft: false
 ---
 In my career, I've mostly used Google Calendar at work. I also use multiple Google calendars for personal events (personal, shared, family, etc.). I can share these calendars with my work account, but my personal events do not show up as "Busy" to my coworkers. So I often have to invite my work account to all of my events, or manually create duplicate "Busy" events in my work calendar.
 

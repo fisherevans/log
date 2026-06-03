@@ -5,7 +5,7 @@ description: "Demos from my final project for college physics simulations class.
 tags:
   - college
 hasVideo: true
-draft: true
+draft: false
 ---
 Demos from my final project for my college physics simulations class - a billiards/pool simulator.
 
