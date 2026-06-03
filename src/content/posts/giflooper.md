@@ -1,8 +1,12 @@
 ---
-title: "GIFLooper"
+title: GIFLooper
 date: 2014-06-24
-description: "A little tool to turn a GIF into a perfect loop, made back when /r/perfectloops was getting popular."
+description: A little tool to turn a GIF into a perfect loop, made back when
+  /r/perfectloops was getting popular.
+tags:
+  - tools
 hasVideo: true
+updatedDate: 2026-06-03
 draft: false
 ---
 I made this tool to aid in creating perfectly looped and stabilized GIFs. From time to time I'll take a video with my phone hoping that someday I'd turn it into a GIF and make it a perfect loop. I made this little app to avoid the manual task of shifting frame by frame so things lined up, and solved it by letting the user define "animation anchors" - the app interpolates from anchor to anchor to create smoother loops.
@@ -15,11 +19,3 @@ Originally posted to [/r/perfectloops](https://www.reddit.com/r/perfectloops). I
 
 ## Demo
 
-<iframe
-  src="https://www.youtube.com/embed/Ds9yRJSjGyQ"
-  title="GIFLooper Demo"
-  loading="lazy"
-  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
-  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen
-></iframe>
