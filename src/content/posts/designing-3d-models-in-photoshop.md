@@ -1,9 +1,13 @@
 ---
 title: Designing 3D Models in Photoshop
 date: 2023-11-27
-description: A workflow for designing custom plaques, tags, and signs by treating
-  a greyscale 2D image as a height map and extruding it through OpenSCAD.
+description: A workflow for designing custom plaques, tags, and signs by
+  treating a greyscale 2D image as a height map and extruding it through
+  OpenSCAD.
+tags:
+  - 3d-printing
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
 Since having a 3D printer, a common item I want to design and print are custom plaques, tags, and signs. Using traditional 3D modeling software works for this, but it's tedious to create really good looking designs. It's especially hard to iterate/tweak a "graphic" design in CAD software.
