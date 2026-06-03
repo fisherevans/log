@@ -3,7 +3,10 @@ title: Personal Calendar Sync
 date: 2024-03-18
 description: A Google Apps Script that mirrors events from multiple personal
   calendars into a work calendar as buffered "busy" blocks.
+tags:
+  - work
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
 In my career, I've mostly used Google Calendar at work. I also use multiple Google calendars for personal events (personal, shared, family, etc.). I can share these calendars with my work account, but my personal events do not show up as "Busy" to my coworkers. So I often have to invite my work account to all of my events, or manually create duplicate "Busy" events in my work calendar.
@@ -25,10 +28,10 @@ This process is an abbreviated version of [this article](https://janelloi.com/au
 1. Share your personal calendars with your work account (no need to share event details)
 2. Get the Calendar ID for each of them (you can find them in the "settings" of the calendar, by the "Share" section)
 3. Create a new [Google Apps Script](https://script.google.com/home/projects/create), and include [this source code](#script), updating the parameters as desired:
-   - Set your external calendar IDs
-   - Set your buffer time (20 minutes means that a 8a-9a event will create a 7:40a-9:20a block in your work calendar)
-   - Update your event details visibility, color, and title
-   - Configure how many days you want the script to look ahead (4 weeks by default)
+  - Set your external calendar IDs
+  - Set your buffer time (20 minutes means that a 8a-9a event will create a 7:40a-9:20a block in your work calendar)
+  - Update your event details visibility, color, and title
+  - Configure how many days you want the script to look ahead (4 weeks by default)
 4. You can then run the script manually to sync and verify it works.
 5. Then head to the "Triggers" section of your project. For each calendar you're syncing from, setup a new trigger to call the `sync` function. Source it from a calendar whenever it is updated. Use the same calendar IDs you added to your script parameters.
 
@@ -132,3 +135,4 @@ function sync() {
   Logger.log('Events deleted: ' + statsDeleted);
 }
 ```
+
