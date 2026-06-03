@@ -5,6 +5,7 @@ description: "Third leg of Lost Relics of Kazar: music system and the next round
   of adventure-mode work."
 tags:
   - gamedev
+  - project:lrk
 hasVideo: true
 updatedDate: 2026-06-03
 draft: false
