@@ -1,11 +1,13 @@
 ---
-title: "Dungeon Generation"
+title: Dungeon Generation
 date: 2014-05-18
-description: "Algorithmic dungeon generation: random rooms, hallway carving, and the trade-offs between layout styles."
+description: "Algorithmic dungeon generation: random rooms, hallway carving, and
+  the trade-offs between layout styles."
 tags:
-  - procedural-generation
-  - game-development
+  - gamedev
+  - procgen
 hasVideo: false
+updatedDate: 2026-06-03
 draft: false
 ---
 I delve in the world of 'Procedurally Generated' map generation.
@@ -18,7 +20,7 @@ Before we get started, here's a sample of the end-result. I am really happy with
 
 ![Sample end result](https://media.fisher.sh/blog/2014/05/18/dungeon-generation/sample-end-result.png)
 
-I stumbled upon this post on Reddit pretty quickly after searching for "procedural dungeon generation" on Google, [**Procedural Dungeon Generation Algorithm Explained by phidinh6**](http://redd.it/1dlwc4). The post outlines a pretty straight-forward approach to generate random rooms that do not intersect, and then connects them with hallways based on a connected graph. He easily lays it out and gives a nice demo that really helped me visualize the whole process, [**here**](http://tinykeep.com/dungen/).
+I stumbled upon this post on Reddit pretty quickly after searching for "procedural dungeon generation" on Google, **[Procedural Dungeon Generation Algorithm Explained by phidinh6](http://redd.it/1dlwc4)**. The post outlines a pretty straight-forward approach to generate random rooms that do not intersect, and then connects them with hallways based on a connected graph. He easily lays it out and gives a nice demo that really helped me visualize the whole process, **[here](http://tinykeep.com/dungen/)**.
 
 There were a couple steps that were easier said than done. The first being step 3; specifically "simple separation steering behavior to separate out all of the rectangles." I couldn't find anything on the internet that was directly related, but I was able to create something based on what I could see in his demo. The basic idea is to loop through each pair of rooms and shift both the least amount possible to get rid of any overlap. Keep doing so until no rooms overlap. Here's some commented code to do this step:
 
@@ -58,7 +60,7 @@ private static void separateRooms() {
 }
 ```
 
-He opts to use a [**Delaunay Triangulation**](http://en.wikipedia.org/wiki/Delaunay_triangulation) trimmed with a [**Minimal Spanning Tree**](http://en.wikipedia.org/wiki/Minimum_spanning_tree) to connect the bigger rooms. However, I found [**naughty's suggestion**](http://www.reddit.com/r/gamedev/comments/1dlwc4/procedural_dungeon_generation_algorithm_explained/c9rktyy) to use a [**Relative Neighborhood Graph**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) to be simpler and to produce better results. It created the loops to make the dungeons more complex while still minimally connecting all rooms. From Wikipedia:
+He opts to use a **[Delaunay Triangulation](http://en.wikipedia.org/wiki/Delaunay_triangulation)** trimmed with a **[Minimal Spanning Tree](http://en.wikipedia.org/wiki/Minimum_spanning_tree)** to connect the bigger rooms. However, I found **[naughty's suggestion](http://www.reddit.com/r/gamedev/comments/1dlwc4/procedural_dungeon_generation_algorithm_explained/c9rktyy)** to use a **[Relative Neighborhood Graph](http://en.wikipedia.org/wiki/Relative_neighborhood_graph)** to be simpler and to produce better results. It created the loops to make the dungeons more complex while still minimally connecting all rooms. From Wikipedia:
 
 *"(A RNG is an) undirected graph defined ... by connecting two points A and B by an edge whenever there does not exist a third point C that is closer to both A and B than they are to each other."*
 
@@ -100,7 +102,7 @@ private static void connectRooms() {
 }
 ```
 
-After these rooms are connected, I needed to generate the hallways required to traverse between them. I wanted the hallways to randomly bend from A to B either clockwise or counterclockwise which caused me some trouble. So much so I needed to look for help at Stack Exchange, [**here**](http://gamedev.stackexchange.com/questions/75360/connecting-two-arbitrary-points-with-2-lines/75372#75372). Thanks to Heckle's suggestion I was able to find a way to connect the two rooms with connected hallways. There's a code example on the Stack Exchange page.
+After these rooms are connected, I needed to generate the hallways required to traverse between them. I wanted the hallways to randomly bend from A to B either clockwise or counterclockwise which caused me some trouble. So much so I needed to look for help at Stack Exchange, **[here](http://gamedev.stackexchange.com/questions/75360/connecting-two-arbitrary-points-with-2-lines/75372#75372)**. Thanks to Heckle's suggestion I was able to find a way to connect the two rooms with connected hallways. There's a code example on the Stack Exchange page.
 
 Once I was able to connect the big rooms with hallways, it's simply a matter of drawing the rooms, smaller corridors and hallways to an image. Pixels can translate directly to tiles, so I plan to generate tile maps based on these generated images. This Image shows a (messy) more detailed result of my methods.
 
@@ -110,4 +112,4 @@ And here's a final result. I still need to work on the doorways from the hallway
 
 ![simple end result](https://media.fisher.sh/blog/2014/05/18/dungeon-generation/simple-end-result.png)
 
-You can find the full source code on my [**Procedural Generation GitHub**](https://github.com/fisherevans/ProceduralGeneration).
+You can find the full source code on my **[Procedural Generation GitHub](https://github.com/fisherevans/ProceduralGeneration)**.
