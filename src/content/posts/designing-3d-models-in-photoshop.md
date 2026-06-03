@@ -6,6 +6,7 @@ description: A workflow for designing custom plaques, tags, and signs by
   OpenSCAD.
 tags:
   - 3d-printing
+  - maker-stuff
 hasVideo: false
 updatedDate: 2026-06-03
 draft: false
