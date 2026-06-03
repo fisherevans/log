@@ -5,7 +5,6 @@ description: I feel like e-ink consumer devices are finally happening. Today, I
   setup my new TRMNL X.
 tags:
   - smart-home
-  - trmnldash
 hasVideo: false
 updatedDate: 2026-06-01
 draft: false
