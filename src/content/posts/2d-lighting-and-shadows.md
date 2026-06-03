@@ -5,6 +5,7 @@ description: How I built dynamic 2D lighting and shadows for a Slick2D game
   using a separate light map and ray-cast shadow polygons.
 tags:
   - gamedev
+  - gfx
 hasVideo: false
 updatedDate: 2026-06-03
 draft: false
