@@ -6,6 +6,7 @@ description: How I built dynamic 2D lighting and shadows for a Slick2D game
 tags:
   - gamedev
   - gfx
+  - project:lrk
 hasVideo: false
 updatedDate: 2026-06-03
 draft: false
