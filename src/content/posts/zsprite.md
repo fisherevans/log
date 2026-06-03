@@ -5,6 +5,7 @@ description: A sprite editor I started building because I couldn't find one that
   let me see tiles repeated as I edited them.
 tags:
   - gamedev
+  - tools
 hasVideo: true
 updatedDate: 2026-06-03
 draft: false
