@@ -14,7 +14,7 @@ This method is inspired by those [sites that make a lithoplane STL out of an ima
 
 ## The Strategy
 
-The goal is create a thin print with images/text/logos "cut" out of the piece. We do this by creating a greyscale 2D image of the design, then using this image as a height-map to generate a 3d model (via the [surface](https://files.openscad.org/examples/Basics/surface.html) function). This can work for both fully cut-through designs, or two-tone designs by swapping out the filliment half way through the print.
+The goal is to create a thin print with images/text/logos "cut" out of the piece. We do this by creating a greyscale 2D image of the design, then using this image as a height-map to generate a 3d model (via the [surface](https://files.openscad.org/examples/Basics/surface.html) function). This can work for both fully cut-through designs, or two-tone designs by swapping out the filament half way through the print.
 
 ## Design
 
@@ -22,7 +22,7 @@ You can use any software you want to design the 2D image. I like [Photopea](http
 
 ![Cut-through example](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/src-cutthrough.png)
 
-But if you'd like a more complex shape, and avoid those stencil lines (and get a sturdier piece), you can design a two-tone image, like so. The grey can be printed with one color filliment, the black another.
+But if you'd like a more complex shape, and avoid those stencil lines (and get a sturdier piece), you can design a two-tone image, like so. The grey can be printed with one color filament, the black another.
 
 ![2 tone example](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/src-2tone-bw.png)
 
@@ -36,7 +36,7 @@ Once we extrude a 3d model, this will make more sense.
 
 Once we have our image saved, we can head over to OpenSCAD to create the model. We'll use the [surface](https://files.openscad.org/examples/Basics/surface.html) function in OpenSCAD to treat the image like a height map:
 
-- White pixels `#ffffff` will be consider a height of `0`
+- White pixels `#ffffff` will be considered a height of `0`
 - Black pixels `#000000` will be considered a height of `1`
 - Greys will be somewhere in between, `#808080` is `0.5`
 
@@ -73,11 +73,11 @@ I have a Prusa Mini, so I'm only familiar with the Prusa Slicer. Once the model 
 
 Then we slice! Here's the cut-through example:
 
-![sliced cuth through top](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/sliced-cutthrough-top.png)
+![sliced cut-through top](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/sliced-cutthrough-top.png)
 
 Looks great! But from the side (or back) it's difficult to read. Also, that O looks fragile.
 
-![sliced cuth through side](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/sliced-cutthrough-side.png)
+![sliced cut-through side](https://media.fisher.sh/blog/2023/11/27/designing-3d-models-in-photoshop/sliced-cutthrough-side.png)
 
 Using the straight-up 2-tone helps though, plus makes it so you can't even see the design from the back, and we don't need to worry about the flow!
 

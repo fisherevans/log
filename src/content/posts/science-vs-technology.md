@@ -23,7 +23,7 @@ The survey I put together aimed to gather some basic information about the surve
 
 #### **Describe "Science/Technology" in a few words. (2 Questions)**
 
-The goal of these questions was to find what keywords people used when describing Science or Technology. By gathering the words used describe the terms, we should be able to find a pretty accurate definition via related words and synonyms.
+The goal of these questions was to find what keywords people used when describing Science or Technology. By gathering the words used to describe the terms, we should be able to find a pretty accurate definition via related words and synonyms.
 
 #### **How closely related is "Science" to "Technology"?**
 
@@ -31,19 +31,19 @@ Obviously, there is a distinction between Science and Technology but they do sha
 
 #### **How much does "Science/Technology" directly influence your life? (2 Questions)**
 
-Considering how closely related they both are, I wanted to find out which of the two people were more influenced by. People were asked to rate the influence of both (separately) on a scale of 1-10, where 1 is "It doesn't effect me at all" and 10 is "Science/Technology is large part of my life."
+Considering how closely related they both are, I wanted to find out which of the two people were more influenced by. People were asked to rate the influence of both (separately) on a scale of 1-10, where 1 is "It doesn't affect me at all" and 10 is "Science/Technology is a large part of my life."
 
 #### **What's more important to the advancement of the human kind?**
 
-This question took the previous one, and abstracted it to the whole of the humankind, instead of the individual.
+This question took the previous one, and abstracted it to the whole of humankind, instead of the individual.
 
 #### **(Optional) What is your gender?**
 
-This one was just to find the differences in responses based gender. It was optional and not really necessary \- but sometimes it's fun to see the social differences between genders.
+This one was just to find the differences in responses based on gender. It was optional and not really necessary \- but sometimes it's fun to see the social differences between genders.
 
 ### **Like a Virus**
 
-I created this survey with [**Google Forms**](http://www.google.com/forms/about/) and shared it on my [**Facebook**](https://www.facebook.com/fisherevans) asking my friends to fill it out and share it. I was only expecting a handful of responses but within a day my post was "shared" by multiple people, and I had people asking for my findings when I was done. I spent the following days waiting for the results to slow down to a point where I thought I had gotten a good enough sample size. By this time I knew I was going to have to do a full write up due to final scale of this little project.
+I created this survey with [**Google Forms**](http://www.google.com/forms/about/) and shared it on my [**Facebook**](https://www.facebook.com/fisherevans) asking my friends to fill it out and share it. I was only expecting a handful of responses but within a day my post was "shared" by multiple people, and I had people asking for my findings when I was done. I spent the following days waiting for the results to slow down to a point where I thought I had gotten a good enough sample size. By this time I knew I was going to have to do a full write up due to the final scale of this little project.
 
 I released the survey at 9am on Wednesday (1/28/15), and closed submissions at 1pm on Saturday (1/31/15). Over that time I was able to gather 117 responses including 1 double submission and 1 "troll" submission. This left me with 115 unique, valid form responses. Awesome. Time to start doing something with all this data.
 
@@ -57,9 +57,9 @@ Google Forms dumps all the data collected into a giant Google Spreadsheet. It's 
 
 ### **The Database**
 
-I decided to store everything in a small database. The 1-10 scale ratings were no big deal to store, but for the Science/Technology keywords I had mold the data a little. The main task was to map words to their "root meaning." For example, the following: explore, explores, exploring, explorers and explored; should be represented as one word, explore. I also had to ignore common, non-descriptive words like the, an or and. (You can see the mappings I chose in the "Keyword Mappings" sheet of the Excel Spreadsheet linked below.)
+I decided to store everything in a small database. The 1-10 scale ratings were no big deal to store, but for the Science/Technology keywords I had to mold the data a little. The main task was to map words to their "root meaning." For example, the following: explore, explores, exploring, explorers and explored; should be represented as one word, explore. I also had to ignore common, non-descriptive words like the, an or and. (You can see the mappings I chose in the "Keyword Mappings" sheet of the Excel Spreadsheet linked below.)
 
-The final table structure for this database was small, but served it's purpose. It contained a main table, "submissions," that held all the multiple choice answers, a "word" table that stored all the used words and what they mapped to, and a "words" table that associated what words each submission used to describe either category (Science or Technology.)
+The final table structure for this database was small, but served its purpose. It contained a main table, "submissions," that held all the multiple choice answers, a "word" table that stored all the used words and what they mapped to, and a "words" table that associated what words each submission used to describe either category (Science or Technology.)
 
 ![](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/image3.png)
 
@@ -91,7 +91,7 @@ In general though, people considered Technology to be more influential in their 
 
 ### **Keywords**
 
-When processing the term definitions/keywords I originally just counted the number of times a word was used amongst all the submissions and ranked the words in order uses. However, I noticed that someone who offered a longer definition had a stronger influence on the results then someone who gave a more precise response. While a longer response may offer a "better," more detailed definition, this survey was looking for average definition. To accomplish equal representation for each surveyee I weighed the word usage based on the number words used in a surveyee's definition. (If someone used 4 words in their definition, each of there word uses would be counted as 0.25 uses.)
+When processing the term definitions/keywords I originally just counted the number of times a word was used amongst all the submissions and ranked the words in order of uses. However, I noticed that someone who offered a longer definition had a stronger influence on the results than someone who gave a more precise response. While a longer response may offer a "better," more detailed definition, this survey was looking for average definition. To accomplish equal representation for each surveyee I weighed the word usage based on the number of words used in a surveyee's definition. (If someone used 4 words in their definition, each of their word uses would be counted as 0.25 uses.)
 
 On average, surveyees used 3.5 words to describe each term. But there is also an interesting group of people who used 8 words to define the terms. Here's distribution of words per submission.
 
@@ -117,9 +117,9 @@ Some interesting things emerge when you rank the words based on gendered usage h
 
 #### **Technology**
 
-[**Dictionary.com**](http://dictionary.reference.com/browse/technology) defines Technology as the knoweldge involved with creation and use of technical means, or the application of such knoweldge. I think this survey shows again that the social definition is pretty spot on with some of the top ranking words being: tool, application, science and make.
+[**Dictionary.com**](http://dictionary.reference.com/browse/technology) defines Technology as the knowledge involved with creation and use of technical means, or the application of such knowledge. I think this survey shows again that the social definition is pretty spot on with some of the top ranking words being: tool, application, science and make.
 
-![technology keywords weighted, sorted by totle](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-totle.png)
+![technology keywords weighted, sorted by total](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/technology-keywords-weighted-sorted-by-totle.png)
 
 *Weighted keywords describing Technology ordered by overall usage. View the non-weighted version [**here**](http://fisherevans.com/files/posts/science-vs-technology/img/keywords/technology/non-weighted/total.png).*
 
@@ -145,6 +145,6 @@ If we take the intersection between the top 15 keywords for both Science and Tec
 
 ## **Reflections**
 
-I started this survey out of pure curiosity and ended up finding some pretty neat findings. I think if anything the cumulative results of this little social test reaffirmed my understanding of what both Science and Technology are, and how they relate. That being said, most information I found is purley subjective. None of this was professionally documented or obtained and my "findings" should be taken with a grain of salt.
+I started this survey out of pure curiosity and ended up finding some pretty neat findings. I think if anything the cumulative results of this little social test reaffirmed my understanding of what both Science and Technology are, and how they relate. That being said, most information I found is purely subjective. None of this was professionally documented or obtained and my "findings" should be taken with a grain of salt.
 
 [**Cover Photo by Freepik**](http://www.freepik.com/free-vector/space-education-background_780903.htm)

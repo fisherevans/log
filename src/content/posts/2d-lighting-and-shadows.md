@@ -7,7 +7,7 @@ tags:
 hasVideo: false
 draft: true
 ---
-Shadows make the world go round'. Thankfully 2d shadow casting is pretty easy.
+Shadows make the world go 'round. Thankfully 2d shadow casting is pretty easy.
 
 ![2D Lighting and Shadows Banner Image](https://media.fisher.sh/blog/2013/08/16/2d-lighting-and-shadows/2d-lighting-and-shadows-banner-image.png)
 
@@ -68,7 +68,7 @@ Here's a live-action demo of the lighting in action. This video also features a 
 
 ## **Shadows**
 
-I would not of been able to work out these shadows without the help of this video: [**Here**](https://www.youtube.com/watch?v=0FZIKX1Y_8I). I would strongly suggest you watch that video if you really want to understand how this works as he gives a lot of good visuals. I will admit, I have become a bit of a graphics softie thanks to using Slick2D, so I adopted his method and came up with another, less efficient way to go about it.
+I would not have been able to work out these shadows without the help of this video: [**Here**](https://www.youtube.com/watch?v=0FZIKX1Y_8I). I would strongly suggest you watch that video if you really want to understand how this works as he gives a lot of good visuals. I will admit, I have become a bit of a graphics softie thanks to using Slick2D, so I adopted his method and came up with another, less efficient way to go about it.
 
 When I load the map, I create the 2D world with JBox2D based on a collision layer in the Tiled map. When I create a static wall with JBox2D, I also keep an array of lines (2 points) for each wall's edge. I use these lines as "light blockers". After I draw the light image to the light buffer, I pass the light buffer, the lights position and other world data to a method. This method then goes through each of these shadow lines that intersect the light's affected area.
 
@@ -82,7 +82,7 @@ I left the point of the light and the shadow line in this image for demonstratio
 
 ## **What I Could Do Better**
 
-There is one major thing I could do more efficiently, but for right now the system is alright as performance is not hurt too harshly from my not-so-efficient ways. As described in the above video, the best way to implement the 2D shadows is to draw a triangle fan that is constructed by clipping a quad where there is an intersecting shadow line with the light's image as the texture. This would give many less draw calls and less resources. If I implemented it this way, each light could be drawn directly to the light map without the need of a separate buffer to draw the shadows.
+There is one major thing I could do more efficiently, but for right now the system is alright as performance is not hurt too harshly from my not-so-efficient ways. As described in the above video, the best way to implement the 2D shadows is to draw a triangle fan that is constructed by clipping a quad where there is an intersecting shadow line with the light's image as the texture. This would give many fewer draw calls and less resources. If I implemented it this way, each light could be drawn directly to the light map without the need of a separate buffer to draw the shadows.
 
 Another minor issue is the number of calculations per frame I have to make for each light. Most lights are static in their position. I don't plan to have moving entities that create light shadows, so I could pre-calculate each triangle fan or shadow map when the light is generated. If I use this method, I would have to update any lights' shadow maps when the surrounding environment changes (door opens, gate closes, etc).
 
@@ -90,7 +90,7 @@ Another minor issue is the number of calculations per frame I have to make for e
 
 The biggest thing I'd like to add in the future is a shader to blur the shadow edges. This would do a couple things:
 
-* It's would ease the shadows by keeping the shadow/light contrast from being so sharp.  
+* It would ease the shadows by keeping the shadow/light contrast from being so sharp.  
 * It would add the illusion of the umbra family. (more realistic lighting)  
 * And finally it would allow the player to better see the edges of the surrounding walls' textures which would add more character to each map.
 

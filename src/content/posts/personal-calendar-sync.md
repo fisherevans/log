@@ -6,31 +6,31 @@ description: A Google Apps Script that mirrors events from multiple personal
 hasVideo: false
 draft: true
 ---
-In my career, I've mostly used Google Calendar at work. I also use multiple Google calendars for personal events (personal, shared, family, etc.). I can share these calendars with my work account, but my personal events do not show up as "Busy" to my coworkers. So I often have to invite my work account too all of my events, or manually create duplicate "Busy" events in my work calendar.
+In my career, I've mostly used Google Calendar at work. I also use multiple Google calendars for personal events (personal, shared, family, etc.). I can share these calendars with my work account, but my personal events do not show up as "Busy" to my coworkers. So I often have to invite my work account to all of my events, or manually create duplicate "Busy" events in my work calendar.
 
-Then I found [this article](https://janelloi.com/auto-sync-google-calendar/). Which links to this [Google Apps Script](https://gist.github.com/ttrahan/a88febc0538315b05346f4e3b35997f2). The process is exactly right, but the script I changed to support some more options.
+Then I found [this article](https://janelloi.com/auto-sync-google-calendar/). Which links to this [Google Apps Script](https://gist.github.com/ttrahan/a88febc0538315b05346f4e3b35997f2). The process is exactly right, but I changed the script to support some more options.
 
 ## Goal
 
-The goal is to automaticlaly create (and delete) busy blocks in my work calendar, with some time buffer to account for travel/context switching. Here's an example:
+The goal is to automatically create (and delete) busy blocks in my work calendar, with some time buffer to account for travel/context switching. Here's an example:
 
 ![Example](https://media.fisher.sh/blog/2024/03/18/personal-calendar-sync/example.png)
 
-The 1-2p event is from my personal calendar, as seen from my work account. The sync scrips has automatically creates a 12:40-2:20p event in my work calendar blocking it off from meeting invites.
+The 1-2p event is from my personal calendar, as seen from my work account. The sync script has automatically created a 12:40-2:20p event in my work calendar blocking it off from meeting invites.
 
 ## Process
 
-This process is an abreviated version of [this article](https://janelloi.com/auto-sync-google-calendar/). The only difference is the mention of multi-calendar support and different parameters to change.
+This process is an abbreviated version of [this article](https://janelloi.com/auto-sync-google-calendar/). The only difference is the mention of multi-calendar support and different parameters to change.
 
 1. Share your personal calendars with your work account (no need to share event details)
-2. Get the Calendar ID for each of them (you can find them in the "settings" of the calander, by the "Share" section)
-3. Create a new [Google Apps Script](https://script.google.com/home/projects/create), and include [this source code](#script), updating the paramaters as desired:
+2. Get the Calendar ID for each of them (you can find them in the "settings" of the calendar, by the "Share" section)
+3. Create a new [Google Apps Script](https://script.google.com/home/projects/create), and include [this source code](#script), updating the parameters as desired:
    - Set your external calendar IDs
-   - Set your buffer time (20 minutes means that a 8a-9a event will create a 7:40a-9:20a block in your work calander)
+   - Set your buffer time (20 minutes means that a 8a-9a event will create a 7:40a-9:20a block in your work calendar)
    - Update your event details visibility, color, and title
    - Configure how many days you want the script to look ahead (4 weeks by default)
-4. You can then run the scipt manually to sync and verify it works.
-5. Then head to the "Triggers" section of your project. For each calendar you're syncing from, setup a new trigger to call the `sync` function. Source it from a calendar whenver it is updated. Use the same calendar IDs you added to your script parameters.
+4. You can then run the script manually to sync and verify it works.
+5. Then head to the "Triggers" section of your project. For each calendar you're syncing from, setup a new trigger to call the `sync` function. Source it from a calendar whenever it is updated. Use the same calendar IDs you added to your script parameters.
 
 That's it, all done!
 

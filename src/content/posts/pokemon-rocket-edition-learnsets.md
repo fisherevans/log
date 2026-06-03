@@ -16,7 +16,7 @@ draft: true
 
 ## Method
 
-I used the [HexManiacAdvance](https://github.com/haven1433/HexManiacAdvance) tool to inspect my patched ROM. Using the followng script in the `Tools > Show Automation Tool` window, I was able to generate some a JSON dump of the data I was looking for:
+I used the [HexManiacAdvance](https://github.com/haven1433/HexManiacAdvance) tool to inspect my patched ROM. Using the following script in the `Tools > Show Automation Tool` window, I was able to generate a JSON dump of the data I was looking for:
 
 ```python
 import json
@@ -142,7 +142,7 @@ The output looked [something like this](https://media.fisher.sh/blog/2023/09/18/
 }
 ```
 
-Then I just wrote a [little golang script](./20230918-script.go) to print out the Markdown.
+Then I just wrote a [little golang script](https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/render.go) to print out the Markdown.
 
 I hope it helps!
 

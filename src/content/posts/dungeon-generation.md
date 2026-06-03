@@ -24,7 +24,7 @@ There were a couple steps that were easier said than done. The first being step 
 
 *// a Room is a simple rectangle (x, y, width, height)*  
 **private** **static** **void** separateRooms() {  
-  Room a, b; *// to hold any two rooms that are over lapping*  
+  Room a, b; *// to hold any two rooms that are overlapping*  
   **int** dx, dxa, dxb, dy, dya, dyb; *// holds delta values of the overlap*  
   **boolean** touching; *// a boolean flag to keep track of touching rooms*  
   do {  
@@ -38,7 +38,7 @@ There were a couple steps that were easier said than done. The first being step 
           *// find the two smallest deltas required to stop the overlap*  
           dx \= Math.min(a.getRight()-b.getLeft()+padding, a.getLeft()-b.getRight()-padding);  
           dy \= Math.min(a.getBottom()-b.getTop()+padding, a.getTop()-b.getBottom()-padding);  
-          *// only keep the smalled delta*  
+          *// only keep the smaller delta*  
           **if** (Math.abs(dx) \< Math.abs(dy)) dy \= 0;  
           **else** dx \= 0;  
           *// create a delta for each rectangle as half the whole delta.*  
@@ -84,7 +84,7 @@ Here's my implementation:
         *// a and b is not a graph edge*  
         **if**(acDist \< abDist && bcDist \< abDist)  
           skip \= **true**;  
-        **if**(skip) *// so we break the loop and go to the next a and b paring*  
+        **if**(skip) *// so we break the loop and go to the next a and b pairing*  
           **break**;  
       }  
       **if**(\!skip) { *// if this a and b pairing was never skipped, it should be an edge*  
@@ -96,7 +96,7 @@ Here's my implementation:
   }  
 }
 
-After these rooms are connected, I needed to generate the hallways required to traverse between them. I wanted the hallways to randomly bend from A to B either clockwise or counter clockwise which caused me some trouble. So much so I needed to look for help at Stack Exchange, [**here**](http://gamedev.stackexchange.com/questions/75360/connecting-two-arbitrary-points-with-2-lines/75372#75372). Thanks to Heckle's suggestion I was able to find a way to connect the two rooms with connected hallways. There's a code example on the Stack Exchange page.
+After these rooms are connected, I needed to generate the hallways required to traverse between them. I wanted the hallways to randomly bend from A to B either clockwise or counterclockwise which caused me some trouble. So much so I needed to look for help at Stack Exchange, [**here**](http://gamedev.stackexchange.com/questions/75360/connecting-two-arbitrary-points-with-2-lines/75372#75372). Thanks to Heckle's suggestion I was able to find a way to connect the two rooms with connected hallways. There's a code example on the Stack Exchange page.
 
 Once I was able to connect the big rooms with hallways, it's simply a matter of drawing the rooms, smaller corridors and hallways to an image. Pixels can translate directly to tiles, so I plan to generate tile maps based on these generated images. This Image shows a (messy) more detailed result of my methods.
 

@@ -21,7 +21,7 @@ In one of my [**previous**](http://fisherevans.com/blog/post/dungeon-generation)
 
 With these requirements in mind, I thought that if I randomly generate points on a grid and connected them with a [**Relative Neighborhood Graph**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) I could somehow morph the edges to create the curves and more "natural" walls.
 
-To start, I generated the random points. The process is pretty straight forward \- I have a predfined area within which I want the cave (defined by a width, height, and some padding).
+To start, I generated the random points. The process is pretty straightforward \- I have a predefined area within which I want the cave (defined by a width, height, and some padding).
 
 **int** x, y;  
 **for** (**int** pointId \= 0; pointId \< \_pointCount; pointId++) {  
@@ -32,7 +32,7 @@ To start, I generated the random points. The process is pretty straight forward 
 
 ![random points](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/random-points.png)
 
-Then I connected them with lines as an [**RNG**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) graph. In short, it's an undirected graph where you connect any two points (a, b) where there isn't a third point (c) that is closer to both (a) and (b) then (a) and (b) are to each other.
+Then I connected them with lines as an [**RNG**](http://en.wikipedia.org/wiki/Relative_neighborhood_graph) graph. In short, it's an undirected graph where you connect any two points (a, b) where there isn't a third point (c) that is closer to both (a) and (b) than (a) and (b) are to each other.
 
 Point a, b, c; *// the three points*  
 **float** abDist, acDist, bcDist; *// the distances we care about (stored as a squared distance)*  
@@ -68,12 +68,12 @@ I ended up coming to the conclusion that I could treat my above image like a [**
 Now I needed to come up with an algorithm that would "let the pixels grow." The basis of following algorithm is that if a pixel is "large" enough (i.e. it's value is above a certain threshold), it will grow into other neighboring pixels.
 
 *// amount: the growth amount if a growth is to occur*  
-*// seedLimit: for every pixel, only let it grow if it meets this theashold*  
-*// chance: if a pixel meets the threshold, it should only grow into it's neighbors*  
+*// seedLimit: for every pixel, only let it grow if it meets this threshold*  
+*// chance: if a pixel meets the threshold, it should only grow into its neighbors*  
 *//         this percentage of the time*  
 *// growRadius: size of the growth area \- as a square around the seed pixel.*  
 **public** **void** grow(**float** amount, **float** seedLimit, **float** chance, **int** growthRadius) {  
-    *// hold the pixel growth sperate from the map while we calculate the growth*  
+    *// hold the pixel growth separate from the map while we calculate the growth*  
     **float**\[\]\[\] growth \= **new** **float**\[\_height\]\[\_width\];  
     **int** tx, ty;  
     **for** (**int** y \= 0; y \< \_height; y++) {  
@@ -84,11 +84,11 @@ Now I needed to come up with an algorithm that would "let the pixels grow." The 
                     **for** (**int** dx \= \-growthRadius; dx \<= growthRadius; dx++) {  
                         tx \= x \+ dx;  
                         ty \= y \+ dy;  
-                        *// don't grow outside the map boundried*  
+                        *// don't grow outside the map boundaries*  
                         **if** (tx \< 0 || ty \< 0 || tx \>= \_width || ty \>= \_height) **continue**;  
-                        *// double the seen pixels amount when it grows*  
+                        *// double the seed pixel's amount when it grows*  
                         **else** if (tx \== x && ty \== y) growth\[y\]\[x\] \= \_map\[y\]\[x\];  
-                        *// if, roll the dice, if it meets the chance, grow that neighbor*  
+                        *// roll the dice, if it meets the chance, grow that neighbor*  
                         **else** if (\_random.nextFloat() \<= chance) growth\[ty\]\[tx\] \+= amount; *//\*\_map\[y\]\[x\];*  
                     }  
                 }  
@@ -108,7 +108,7 @@ We'll want to run this growth algorithm a couple times (come on, bacteria doesn'
         grow(amount, seedLimit, chance, growthRadius);  
 }
 
-We can then use this method to grow our cave system. This is the trickiest part; seemingly small changes to the parameters can create huge changes in the output. Play around with different growth amounts, chances, radii, etc. You can creat big, wide smooth caves; or cramped jagged caves pretty easily. I found the following to create a pretty decent "cave" looking result.
+We can then use this method to grow our cave system. This is the trickiest part; seemingly small changes to the parameters can create huge changes in the output. Play around with different growth amounts, chances, radii, etc. You can create big, wide smooth caves; or cramped jagged caves pretty easily. I found the following to create a pretty decent "cave" looking result.
 
 oc.growMultiple(8, 1f, 1f, 0.05f, 1);  
 oc.growMultiple(1, 0.3333f, 1f, 0.5f, 1);  
@@ -121,7 +121,7 @@ Awesome, this looks good. However, tiles don't really work with "gradient" or "b
 **public** **void** contrast(**float** threshold) {  
     **for**(**int** y \= 0;y \< \_height;y++) {  
         **for**(**int** x \= 0;x \< \_width;x++) { *// for each pixel*  
-            *// if it's above the threshold, set it to 1, other wise, 0*  
+            *// if it's above the threshold, set it to 1, otherwise, 0*  
             \_map\[y\]\[x\] \= \_map\[y\]\[x\] \>= threshold ? 1 : 0;  
         }  
     }  
