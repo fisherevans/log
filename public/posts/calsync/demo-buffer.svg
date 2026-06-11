@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="940" height="280" rx="14" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="40" y="48" font-size="17" font-weight="700" fill="#bf8700">BUFFER<tspan font-size="13" font-weight="400" fill="#57606a">&#160;&#160;&#160;pad the block for travel and getting back up to speed</tspan></text>
+  <text x="200" y="82" font-size="11" font-weight="600" fill="#57606a" text-anchor="middle" letter-spacing="0.5">PERSONAL CALENDAR</text>
+  <text x="760" y="82" font-size="11" font-weight="600" fill="#57606a" text-anchor="middle" letter-spacing="0.5">WORK CALENDAR</text>
+  <line x1="78" y1="100" x2="322" y2="100" stroke="#dde2e8"/>
+  <line x1="78" y1="150" x2="322" y2="150" stroke="#dde2e8"/>
+  <line x1="78" y1="200" x2="322" y2="200" stroke="#dde2e8"/>
+  <line x1="78" y1="250" x2="322" y2="250" stroke="#dde2e8"/>
+  <text x="70" y="104" font-size="11" fill="#8b949e" text-anchor="end">1 PM</text>
+  <text x="70" y="154" font-size="11" fill="#8b949e" text-anchor="end">2 PM</text>
+  <text x="70" y="204" font-size="11" fill="#8b949e" text-anchor="end">3 PM</text>
+  <text x="70" y="254" font-size="11" fill="#8b949e" text-anchor="end">4 PM</text>
+  <rect x="88" y="150" width="234" height="50" rx="6" fill="#fbf0d9" stroke="#e3c270"/>
+  <rect x="88" y="150" width="5" height="50" rx="2.5" fill="#d29922"/>
+  <text x="104" y="172" font-size="13" font-weight="600" fill="#24292f">Haircut</text>
+  <text x="104" y="190" font-size="11" fill="#7a6320">2:00 - 3:00 PM</text>
+  <line x1="638" y1="100" x2="882" y2="100" stroke="#dde2e8"/>
+  <line x1="638" y1="150" x2="882" y2="150" stroke="#dde2e8"/>
+  <line x1="638" y1="200" x2="882" y2="200" stroke="#dde2e8"/>
+  <line x1="638" y1="250" x2="882" y2="250" stroke="#dde2e8"/>
+  <text x="630" y="104" font-size="11" fill="#8b949e" text-anchor="end">1 PM</text>
+  <text x="630" y="154" font-size="11" fill="#8b949e" text-anchor="end">2 PM</text>
+  <text x="630" y="204" font-size="11" fill="#8b949e" text-anchor="end">3 PM</text>
+  <text x="630" y="254" font-size="11" fill="#8b949e" text-anchor="end">4 PM</text>
+  <rect x="648" y="133" width="234" height="84" rx="6" fill="#eaecef" stroke="#cdd2d8"/>
+  <rect x="648" y="133" width="5" height="84" rx="2.5" fill="#8b949e"/>
+  <rect x="648" y="133" width="234" height="17" rx="6" fill="#f3d9a6" opacity="0.55"/>
+  <rect x="648" y="200" width="234" height="17" rx="6" fill="#f3d9a6" opacity="0.55"/>
+  <text x="872" y="146" font-size="10" fill="#9a7b27" text-anchor="end">+20 min</text>
+  <text x="872" y="213" font-size="10" fill="#9a7b27" text-anchor="end">+20 min</text>
+  <text x="664" y="180" font-size="13" font-weight="600" fill="#24292f">Busy</text>
+  <text x="664" y="197" font-size="11" fill="#6b7480">1:40 - 3:20 PM</text>
+  <line x1="332" y1="175" x2="636" y2="175" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="448" y="163" width="72" height="24" rx="12" fill="#bf8700"/>
+  <text x="484" y="179" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">mask</text>
+  <text x="484" y="205" font-size="11" fill="#57606a" text-anchor="middle">+ buffer</text>
+</svg>

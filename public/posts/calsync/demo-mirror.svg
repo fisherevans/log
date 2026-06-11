@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 220" font-family="system-ui, -apple-system, Segoe UI, Roboto, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#57606a"/>
+    </marker>
+  </defs>
+  <rect x="10" y="10" width="940" height="200" rx="14" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="40" y="48" font-size="17" font-weight="700" fill="#1f6feb">MIRROR<tspan font-size="13" font-weight="400" fill="#57606a">&#160;&#160;&#160;see your work day on your own calendar, title only</tspan></text>
+  <text x="200" y="84" font-size="11" font-weight="600" fill="#57606a" text-anchor="middle" letter-spacing="0.5">WORK CALENDAR</text>
+  <text x="760" y="84" font-size="11" font-weight="600" fill="#57606a" text-anchor="middle" letter-spacing="0.5">PERSONAL CALENDAR</text>
+  <rect x="80" y="96" width="240" height="100" rx="8" fill="#e7effb" stroke="#aac4ee"/>
+  <rect x="80" y="96" width="5" height="100" rx="2.5" fill="#1f6feb"/>
+  <text x="100" y="120" font-size="14" font-weight="600" fill="#24292f">Project Review</text>
+  <circle cx="106" cy="137" r="7" fill="#c2cee2" stroke="#e7effb" stroke-width="1.5"/>
+  <circle cx="118" cy="137" r="7" fill="#a9bbd9" stroke="#e7effb" stroke-width="1.5"/>
+  <circle cx="130" cy="137" r="7" fill="#8fa6cf" stroke="#e7effb" stroke-width="1.5"/>
+  <text x="144" y="141" font-size="11" fill="#57606a">5 guests</text>
+  <text x="100" y="161" font-size="11" fill="#1f6feb" text-decoration="underline">Q3-strategy.pdf, agenda.gdoc</text>
+  <text x="100" y="181" font-size="11" fill="#1f6feb" text-decoration="underline">zoom.us/j/88213</text>
+  <line x1="330" y1="146" x2="628" y2="146" stroke="#57606a" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="442" y="134" width="72" height="24" rx="12" fill="#1f6feb"/>
+  <text x="478" y="150" font-size="12" font-weight="600" fill="#ffffff" text-anchor="middle">mirror</text>
+  <text x="478" y="176" font-size="11" fill="#57606a" text-anchor="middle">title only</text>
+  <rect x="640" y="96" width="240" height="100" rx="8" fill="#e7effb" stroke="#aac4ee"/>
+  <rect x="640" y="96" width="5" height="100" rx="2.5" fill="#1f6feb"/>
+  <text x="660" y="120" font-size="14" font-weight="600" fill="#24292f">Project Review</text>
+  <text x="660" y="150" font-size="11" font-style="italic" fill="#9aa3ad">guests, docs &amp; notes</text>
+  <text x="660" y="167" font-size="11" font-style="italic" fill="#9aa3ad">left behind</text>
+</svg>
