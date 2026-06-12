@@ -21,6 +21,14 @@ import {
 } from './moderation';
 import { handleSubscribe } from './subscribe';
 import { Telemetry } from './datadog';
+import {
+    handleCallback,
+    handleClientMetadata,
+    handleJwks,
+    handleLogin,
+    handleLogout,
+    handleMe,
+} from './atproto';
 
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -38,6 +46,21 @@ export default {
         try {
             if (request.method === 'GET' && path === '/health') {
                 return json({ ok: true }, {}, cors);
+            }
+
+            // --- Bluesky OAuth (issue #3) ------------------------------------
+            // Browser-redirect endpoints (login/callback/metadata/jwks) are
+            // top-level navigations, not CORS fetches. /me and /logout are called
+            // by the blog UI cross-origin, so they carry CORS headers.
+            if (request.method === 'GET') {
+                if (path === '/oauth/client-metadata.json') return await handleClientMetadata(env);
+                if (path === '/oauth/jwks.json') return await handleJwks(env);
+                if (path === '/oauth/login') return await handleLogin(request, env);
+                if (path === '/oauth/callback') return await handleCallback(request, env);
+                if (path === '/oauth/me') return await handleMe(request, env, cors);
+            }
+            if (request.method === 'POST' && path === '/oauth/logout') {
+                return await handleLogout(request, env, cors);
             }
 
             if (path === '/comments') {
