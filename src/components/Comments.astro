@@ -1,0 +1,180 @@
+---
+// Native in-page comments (issue #5). Renders an empty mount; the client script
+// (src/scripts/comments.ts) fetches + renders the thread from the comments
+// Worker. Only renders when the post has a stable id (what comments key on).
+interface Props {
+    postId?: string;
+}
+const { postId } = Astro.props;
+---
+
+{
+    postId && (
+        <section class="comments" aria-label="Comments">
+            <div data-comments data-post-id={postId} />
+        </section>
+    )
+}
+
+<style>
+    .comments {
+        max-width: var(--max-width);
+        margin: 3em auto 0;
+        padding: 2em 1em 0;
+        border-top: 1px solid var(--rule);
+    }
+    .comments :global(.comments-heading) {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 1rem;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+        margin: 0 0 1.25em;
+    }
+    .comments :global(.comments-status) {
+        color: var(--muted);
+        font-size: 0.95rem;
+    }
+
+    /* Composer */
+    .comments :global(.comment-composer) {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6em;
+        margin-bottom: 2em;
+    }
+    .comments :global(.comment-composer-reply) {
+        margin: 0.75em 0 0.25em;
+        padding-left: 0.75em;
+        border-left: 2px solid var(--rule);
+    }
+    .comments :global(.comment-input) {
+        width: 100%;
+        box-sizing: border-box;
+        background: var(--code-bg);
+        color: var(--fg);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.6em 0.7em;
+        font: inherit;
+        resize: vertical;
+    }
+    .comments :global(.comment-input:focus-visible) {
+        outline: none;
+        border-color: var(--accent);
+    }
+    .comments :global(.comment-handle-input) {
+        max-width: 22em;
+    }
+    .comments :global(.comment-submit) {
+        align-self: flex-start;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.85rem;
+        letter-spacing: 0.03em;
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.45em 0.9em;
+        cursor: pointer;
+        transition:
+            color 0.15s,
+            background 0.15s,
+            border-color 0.15s;
+    }
+    .comments :global(.comment-submit:hover),
+    .comments :global(.comment-submit:focus-visible) {
+        background: var(--hover-bg);
+        color: var(--hover);
+        border-color: var(--hover-bg);
+        outline: none;
+    }
+    .comments :global(.comment-submit[disabled]) {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .comments :global(.comment-error) {
+        color: #e0683c;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+    .comments :global(.comment-turnstile:empty) {
+        display: none;
+    }
+
+    /* Thread */
+    .comments :global(.comments-list) {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .comments :global(.comments-replies) {
+        margin-top: 0.75em;
+        margin-left: 1.25em;
+        padding-left: 1em;
+        border-left: 1px solid var(--rule);
+    }
+    .comments :global(.comment) {
+        padding: 0.9em 0;
+        border-bottom: 1px solid var(--rule);
+    }
+    .comments :global(.comment-head) {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5em;
+        margin-bottom: 0.4em;
+    }
+    .comments :global(.comment-avatar) {
+        width: 1.4em;
+        height: 1.4em;
+        border-radius: 50%;
+        object-fit: cover;
+        background: var(--code-bg);
+        border: 1px solid var(--rule);
+        flex: none;
+    }
+    .comments :global(.comment-author) {
+        font-weight: 600;
+        color: var(--fg);
+    }
+    .comments :global(.comment-handle),
+    .comments :global(.comment-time) {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.78rem;
+        color: var(--muted);
+    }
+    .comments :global(.comment-handle) {
+        border-bottom: none;
+    }
+    .comments :global(.comment-time) {
+        margin-left: auto;
+    }
+    .comments :global(.comment-body) {
+        color: var(--fg);
+        line-height: 1.5;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    .comments :global(.comment-actions) {
+        display: flex;
+        gap: 1em;
+        margin-top: 0.5em;
+    }
+    .comments :global(.comment-link) {
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.78rem;
+        color: var(--muted);
+    }
+    .comments :global(.comment-link:hover) {
+        color: var(--accent);
+    }
+</style>
+
+<script>
+    import { initComments } from '../scripts/comments';
+    initComments();
+</script>

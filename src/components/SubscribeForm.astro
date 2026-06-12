@@ -1,0 +1,107 @@
+---
+// Subscribe CTA (issue #7): prominent RSS + a native email form posting to the
+// comments Worker. Occasional, big-posts-only emails, sent manually - no send
+// automation. RSS auto-discovery is already in the page head; this surfaces it.
+import { COMMENTS_API_URL } from '../consts';
+---
+
+<section class="subscribe" aria-label="Subscribe">
+    <div class="subscribe-inner">
+        <p class="subscribe-lede">
+            Get new posts when they land. Occasional, big-posts-only - no noise.
+        </p>
+        <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
+            <div class="subscribe-row">
+                <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+                <button type="submit">Subscribe</button>
+            </div>
+            <div data-subscribe-turnstile class="subscribe-turnstile"></div>
+            <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
+        </form>
+        <p class="subscribe-rss">
+            Prefer a reader? <a href="/rss.xml">Subscribe via RSS</a>.
+        </p>
+    </div>
+</section>
+
+<style>
+    .subscribe {
+        max-width: var(--max-width);
+        margin: 2.5em auto 0;
+        padding: 1.5em 1em 0;
+        border-top: 1px solid var(--rule);
+    }
+    .subscribe-lede {
+        margin: 0 0 0.9em;
+        color: var(--fg);
+    }
+    .subscribe-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em;
+    }
+    .subscribe-form input[type='email'] {
+        flex: 1 1 16em;
+        background: var(--code-bg);
+        color: var(--fg);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.55em 0.7em;
+        font: inherit;
+    }
+    .subscribe-form input[type='email']:focus-visible {
+        outline: none;
+        border-color: var(--accent);
+    }
+    .subscribe-form button {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.85rem;
+        letter-spacing: 0.03em;
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.5em 1em;
+        cursor: pointer;
+        transition:
+            color 0.15s,
+            background 0.15s,
+            border-color 0.15s;
+    }
+    .subscribe-form button:hover,
+    .subscribe-form button:focus-visible {
+        background: var(--hover-bg);
+        color: var(--hover);
+        border-color: var(--hover-bg);
+        outline: none;
+    }
+    .subscribe-form button:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+    .subscribe-turnstile:empty {
+        display: none;
+    }
+    .subscribe-turnstile {
+        margin-top: 0.6em;
+    }
+    .subscribe-status:empty {
+        display: none;
+    }
+    .subscribe-status {
+        margin: 0.6em 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+    }
+    .subscribe-rss {
+        margin: 0.9em 0 0;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.82rem;
+        color: var(--muted);
+    }
+</style>
+
+<script>
+    import { initSubscribe } from '../scripts/subscribe';
+    initSubscribe();
+</script>
