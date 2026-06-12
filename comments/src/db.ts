@@ -214,3 +214,23 @@ export async function recordFirstSeen(
         .bind(did, when, accountCreatedAt)
         .run();
 }
+
+// ---- subscribers (issue #7) -------------------------------------------------
+
+// Add an email subscriber. Idempotent on the email (re-subscribing is a no-op).
+// Returns true if a new row was inserted, false if the email was already present.
+export async function addSubscriber(
+    db: D1Database,
+    email: string,
+    when: number,
+    ipHash: string | null,
+): Promise<boolean> {
+    const res = await db
+        .prepare(
+            `INSERT INTO subscribers (email, created_at, ip_hash) VALUES (?, ?, ?)
+             ON CONFLICT(email) DO NOTHING`,
+        )
+        .bind(email, when, ipHash)
+        .run();
+    return (res.meta.changes ?? 0) > 0;
+}

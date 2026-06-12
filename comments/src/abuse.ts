@@ -8,6 +8,7 @@
 import type { Env } from './env';
 import { HttpError } from './http';
 import type { Identity } from './identity';
+import { requireTurnstile } from './turnstile';
 import {
     countByDidSince,
     countByIpSince,
@@ -39,14 +40,8 @@ export async function enforceAbuse(
 ): Promise<void> {
     const now = Date.now();
 
-    // 1. Turnstile. Enforced only when a secret is configured (so local dev and
-    //    tests run without it); production always has it.
-    if (env.TURNSTILE_SECRET) {
-        if (!turnstileToken) throw new HttpError(400, 'missing Turnstile token');
-        if (!(await verifyTurnstile(env.TURNSTILE_SECRET, turnstileToken, remoteIp))) {
-            throw new HttpError(403, 'Turnstile verification failed');
-        }
-    }
+    // 1. Turnstile (no-op when no secret is configured).
+    await requireTurnstile(env, turnstileToken, remoteIp);
 
     // 2. Bans.
     if (await isBanned(env.DB, identity.did, ipHash)) {
@@ -80,26 +75,4 @@ async function isTrusted(env: Env, did: string, now: number): Promise<boolean> {
     const rep = await getReputation(env.DB, did);
     if (rep?.account_created_at && now - rep.account_created_at >= TRUST_MIN_AGE_MS) return true;
     return false;
-}
-
-interface TurnstileResult {
-    success: boolean;
-}
-
-async function verifyTurnstile(secret: string, token: string, remoteIp: string): Promise<boolean> {
-    const body = new FormData();
-    body.append('secret', secret);
-    body.append('response', token);
-    if (remoteIp) body.append('remoteip', remoteIp);
-    try {
-        const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-            method: 'POST',
-            body,
-        });
-        const data = (await res.json()) as TurnstileResult;
-        return data.success === true;
-    } catch {
-        // Fail closed: if the verification call itself errors, reject the comment.
-        return false;
-    }
 }
