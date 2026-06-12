@@ -72,7 +72,16 @@ content:
         default: false
       - name: body
         label: Body
-        type: rich-text
+        # Plain markdown source editor, NOT rich-text. The rich-text WYSIWYG
+        # round-trips the body through a model that drops raw HTML (<iframe>
+        # embeds) and backslash escapes - it silently stripped 29 embeds +
+        # text on 2026-06-03 (nottingham-cloud#118). `code` edits the body as
+        # faithful source. Pages CMS keys the body off the field NAME `body`,
+        # so the type only changes the editor widget, not the data. scribe
+        # binds `body` by name too and uses its own editor - unaffected.
+        type: code
+        options:
+          language: markdown
 
   - name: about
     label: About page
