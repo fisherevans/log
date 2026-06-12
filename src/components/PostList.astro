@@ -1,0 +1,102 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { postHref } from '../lib/posts';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+    posts: CollectionEntry<'posts'>[];
+}
+const { posts } = Astro.props;
+---
+
+<ul class="post-list">
+    {
+        posts.map((post) => (
+            <li>
+                <a class="title-link" href={postHref(post)}>
+                    {post.data.title}
+                </a>
+                {post.data.description && <p class="description">{post.data.description}</p>}
+                <div class="row-meta">
+                    <span class="date">
+                        <FormattedDate date={post.data.date} />
+                    </span>
+                    {post.data.tags.length > 0 && (
+                        <span class="chips">
+                            {post.data.tags.map((tag) => (
+                                <a class="chip" href={`/tags/${tag}/`}>
+                                    {tag}
+                                </a>
+                            ))}
+                        </span>
+                    )}
+                </div>
+            </li>
+        ))
+    }
+</ul>
+
+<style>
+    .post-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .post-list li {
+        padding: 1.25em 0;
+        border-bottom: 1px solid var(--rule);
+    }
+    .post-list li:first-child {
+        padding-top: 0.5em;
+    }
+    .post-list li:last-child {
+        border-bottom: none;
+    }
+    .post-list li::before {
+        content: none;
+    }
+    .post-list .title-link {
+        color: var(--fg);
+        border-bottom: 1px dotted transparent;
+        font-family: 'Marauder', serif;
+        font-weight: 700;
+        font-variation-settings: 'opsz' 20;
+        font-size: 1.5rem;
+        line-height: 1.2;
+    }
+    .post-list .title-link:hover {
+        color: var(--hover);
+        background-color: var(--hover-bg);
+        box-shadow:
+            0.15em 0 0 var(--hover-bg),
+            -0.15em 0 0 var(--hover-bg);
+        border-bottom: 1px solid var(--hover);
+    }
+    .post-list .description {
+        margin: 0.4em 0 0;
+        color: var(--fg);
+        opacity: 0.85;
+    }
+    .post-list .row-meta {
+        margin-top: 0.5em;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em 1em;
+        align-items: baseline;
+        font-size: 0.85em;
+    }
+    .post-list .date {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.78em;
+        color: var(--muted);
+        letter-spacing: 0.03em;
+    }
+    .post-list .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35em;
+    }
+</style>

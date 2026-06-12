@@ -24,9 +24,17 @@ function loadTurnstile(): Promise<void> {
     });
 }
 
+// Wire every subscribe form on the page (the footer + the landing-page modal can
+// both be present). Idempotent: each form is wired at most once.
 export function initSubscribe() {
-    const form = document.querySelector<HTMLFormElement>('[data-subscribe]');
-    if (!form) return;
+    document.querySelectorAll<HTMLFormElement>('[data-subscribe]').forEach((form) => {
+        if (form.dataset.wired) return;
+        form.dataset.wired = '1';
+        wireForm(form);
+    });
+}
+
+function wireForm(form: HTMLFormElement) {
     const email = form.querySelector<HTMLInputElement>('input[type="email"]')!;
     const status = form.querySelector<HTMLElement>('[data-subscribe-status]')!;
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
