@@ -18,6 +18,7 @@ export default defineWorkersConfig(async () => {
                             DEV_AUTH: '1',
                             ADMIN_DID: 'did:plc:admin',
                             IP_HASH_SALT: 'test-salt',
+                            LOGIN_GRANTS_TOKEN: 'test-grants-token',
                         },
                     },
                     wrangler: { configPath: './wrangler.toml' },
