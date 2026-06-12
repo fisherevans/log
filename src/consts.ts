@@ -14,6 +14,13 @@ export const AUTHOR_EMAIL = "fisher@fisherevans.com";
 export const BLUESKY_HANDLE = "fisher.sh";
 export const BLUESKY_PROFILE_URL = `https://bsky.app/profile/${BLUESKY_HANDLE}`;
 
+// Comments + subscribe backend (the Cloudflare Worker; source in /comments).
+// The native UI calls this origin client-side. TURNSTILE_SITEKEY is the public
+// Turnstile key - leave empty until it's minted; the widget is then omitted and
+// the Worker (which only enforces when its secret is set) still accepts requests.
+export const COMMENTS_API_URL = "https://comments.fisher.sh";
+export const TURNSTILE_SITEKEY = "";
+
 // External links surfaced in the footer (single source of truth - add/remove here).
 export const SOCIAL_LINKS = [
     { label: "fisher.sh", href: "https://fisher.sh" },
