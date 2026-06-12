@@ -25,6 +25,7 @@ import { Telemetry } from './datadog';
 import {
     handleCallback,
     handleClientMetadata,
+    handleDevLogin,
     handleJwks,
     handleLogin,
     handleLogout,
@@ -58,6 +59,7 @@ export default {
                 if (path === '/oauth/jwks.json') return await handleJwks(env);
                 if (path === '/oauth/login') return await handleLogin(request, env);
                 if (path === '/oauth/callback') return await handleCallback(request, env);
+                if (path === '/oauth/dev-login') return await handleDevLogin(request, env);
                 if (path === '/oauth/me') return await handleMe(request, env, cors);
             }
             if (request.method === 'POST' && path === '/oauth/logout') {
