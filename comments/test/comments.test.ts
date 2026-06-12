@@ -116,3 +116,31 @@ describe('comments CRUD', () => {
         expect((await post({ postId: 'AnyPost001', body: 'global off' })).status).toBe(403);
     });
 });
+
+// Body hygiene (#17): the back-end half of "validate both ends". The stored text
+// is what the client later renders through the markdown allowlist, so it must be
+// clean going in - no control chars, normalized newlines, no whitespace padding.
+describe('body normalization', () => {
+    it('strips control chars but keeps newlines and tabs', async () => {
+        const c = (await (await post({ postId: POST, body: 'a\x00b\x07c\td\ne' })).json()) as any;
+        expect(c.body).toBe('a\x00b\x07c\td\ne'.replace(/[\x00\x07]/g, ''));
+        expect(c.body).toBe('abc\td\ne');
+    });
+
+    it('normalizes CRLF and collapses 3+ blank lines to one', async () => {
+        const c = (await (await post({ postId: POST, body: 'one\r\n\r\n\r\n\r\ntwo' })).json()) as any;
+        expect(c.body).toBe('one\n\ntwo');
+    });
+
+    it('trims surrounding whitespace and rejects whitespace-only bodies', async () => {
+        const c = (await (await post({ postId: POST, body: '  \n  hi  \n  ' })).json()) as any;
+        expect(c.body).toBe('hi');
+        expect((await post({ postId: POST, body: '\n\t  \r\n ' })).status).toBe(400);
+    });
+
+    it('preserves markdown source verbatim (rendering is the client\'s job)', async () => {
+        const md = '**bold** and `code`\n\n- a\n- b\n\n> quote\n\n[x](https://e.test)';
+        const c = (await (await post({ postId: POST, body: md })).json()) as any;
+        expect(c.body).toBe(md);
+    });
+});

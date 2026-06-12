@@ -19,6 +19,20 @@ import type { Telemetry } from './datadog';
 
 const MAX_BODY = 4000;
 
+// Server-side body hygiene. The client renders comment bodies through a vetted
+// markdown parser + DOMPurify allowlist (src/scripts/markdown.ts), so stored
+// text is never injected as HTML - but we still normalize what lands in the DB:
+// strip control chars (except \n and \t), normalize CRLF, and collapse runs of
+// 3+ blank lines so a comment can't be padded into a wall of whitespace. This is
+// the back-end half of the "validate both ends" contract for issue #17.
+function normalizeBody(raw: string): string {
+    return raw
+        .replace(/\r\n?/g, '\n')
+        .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+}
+
 // Public shape of a comment. ip_hash and other internals never leave the Worker.
 // A deleted comment is returned as a tombstone (empty body, deleted: true) so the
 // thread structure renders without exposing the original text.
@@ -77,7 +91,7 @@ export async function handleCreate(
     if (!identity) throw new HttpError(401, 'sign in to comment');
 
     const postId = (body.postId ?? '').trim();
-    const text = (body.body ?? '').trim();
+    const text = normalizeBody(body.body ?? '');
     const parentId = body.parentId ?? null;
     if (!postId) throw new HttpError(400, 'postId required');
     if (!text) throw new HttpError(400, 'comment body required');
