@@ -19,11 +19,12 @@ import {
     softDeleteComment,
 } from './db';
 
-// The admin gate. Returns the admin identity or throws. Authorization now reads
-// the DID-keyed grant store (the `admin` group; see migrations/0003_grants.sql),
-// which is the shared source of truth across the edge + the k3s admin apps.
-// env.ADMIN_DID is kept as a transitional fallback for one deploy and dropped in
-// Phase 3 once the grant is seeded.
+// The admin gate. Returns the admin identity or throws. Authorization reads the
+// DID-keyed grant store (the `admin` group; see migrations/0003_grants.sql), the
+// shared source of truth across the edge + the k3s admin apps. env.ADMIN_DID is
+// kept as an intentional break-glass admin: the env-configured DID always passes,
+// so a corrupted/empty grants table can't lock the operator out of moderation
+// (parallel to the login app's ?recover=1 password break-glass; see auth.md).
 export async function requireAdmin(request: Request, env: Env): Promise<Identity> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'admin sign-in required');
