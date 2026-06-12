@@ -551,6 +551,21 @@ const { postId } = Astro.props;
         align-items: center;
         gap: 1em;
     }
+
+    /* --- sign-in button (#19): Bluesky logo + sans-serif ------------------- */
+
+    .comments :global(.comment-signin-btn) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0;
+        font-size: 0.9rem;
+    }
+    .comments :global(.comment-signin-btn .comment-icon svg) {
+        width: 1.1em;
+        height: 1.1em;
+    }
 </style>
 
 <script>
