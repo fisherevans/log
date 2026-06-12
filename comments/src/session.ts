@@ -36,10 +36,15 @@ function readCookie(request: Request, name: string): string | null {
     return null;
 }
 
-function setCookie(value: string, maxAgeSec: number): string {
-    // HttpOnly so JS can't read it; Secure + SameSite=None for the cross-site
-    // call from the blog; Path=/ so it's sent to every API route.
-    return `${COOKIE_NAME}=${value}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAgeSec}`;
+function setCookie(value: string, maxAgeSec: number, dev = false): string {
+    // HttpOnly so JS can't read it; Path=/ so it's sent to every API route.
+    // Prod: Secure + SameSite=None for the cross-SITE call from the blog
+    // (log.fisher.sh -> comments.fisher.sh). DEV (sandbox over plain HTTP on a
+    // tailnet IP, where the blog + worker are the same host on different ports,
+    // i.e. same-site): SameSite=None;Secure would be dropped over http, so use
+    // SameSite=Lax without Secure. Gated on DEV_AUTH, which is never set in prod.
+    const sameSite = dev ? 'SameSite=Lax' : 'Secure; SameSite=None';
+    return `${COOKIE_NAME}=${value}; HttpOnly; ${sameSite}; Path=/; Max-Age=${maxAgeSec}`;
 }
 
 // Create a session for a verified identity. Returns the Set-Cookie header value.
@@ -53,7 +58,7 @@ export async function createSession(env: Env, p: SessionProfile): Promise<string
     )
         .bind(tok, p.did, p.handle, p.displayName, p.avatar, p.accountCreatedAt, now, expires)
         .run();
-    return setCookie(tok, Math.floor(SESSION_TTL_MS / 1000));
+    return setCookie(tok, Math.floor(SESSION_TTL_MS / 1000), !!env.DEV_AUTH);
 }
 
 // Resolve the current session cookie to an identity, or null if absent/expired.
@@ -88,5 +93,5 @@ export async function destroySession(env: Env, request: Request): Promise<string
     if (tok) {
         await env.DB.prepare(`DELETE FROM sessions WHERE token = ?`).bind(tok).run();
     }
-    return setCookie('', 0);
+    return setCookie('', 0, !!env.DEV_AUTH);
 }
