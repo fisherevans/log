@@ -1,14 +1,18 @@
 ---
 import { SOCIAL_LINKS } from '../consts';
+import SubscribeForm from './SubscribeForm.astro';
 const today = new Date();
 ---
 
 <footer>
     <div class="inner">
-        <span>&copy; {today.getFullYear()} fisher evans</span>
-        <span class="links">
-            {SOCIAL_LINKS.map((link) => <a href={link.href}>{link.label}</a>)}
-        </span>
+        <SubscribeForm />
+        <div class="meta">
+            <span>&copy; {today.getFullYear()} fisher evans</span>
+            <span class="links">
+                {SOCIAL_LINKS.map((link) => <a href={link.href}>{link.label}</a>)}
+            </span>
+        </div>
     </div>
 </footer>
 <style>
@@ -20,11 +24,16 @@ const today = new Date();
     .inner {
         max-width: var(--max-width);
         margin: 0 auto;
-        padding: 1.5em 1em;
+        padding: 1.8em 1em;
+    }
+    .meta {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
         gap: 1em;
+        margin-top: 1.6em;
+        padding-top: 1.2em;
+        border-top: 1px solid var(--rule);
         font-size: 0.85rem;
         flex-wrap: wrap;
     }
