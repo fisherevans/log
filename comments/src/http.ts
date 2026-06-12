@@ -38,11 +38,23 @@ export function json(data: unknown, init: ResponseInit = {}, extra: Record<strin
     });
 }
 
+// Flatten an Error and its (non-enumerable) .cause chain into one string, so the
+// real failure is visible in `wrangler tail` instead of just the top message.
+export function errorChain(err: unknown): string {
+    const parts: string[] = [];
+    let cur: unknown = err;
+    for (let i = 0; cur instanceof Error && i < 5; i++) {
+        parts.push(`${cur.name}: ${cur.message}`);
+        cur = (cur as { cause?: unknown }).cause;
+    }
+    return parts.join(' <- ') || String(err);
+}
+
 export function errorResponse(err: unknown, cors: Record<string, string>): Response {
     if (err instanceof HttpError) {
         return json({ error: err.message }, { status: err.status }, cors);
     }
-    console.error('unhandled error', err);
+    console.error('unhandled error', errorChain(err), (err as Error)?.stack);
     return json({ error: 'internal error' }, { status: 500 }, cors);
 }
 
