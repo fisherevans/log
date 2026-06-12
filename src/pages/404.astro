@@ -1,0 +1,59 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={`404 - ${SITE_TITLE}`} description="Nothing logged at this address." />
+        <style>
+            .notfound {
+                margin: 3rem 0;
+            }
+            .notfound .code {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+                color: var(--muted);
+                letter-spacing: 0.08em;
+            }
+            .notfound h1 {
+                margin: 0.4em 0 0.5em;
+            }
+            .notfound p {
+                color: var(--fg);
+                opacity: 0.85;
+                max-width: 32em;
+            }
+            .notfound .ways-back {
+                margin-top: 2rem;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5em 1.5em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.9rem;
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <div class="notfound">
+                <div class="code">404 / NOT LOGGED</div>
+                <h1>This page isn't in the log.</h1>
+                <p>
+                    Whatever you were after either never existed or got quietly
+                    garbage-collected somewhere between commits. Happens to the
+                    best of us.
+                </p>
+                <div class="ways-back">
+                    <a href="/">&larr; Back to the log</a>
+                    <a href="https://fisher.sh">fisher.sh</a>
+                </div>
+            </div>
+        </main>
+        <Footer />
+    </body>
+</html>
