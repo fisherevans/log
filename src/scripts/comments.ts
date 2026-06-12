@@ -65,7 +65,7 @@ function el(tag: string, attrs: Attrs = {}, ...kids: (Node | string)[]): HTMLEle
 const REPLY_SVG =
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5 3 7l4 3.5"/><path d="M3 7h6.5a3.5 3.5 0 0 1 3.5 3.5V12"/></svg>';
 const MENU_SVG =
-    '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>';
+    '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="8" cy="3" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13" r="1.5"/></svg>';
 // The Bluesky butterfly. Trusted constant, fill follows currentColor.
 const BLUESKY_SVG =
     '<svg viewBox="0 0 600 530" fill="currentColor" aria-hidden="true"><path d="M135.7 44.4c71.6 53.8 148.6 162.8 176.9 221.3 28.3-58.5 105.3-167.5 176.9-221.3 51.7-38.8 135.5-68.8 135.5 26.8 0 19.1-10.9 160.4-17.3 183.3-22.3 79.6-103.4 99.9-175.5 87.6 126 21.4 158.1 92.4 88.9 163.4-131.5 134.8-188.9-33.8-203.7-77-2.7-7.9-4-11.6-4.1-8.4-.1-3.2-1.4.5-4.1 8.4-14.8 43.2-72.2 211.8-203.7 77-69.2-71-37.1-142 88.9-163.4-72.1 12.3-153.2-8-175.5-87.6C10.9 231.6 0 90.3 0 71.2 0-24.4 83.8 5.6 135.7 44.4Z"/></svg>';
@@ -211,7 +211,10 @@ class CommentsWidget {
         if (this.focusStack.length) {
             const focusId = this.focusStack[this.focusStack.length - 1];
             const c = this.comments.find((x) => x.id === focusId);
-            if (c) this.renderSubtree(byParent, c, 0, list);
+            if (c) {
+                this.renderSubtree(byParent, c, 0, list);
+                list.querySelector(`li.comment[data-id="${c.id}"]`)?.classList.add('comment-focused');
+            }
             return list;
         }
 
@@ -222,7 +225,7 @@ class CommentsWidget {
             list.append(
                 el('li', { class: 'comments-loadmore-row' },
                     el('button', { class: 'comment-submit comment-loadmore', type: 'button', click: () => { this.topShown += PAGE_SIZE; this.render(); } },
-                        `Load ${Math.min(PAGE_SIZE, remaining)} more`),
+                        'Load more'),
                 ),
             );
         }
@@ -297,9 +300,13 @@ class CommentsWidget {
         if (!c.deleted && c.editCount > 0) {
             // Change-magnitude only - the old text is never exposed (resolved
             // redaction concern, #15). The tooltip carries the count + magnitude.
-            const mag = c.charsChanged > 0 ? ` · ~${c.charsChanged} char${c.charsChanged === 1 ? '' : 's'}` : '';
-            const tip = `edited ${c.editCount}×${c.charsChanged > 0 ? `, ~${c.charsChanged} chars changed` : ''}`;
-            headBits.push(el('span', { class: 'comment-edited', title: tip }, `edited${mag}`));
+            // Visible marker is just "edited"; the magnitude (chars + % of the
+            // comment that churned) lives in the tooltip so it isn't shouty.
+            const pct = c.charsChanged > 0 ? Math.max(1, Math.round((c.charsChanged / (c.charsChanged + c.body.length)) * 100)) : 0;
+            const tip = c.charsChanged > 0
+                ? `edited ${c.editCount}× · ~${c.charsChanged} char${c.charsChanged === 1 ? '' : 's'} (${pct}%)`
+                : `edited ${c.editCount}×`;
+            headBits.push(el('span', { class: 'comment-edited', title: tip }, 'edited'));
         }
         const head = el('div', { class: 'comment-head' }, ...headBits);
 
@@ -312,7 +319,8 @@ class CommentsWidget {
         }
 
         const actions = el('div', { class: 'comment-actions' });
-        if (!c.deleted) actions.append(this.actionsMenu(c));
+        const menu = this.actionsMenu(c);
+        if (menu) actions.append(menu);
         if (!c.deleted && this.me.loggedIn) {
             const reply = el('button', { class: 'comment-link comment-action-reply', type: 'button', title: 'Reply', 'aria-label': 'Reply', click: () => this.openReply(c) });
             reply.append(icon(REPLY_SVG));
@@ -402,10 +410,12 @@ class CommentsWidget {
             }
         });
 
-        const box = el('div', { class: parent ? 'comment-composer comment-composer-reply' : 'comment-composer' }, tabs, ta, preview, turnstileMount, error, submit);
+        const box = el('div', { class: parent ? 'comment-composer comment-composer-reply' : 'comment-composer' }, tabs, ta, preview, turnstileMount, error);
+        const actions = el('div', { class: 'comment-composer-actions' }, submit);
         if (parent) {
-            box.prepend(el('button', { class: 'comment-link comment-cancel', type: 'button', click: () => box.remove() }, 'dismiss'));
+            actions.append(el('button', { class: 'comment-link comment-cancel', type: 'button', click: () => box.remove() }, 'dismiss'));
         }
+        box.append(actions);
         return box;
     }
 
@@ -442,55 +452,57 @@ class CommentsWidget {
         );
     }
 
-    // Per-comment "..." menu (#13). Universal items (permalink, copy, navigate)
-    // for everyone; the author's delete folds in here. Admin moderation items
-    // (ban, delete-others) land with the admin modal in #14.
-    private actionsMenu(c: Comment): HTMLElement {
-        const wrap = el('div', { class: 'comment-menu' });
-        const btn = el('button', {
-            class: 'comment-link comment-menu-btn',
-            type: 'button',
-            title: 'More',
-            'aria-label': 'More actions',
-            'aria-haspopup': 'menu',
-        });
-        btn.append(icon(MENU_SVG));
+    // Per-comment "..." menu (#13). Returns null when there's nothing to offer
+    // (e.g. a deleted tombstone you can't moderate). Soft delete keeps the row so
+    // reply chains survive; "& remove" / "Remove" hard-delete a leaf (no replies).
+    private actionsMenu(c: Comment): HTMLElement | null {
         const pop = el('div', { class: 'comment-menu-pop', role: 'menu', hidden: 'hidden' });
-
         const close = () => {
             pop.hidden = true;
             document.removeEventListener('click', onDoc, true);
         };
+        const item = (label: string, onClick: () => void, cls = '') =>
+            pop.append(el('button', { class: `comment-menu-item ${cls}`.trim(), type: 'button', role: 'menuitem', click: () => { close(); onClick(); } }, label));
+
+        const canModerate = this.me.loggedIn && (this.me.did === c.author.did || !!this.me.isAdmin);
+        const hasReplies = this.comments.some((x) => x.parentId === c.id);
+
+        if (c.deleted) {
+            // A tombstone: the only useful action is purging it, and only if it's
+            // a leaf (removing one with replies would orphan them).
+            if (canModerate && !hasReplies) item('Remove', () => this.delete(c, true), 'comment-menu-danger');
+        } else {
+            item('Permalink', () => this.copyPermalink(c));
+            item('Copy markdown', () => this.copyMarkdown(c));
+            item('Copy rich text', () => this.copyRich(c));
+            if (c.parentId) item('View parent', () => this.gotoComment(c.parentId!));
+            if (hasReplies) item('View replies', () => this.gotoFirstChild(c.id));
+
+            const canEdit =
+                this.me.loggedIn &&
+                this.me.did === c.author.did &&
+                Date.now() - c.createdAt <= EDIT_WINDOW_MS &&
+                c.editCount < MAX_EDITS;
+            if (canEdit) item('Edit', () => this.openEdit(c));
+
+            if (canModerate) {
+                item('Delete', () => this.delete(c, false), 'comment-menu-danger');
+                if (!hasReplies) item('Delete & remove', () => this.delete(c, true), 'comment-menu-danger');
+            }
+            if (this.me.isAdmin && c.author.did && c.author.did !== this.me.did) {
+                item('Ban author', () => this.ban(c, null), 'comment-menu-danger');
+                item('Ban author · 10 days', () => this.ban(c, 10), 'comment-menu-danger');
+            }
+        }
+
+        if (!pop.childElementCount) return null;
+
+        const wrap = el('div', { class: 'comment-menu' });
+        const btn = el('button', { class: 'comment-link comment-menu-btn', type: 'button', title: 'More', 'aria-label': 'More actions', 'aria-haspopup': 'menu' });
+        btn.append(icon(MENU_SVG));
         const onDoc = (e: Event) => {
             if (!wrap.contains(e.target as Node)) close();
         };
-        const item = (label: string, onClick: () => void, cls = '') =>
-            el('button', { class: `comment-menu-item ${cls}`.trim(), type: 'button', role: 'menuitem', click: () => { close(); onClick(); } }, label);
-
-        pop.append(item('Permalink', () => this.copyPermalink(c)));
-        pop.append(item('Copy markdown', () => this.copyMarkdown(c)));
-        pop.append(item('Copy rich text', () => this.copyRich(c)));
-        if (c.parentId) pop.append(item('View parent', () => this.gotoComment(c.parentId!)));
-        if (this.comments.some((x) => x.parentId === c.id)) pop.append(item('View replies', () => this.gotoFirstChild(c.id)));
-
-        // Edit: author only, within the window and under the cap (delete stays
-        // available after either runs out).
-        const canEdit =
-            this.me.loggedIn &&
-            this.me.did === c.author.did &&
-            Date.now() - c.createdAt <= EDIT_WINDOW_MS &&
-            c.editCount < MAX_EDITS;
-        if (canEdit) pop.append(item('Edit', () => this.openEdit(c)));
-
-        // Delete: the author always, or any admin. Ban: admins only, never your
-        // own comment. Backend re-enforces both via requireAdmin / the delete gate.
-        const canDelete = this.me.loggedIn && (this.me.did === c.author.did || !!this.me.isAdmin);
-        if (canDelete) pop.append(item('Delete', () => this.delete(c), 'comment-menu-danger'));
-        if (this.me.isAdmin && c.author.did && c.author.did !== this.me.did) {
-            pop.append(item('Ban author', () => this.ban(c, null), 'comment-menu-danger'));
-            pop.append(item('Ban author · 10 days', () => this.ban(c, 10), 'comment-menu-danger'));
-        }
-
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (pop.hidden) {
@@ -510,7 +522,43 @@ class CommentsWidget {
         const url = this.permalink(c);
         history.replaceState(null, '', `#comment-${c.id}`);
         this.gotoComment(c.id);
-        await this.copy(() => navigator.clipboard.writeText(url), 'Permalink copied');
+        try {
+            await navigator.clipboard.writeText(url);
+            this.toast('Permalink copied');
+        } catch {
+            // Clipboard blocked (common on mobile / non-secure contexts): give the
+            // URL in a modal so there's always a way to grab it.
+            this.shareModal(url);
+        }
+    }
+
+    // Fallback for a blocked clipboard: show the URL selectable with a Copy button.
+    private shareModal(url: string) {
+        overlay((close) => {
+            const box = el('div', { class: 'comment-modal' });
+            const input = el('input', { class: 'comment-modal-urlinput', type: 'text', readonly: 'readonly', 'aria-label': 'Permalink' }) as HTMLInputElement;
+            input.value = url;
+            input.addEventListener('focus', () => input.select());
+            const copy = el('button', { class: 'comment-modal-btn', type: 'button' }, 'Copy');
+            copy.addEventListener('click', async () => {
+                input.select();
+                try {
+                    await navigator.clipboard.writeText(url);
+                    copy.textContent = 'Copied';
+                } catch {
+                    copy.textContent = 'Select the text above';
+                }
+            });
+            const done = el('button', { class: 'comment-modal-btn comment-modal-btn-ghost', type: 'button', click: close }, 'Close');
+            box.append(
+                el('h3', {}, 'Copy this link'),
+                el('p', { class: 'comment-modal-note' }, 'Your browser blocked the clipboard. Copy it manually:'),
+                input,
+                el('div', { class: 'comment-modal-row' }, copy, done),
+            );
+            setTimeout(() => input.select(), 0);
+            return box;
+        });
     }
 
     private async copyMarkdown(c: Comment) {
@@ -746,10 +794,23 @@ class CommentsWidget {
         return el('label', { class: 'comment-admin-toggle' }, input, el('span', {}, label));
     }
 
-    private async delete(c: Comment) {
-        if (!confirm('Delete this comment?')) return;
-        const res = await api(`/comments/${c.id}`, { method: 'DELETE' });
-        if (res.ok) await this.init();
+    // Soft delete leaves a "comment deleted" tombstone (keeps the reply chain).
+    // Hard delete removes the row entirely; the Worker refuses it if there are
+    // replies, so we only offer it on leaves.
+    private async delete(c: Comment, hard = false) {
+        const prompt = hard
+            ? c.deleted
+                ? 'Permanently remove this deleted comment? This cannot be undone.'
+                : 'Delete and permanently remove this comment? This cannot be undone.'
+            : 'Delete this comment?';
+        if (!confirm(prompt)) return;
+        const res = await api(`/comments/${c.id}${hard ? '?hard=1' : ''}`, { method: 'DELETE' });
+        if (res.ok) {
+            await this.init();
+        } else {
+            const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
+            this.toast(msg || 'Could not remove the comment.');
+        }
     }
 }
 

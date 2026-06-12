@@ -8,7 +8,9 @@ import {
     type CommentRow,
     applyEdit,
     commentsEnabled,
+    countChildren,
     getComment,
+    hardDeleteComment,
     insertComment,
     listComments,
     softDeleteComment,
@@ -216,17 +218,31 @@ export async function handleEdit(
     return shape(updated!);
 }
 
-// DELETE /comments/:id  ->  { ok }. Allowed for the comment's author or the admin.
+// DELETE /comments/:id[?hard=1]  ->  { ok }. Author or admin. Soft delete leaves
+// a tombstone so reply chains survive; hard delete (?hard=1) removes the row
+// entirely + its revisions, and is refused if the comment still has replies
+// (that would orphan them). Hard delete also works on an existing tombstone.
 export async function handleDelete(request: Request, env: Env, id: string, telemetry: Telemetry): Promise<unknown> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'sign in to delete');
+    const hard = new URL(request.url).searchParams.get('hard') === '1';
 
     const row = await getComment(env.DB, id);
-    if (!row || row.deleted_at != null) throw new HttpError(404, 'comment not found');
+    if (!row) throw new HttpError(404, 'comment not found');
+    if (!hard && row.deleted_at != null) throw new HttpError(404, 'comment not found');
 
     const isAuthor = identity.did === row.author_did;
     const isAdmin = await isAdminIdentity(env, identity);
     if (!isAuthor && !isAdmin) throw new HttpError(403, 'not allowed to delete this comment');
+
+    if (hard) {
+        if (await countChildren(env.DB, id)) {
+            throw new HttpError(409, 'this comment has replies - it can only be deleted, not removed');
+        }
+        await hardDeleteComment(env.DB, id);
+        telemetry.event('remove', { comment_id: id, post_id: row.post_id, by: identity.did });
+        return { ok: true, removed: true };
+    }
 
     await softDeleteComment(env.DB, id, Date.now());
     telemetry.event(isAdmin && !isAuthor ? 'admin_delete' : 'delete', {

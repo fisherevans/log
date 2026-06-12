@@ -250,8 +250,14 @@ const { postId } = Astro.props;
        kill the global `li::before` chevron + its indent. */
     .comments :global(.comment-body ul),
     .comments :global(.comment-body ol) {
-        margin: 0 0 0.6em;
+        margin: 0.4em 0;
         padding-left: 1.5em;
+    }
+    /* A paragraph immediately before a list (e.g. "A few points:") sits closer
+       so the gap above the list matches the gap below it. */
+    .comments :global(.comment-body p:has(+ ul)),
+    .comments :global(.comment-body p:has(+ ol)) {
+        margin-bottom: 0.4em;
     }
     .comments :global(.comment-body ul) {
         list-style: disc outside;
@@ -261,6 +267,7 @@ const { postId } = Astro.props;
     }
     .comments :global(.comment-body li) {
         padding-left: 0;
+        margin: 0.08em 0;
     }
     .comments :global(.comment-body li::before) {
         content: none;
@@ -270,7 +277,7 @@ const { postId } = Astro.props;
     }
     .comments :global(.comment-body code) {
         font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.88em;
+        font-size: 0.75em;
         background: var(--code-bg);
         border: 1px solid var(--rule);
         border-radius: 4px;
@@ -629,6 +636,37 @@ const { postId } = Astro.props;
     .comments :global(.comments-crumb-current) {
         color: var(--fg);
         font-weight: 600;
+    }
+
+    /* Drilled-in focus: the comment you zoomed into stands out from its replies. */
+    .comments :global(.comment-focused) {
+        background: color-mix(in srgb, var(--accent) 7%, transparent);
+        border-left: 2px solid var(--accent);
+        border-radius: 0 6px 6px 0;
+        padding-left: 0.8em;
+        margin-left: -0.8em;
+    }
+
+    /* Composer / editor action row: submit + (dismiss) together at the bottom. */
+    .comments :global(.comment-composer-actions),
+    .comments :global(.comment-editor-actions) {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+    }
+
+    /* Share-link fallback modal: the URL in a selectable field. */
+    :global(.comment-modal-urlinput) {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.85rem;
+        color: var(--fg);
+        background: var(--code-bg);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.6em 0.7em;
+        margin: 0.4em 0 1em;
     }
 </style>
 

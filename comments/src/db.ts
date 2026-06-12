@@ -85,6 +85,22 @@ export async function softDeleteComment(db: D1Database, id: string, when: number
         .run();
 }
 
+// How many comments reply directly to this one (deleted or not). A non-zero
+// count blocks hard delete - removing the row would orphan the replies.
+export async function countChildren(db: D1Database, parentId: string): Promise<number> {
+    const row = await db.prepare(`SELECT COUNT(*) AS n FROM comments WHERE parent_id = ?`).bind(parentId).first<{ n: number }>();
+    return row?.n ?? 0;
+}
+
+// Hard delete: remove the row and its revision history entirely. Caller must have
+// already checked there are no replies.
+export async function hardDeleteComment(db: D1Database, id: string): Promise<void> {
+    await db.batch([
+        db.prepare(`DELETE FROM comment_revisions WHERE comment_id = ?`).bind(id),
+        db.prepare(`DELETE FROM comments WHERE id = ?`).bind(id),
+    ]);
+}
+
 // Apply an edit: snapshot the current body as a revision (version = current
 // edit_count, so 0 is the original), then swap in the new body and bump the
 // counters. `magnitude` is the added+removed char count for the change indicator.

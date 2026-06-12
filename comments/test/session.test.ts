@@ -21,7 +21,11 @@ describe('worker sessions', () => {
             accountCreatedAt: 1_600_000_000_000,
         });
         expect(setCookie).toContain('HttpOnly');
-        expect(setCookie).toContain('SameSite=None');
+        // The test pool runs with DEV_AUTH=1, so the cookie uses the dev attrs
+        // (SameSite=Lax, no Secure) that let the sandbox work over plain HTTP.
+        // Prod (no DEV_AUTH) uses SameSite=None; Secure - see setCookie().
+        expect(setCookie).toContain('SameSite=Lax');
+        expect(setCookie).not.toContain('Secure');
 
         const tok = cookieToken(setCookie);
         const req = new Request('https://comments.fisher.sh/', { headers: { Cookie: `cmt_session=${tok}` } });
