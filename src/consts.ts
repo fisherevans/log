@@ -26,6 +26,10 @@ export const BLUESKY_PROFILE_URL = `https://bsky.app/profile/${BLUESKY_HANDLE}`;
 export const COMMENTS_API_URL = import.meta.env.PUBLIC_COMMENTS_API_URL ?? "https://comments.fisher.sh";
 export const TURNSTILE_SITEKEY = import.meta.env.PUBLIC_TURNSTILE_SITEKEY ?? "0x4AAAAAADjdWj1G2urGdLYq";
 
+// The blog author's Bluesky DID. Comments by this DID get an "author" badge so
+// the OP is visually distinct from other commenters.
+export const OP_DID = "did:plc:auevmn4wzowwhiuq6jo3ysl6";
+
 // External links surfaced in the footer (single source of truth - add/remove here).
 export const SOCIAL_LINKS = [
     { label: "fisher.sh", href: "https://fisher.sh" },

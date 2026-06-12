@@ -2,6 +2,7 @@
 // Native in-page comments (issue #5). Renders an empty mount; the client script
 // (src/scripts/comments.ts) fetches + renders the thread from the comments
 // Worker. Only renders when the post has a stable id (what comments key on).
+import { OP_DID } from '../consts';
 interface Props {
     postId?: string;
 }
@@ -11,7 +12,7 @@ const { postId } = Astro.props;
 {
     postId && (
         <section class="comments" aria-label="Comments">
-            <div data-comments data-post-id={postId} />
+            <div data-comments data-post-id={postId} data-op-did={OP_DID} />
         </section>
     )
 }
@@ -171,6 +172,59 @@ const { postId } = Astro.props;
     }
     .comments :global(.comment-link:hover) {
         color: var(--accent);
+    }
+
+    /* --- UX iteration ------------------------------------------------------ */
+
+    /* Neutralize the global prose list bullet/chevron + indent that bleed into
+       the comment <ul><li> (global.css `ul > li::before` is unscoped). */
+    .comments :global(.comments-list li) {
+        padding-left: 0;
+    }
+    .comments :global(.comments-list li::before) {
+        content: none;
+    }
+
+    /* Sans-serif for the "machine" meta (handle, time, actions) - contrast
+       against the serif author names + bodies. */
+    .comments :global(.comment-handle),
+    .comments :global(.comment-time),
+    .comments :global(.comment-link) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0;
+    }
+
+    /* OP / author: accent the name + a subtle outline pill. */
+    .comments :global(.comment-op .comment-author) {
+        color: var(--accent);
+    }
+    .comments :global(.comment-op-badge) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        padding: 0.05em 0.45em;
+        margin-left: 0.15em;
+        opacity: 0.85;
+    }
+
+    /* Reply as an icon, pushed to the right of the actions row. */
+    .comments :global(.comment-actions) {
+        align-items: center;
+    }
+    .comments :global(.comment-action-reply) {
+        margin-left: auto;
+    }
+    .comments :global(.comment-icon) {
+        display: inline-flex;
+        vertical-align: -0.15em;
+    }
+    .comments :global(.comment-icon svg) {
+        width: 1.05em;
+        height: 1.05em;
     }
 </style>
 

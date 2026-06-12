@@ -45,6 +45,16 @@ function el(tag: string, attrs: Attrs = {}, ...kids: (Node | string)[]): HTMLEle
     return node;
 }
 
+// A reply arrow icon. innerHTML is a fixed trusted constant (never user input).
+const REPLY_SVG =
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5 3 7l4 3.5"/><path d="M3 7h6.5a3.5 3.5 0 0 1 3.5 3.5V12"/></svg>';
+function icon(svg: string): HTMLElement {
+    const s = document.createElement('span');
+    s.className = 'comment-icon';
+    s.innerHTML = svg;
+    return s;
+}
+
 function relativeTime(ms: number): string {
     const s = Math.floor((Date.now() - ms) / 1000);
     if (s < 60) return 'just now';
@@ -95,6 +105,7 @@ class CommentsWidget {
     constructor(
         private root: HTMLElement,
         private postId: string,
+        private opDid: string | null = null,
     ) {}
 
     async init() {
@@ -172,7 +183,9 @@ class CommentsWidget {
             ? el('img', { class: 'comment-avatar', src: c.author.avatar, alt: '', loading: 'lazy' })
             : el('span', { class: 'comment-avatar comment-avatar-blank' });
 
+        const isOp = !!this.opDid && c.author.did === this.opDid;
         const headBits: (Node | string)[] = [avatar, el('span', { class: 'comment-author' }, name)];
+        if (isOp) headBits.push(el('span', { class: 'comment-op-badge', title: 'Post author' }, 'author'));
         if (c.author.handle) {
             headBits.push(
                 el('a', { class: 'comment-handle', href: `https://bsky.app/profile/${c.author.handle}`, target: '_blank', rel: 'noopener' }, `@${c.author.handle}`),
@@ -184,14 +197,16 @@ class CommentsWidget {
         const body = el('div', { class: 'comment-body' }, c.deleted ? el('em', {}, 'comment deleted') : c.body);
 
         const actions = el('div', { class: 'comment-actions' });
-        if (!c.deleted && this.me.loggedIn) {
-            actions.append(el('button', { class: 'comment-link', type: 'button', click: () => this.openReply(c) }, 'reply'));
-        }
         if (!c.deleted && this.me.loggedIn && this.me.did === c.author.did) {
             actions.append(el('button', { class: 'comment-link', type: 'button', click: () => this.delete(c) }, 'delete'));
         }
+        if (!c.deleted && this.me.loggedIn) {
+            const reply = el('button', { class: 'comment-link comment-action-reply', type: 'button', title: 'Reply', 'aria-label': 'Reply', click: () => this.openReply(c) });
+            reply.append(icon(REPLY_SVG));
+            actions.append(reply);
+        }
 
-        return el('li', { class: 'comment', 'data-id': c.id }, head, body, actions);
+        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id }, head, body, actions);
     }
 
     // Inline composer. parent=null for the top-level box; a comment for a reply.
@@ -242,7 +257,7 @@ class CommentsWidget {
 
         const box = el('div', { class: parent ? 'comment-composer comment-composer-reply' : 'comment-composer' }, ta, turnstileMount, error, submit);
         if (parent) {
-            box.prepend(el('button', { class: 'comment-link comment-cancel', type: 'button', click: () => box.remove() }, 'cancel'));
+            box.prepend(el('button', { class: 'comment-link comment-cancel', type: 'button', click: () => box.remove() }, 'dismiss'));
         }
         return box;
     }
@@ -291,5 +306,5 @@ export function initComments() {
     const root = document.querySelector<HTMLElement>('[data-comments]');
     const postId = root?.dataset.postId;
     if (!root || !postId) return;
-    new CommentsWidget(root, postId).init();
+    new CommentsWidget(root, postId, root.dataset.opDid ?? null).init();
 }
