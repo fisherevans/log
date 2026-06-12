@@ -36,14 +36,23 @@ comments/
 
 | Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| GET | `/comments?post_id=...` | public | list a post's thread |
+| GET | `/comments?post_id=...` | public | list a post's thread (incl. edit indicators) |
 | POST | `/comments` | session | create a comment |
+| PATCH | `/comments/:id` | author | edit, within 24h + 3-edit cap (#15) |
 | DELETE | `/comments/:id` | author or admin | delete a comment (soft) |
+| GET | `/oauth/me` | public | session + `isAdmin` flag |
+| GET | `/admin/status?post_id=` | admin | per-post + global comment switches |
+| POST | `/admin/ban` | admin | ban a DID/IP (`days` = temp ban) |
+| POST | `/admin/unban` | admin | lift a ban |
+| POST | `/admin/global` / `/admin/posts/:id` | admin | toggle comments |
 | GET | `/health` | public | liveness |
 
 Identity (Bluesky OAuth), abuse controls + moderation, DataDog observability, and
 the email-subscribe endpoint mount additional routes here as their issues land
-(#3, #4, #6, #7).
+(#3, #4, #6, #7). The Comments UX v2 milestone added safe markdown rendering +
+link-safety (client), a per-comment actions menu + permalinks, in-UI admin
+moderation + temp bans, windowed edits with DB-only revision history (only a
+change-magnitude indicator is exposed), and load-more + deep-nesting drill-in.
 
 ## Local development
 
