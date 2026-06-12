@@ -14,6 +14,7 @@ import {
 } from './db';
 import { mintId } from './ids';
 import { enforceAbuse } from './abuse';
+import { hashIp } from './hash';
 
 const MAX_BODY = 4000;
 
@@ -89,7 +90,7 @@ export async function handleCreate(request: Request, env: Env, body: CreateBody)
     // Turnstile, ban lists, per-IP/per-DID rate limiting, and progressive-trust
     // caps, cheapest-first. Throws 403/429 to reject before the insert.
     const ip = clientIp(request);
-    const ipHash = await maybeHashIp(env, ip);
+    const ipHash = await hashIp(env, ip);
     await enforceAbuse(env, identity, ipHash, body.turnstileToken, ip);
 
     const id = mintId();
@@ -115,7 +116,7 @@ export async function handleCreate(request: Request, env: Env, body: CreateBody)
     return shape(row!);
 }
 
-// DELETE /comments/:id  -> { ok }. Allowed for the comment's author or the admin.
+// DELETE /comments/:id  ->  { ok }. Allowed for the comment's author or the admin.
 export async function handleDelete(request: Request, env: Env, id: string): Promise<unknown> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'sign in to delete');
@@ -129,14 +130,4 @@ export async function handleDelete(request: Request, env: Env, id: string): Prom
 
     await softDeleteComment(env.DB, id, Date.now());
     return { ok: true };
-}
-
-// Hash the submitter IP with the configured salt. Returns null when no salt is
-// configured (local dev) so the column is simply left empty. The salted-hash
-// scheme (privacy-preserving but still bannable) is finalized in issue #4.
-async function maybeHashIp(env: Env, ip: string): Promise<string | null> {
-    if (!ip || !env.IP_HASH_SALT) return null;
-    const data = new TextEncoder().encode(`${env.IP_HASH_SALT}:${ip}`);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }

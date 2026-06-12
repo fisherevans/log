@@ -19,6 +19,7 @@ import {
     handleToggleGlobal,
     handleUnban,
 } from './moderation';
+import { handleSubscribe } from './subscribe';
 
 export default {
     async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -45,6 +46,10 @@ export default {
                     const body = await readJson<Parameters<typeof handleCreate>[2]>(request);
                     return json(await handleCreate(request, env, body), { status: 201 }, cors);
                 }
+            }
+
+            if (path === '/subscribe' && request.method === 'POST') {
+                return json(await handleSubscribe(request, env, await readJson(request)), { status: 201 }, cors);
             }
 
             const del = path.match(/^\/comments\/([A-Za-z0-9]+)$/);
