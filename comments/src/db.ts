@@ -13,6 +13,9 @@ export interface CommentRow {
     created_at: number;
     deleted_at: number | null;
     ip_hash: string | null;
+    edited_at: number | null;
+    edit_count: number;
+    chars_changed: number;
 }
 
 export interface NewComment {
@@ -34,7 +37,8 @@ export async function listComments(db: D1Database, postId: string): Promise<Comm
     const { results } = await db
         .prepare(
             `SELECT id, post_id, parent_id, author_did, author_handle, author_display_name,
-                    author_avatar, body, created_at, deleted_at, ip_hash
+                    author_avatar, body, created_at, deleted_at, ip_hash,
+                    edited_at, edit_count, chars_changed
              FROM comments WHERE post_id = ? ORDER BY created_at ASC`,
         )
         .bind(postId)
@@ -79,6 +83,33 @@ export async function softDeleteComment(db: D1Database, id: string, when: number
         .prepare(`UPDATE comments SET deleted_at = ?, body = '' WHERE id = ? AND deleted_at IS NULL`)
         .bind(when, id)
         .run();
+}
+
+// Apply an edit: snapshot the current body as a revision (version = current
+// edit_count, so 0 is the original), then swap in the new body and bump the
+// counters. `magnitude` is the added+removed char count for the change indicator.
+// Batched so the snapshot and the swap can't tear.
+export async function applyEdit(
+    db: D1Database,
+    id: string,
+    currentBody: string,
+    newBody: string,
+    version: number,
+    magnitude: number,
+    when: number,
+): Promise<void> {
+    await db.batch([
+        db
+            .prepare(`INSERT INTO comment_revisions (comment_id, version, body, created_at) VALUES (?, ?, ?, ?)`)
+            .bind(id, version, currentBody, when),
+        db
+            .prepare(
+                `UPDATE comments
+                 SET body = ?, edited_at = ?, edit_count = edit_count + 1, chars_changed = chars_changed + ?
+                 WHERE id = ?`,
+            )
+            .bind(newBody, when, magnitude, id),
+    ]);
 }
 
 // ---- kill switches ----------------------------------------------------------

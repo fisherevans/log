@@ -117,6 +117,71 @@ describe('comments CRUD', () => {
     });
 });
 
+function edit(id: string, body: string, who: { did: string } = USER): Promise<Response> {
+    return SELF.fetch(`https://comments.fisher.sh/comments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'X-Dev-Did': who.did },
+        body: JSON.stringify({ body }),
+    });
+}
+
+// Windowed edits + revisions (#15). Old versions are snapshotted but never
+// returned; the API exposes only the change-magnitude indicator.
+describe('edits', () => {
+    it('edits within the window and exposes the magnitude indicator', async () => {
+        const c = (await (await post({ postId: POST, body: 'hello wrld' })).json()) as any;
+        const res = await edit(c.id, 'hello world!');
+        expect(res.status).toBe(200);
+        const updated = (await res.json()) as any;
+        expect(updated.body).toBe('hello world!');
+        expect(updated.editCount).toBe(1);
+        expect(updated.editedAt).toBeGreaterThan(0);
+        expect(updated.charsChanged).toBeGreaterThan(0);
+    });
+
+    it('snapshots the original to comment_revisions but never returns it', async () => {
+        const c = (await (await post({ postId: POST, body: 'original text' })).json()) as any;
+        await edit(c.id, 'revised text');
+        const rev = await env.DB.prepare('SELECT version, body FROM comment_revisions WHERE comment_id = ?').bind(c.id).all();
+        expect(rev.results).toEqual([{ version: 0, body: 'original text' }]);
+        // The list/shape never carries old text.
+        const { comments } = await list(POST);
+        expect(JSON.stringify(comments)).not.toContain('original text');
+    });
+
+    it('treats an identical edit as a no-op (no burned edit)', async () => {
+        const c = (await (await post({ postId: POST, body: 'same' })).json()) as any;
+        const updated = (await (await edit(c.id, 'same')).json()) as any;
+        expect(updated.editCount).toBe(0);
+    });
+
+    it('refuses edits from a non-author', async () => {
+        const c = (await (await post({ postId: POST, body: 'mine' })).json()) as any;
+        expect((await edit(c.id, 'hijacked', { did: 'did:plc:mallory' })).status).toBe(403);
+    });
+
+    it('refuses an empty edit and a deleted comment', async () => {
+        const c = (await (await post({ postId: POST, body: 'body' })).json()) as any;
+        expect((await edit(c.id, '   ')).status).toBe(400);
+        await SELF.fetch(`https://comments.fisher.sh/comments/${c.id}`, { method: 'DELETE', headers: { 'X-Dev-Did': USER.did } });
+        expect((await edit(c.id, 'too late')).status).toBe(404);
+    });
+
+    it('closes the window after 24h', async () => {
+        const c = (await (await post({ postId: POST, body: 'old comment' })).json()) as any;
+        await env.DB.prepare('UPDATE comments SET created_at = ? WHERE id = ?').bind(1, c.id).run();
+        expect((await edit(c.id, 'sneaky late edit')).status).toBe(403);
+    });
+
+    it('caps at 3 edits', async () => {
+        const c = (await (await post({ postId: POST, body: 'v0' })).json()) as any;
+        expect((await edit(c.id, 'v1')).status).toBe(200);
+        expect((await edit(c.id, 'v2')).status).toBe(200);
+        expect((await edit(c.id, 'v3')).status).toBe(200);
+        expect((await edit(c.id, 'v4')).status).toBe(429);
+    });
+});
+
 // Body hygiene (#17): the back-end half of "validate both ends". The stored text
 // is what the client later renders through the markdown allowlist, so it must be
 // clean going in - no control chars, normalized newlines, no whitespace padding.

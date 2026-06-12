@@ -6,6 +6,7 @@ import { HttpError, clientIp } from './http';
 import { getIdentity } from './identity';
 import {
     type CommentRow,
+    applyEdit,
     commentsEnabled,
     getComment,
     insertComment,
@@ -19,6 +20,23 @@ import { isAdminIdentity } from './moderation';
 import type { Telemetry } from './datadog';
 
 const MAX_BODY = 4000;
+
+// Edits (issue #15): allowed only briefly after posting and a few times at most.
+// After the window closes it's delete-only. The cap doubles as the per-day rate
+// limit (<= MAX_EDITS inside a sub-day window). Delete is never gated by this.
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+const MAX_EDITS = 3;
+
+// Added+removed char count between two strings via common prefix/suffix - a cheap
+// magnitude for the "edited" indicator (no diff library, no content exposed).
+function editMagnitude(oldB: string, newB: string): number {
+    let p = 0;
+    const max = Math.min(oldB.length, newB.length);
+    while (p < max && oldB[p] === newB[p]) p++;
+    let s = 0;
+    while (s < oldB.length - p && s < newB.length - p && oldB[oldB.length - 1 - s] === newB[newB.length - 1 - s]) s++;
+    return oldB.length - p - s + (newB.length - p - s);
+}
 
 // Server-side body hygiene. The client renders comment bodies through a vetted
 // markdown parser + DOMPurify allowlist (src/scripts/markdown.ts), so stored
@@ -45,6 +63,11 @@ interface PublicComment {
     body: string;
     createdAt: number;
     deleted: boolean;
+    // Edit indicator (#15). The old text itself is never exposed - only that it
+    // was edited, how many times, and the rough char magnitude.
+    editedAt: number | null;
+    editCount: number;
+    charsChanged: number;
 }
 
 function shape(row: CommentRow): PublicComment {
@@ -62,6 +85,9 @@ function shape(row: CommentRow): PublicComment {
         body: deleted ? '' : row.body,
         createdAt: row.created_at,
         deleted,
+        editedAt: deleted ? null : row.edited_at,
+        editCount: deleted ? 0 : row.edit_count,
+        charsChanged: deleted ? 0 : row.chars_changed,
     };
 }
 
@@ -150,6 +176,44 @@ export async function handleCreate(
 
     const row = await getComment(env.DB, id);
     return shape(row!);
+}
+
+interface EditBody {
+    body?: string;
+}
+
+// PATCH /comments/:id  -> the updated comment. Author-only, within the edit
+// window and under the edit cap. Prior versions are snapshotted to
+// comment_revisions but never returned. Delete is the always-available escape
+// hatch and is handled separately, so a closed window never traps content.
+export async function handleEdit(
+    request: Request,
+    env: Env,
+    id: string,
+    body: EditBody,
+    telemetry: Telemetry,
+): Promise<unknown> {
+    const identity = await getIdentity(request, env);
+    if (!identity) throw new HttpError(401, 'sign in to edit');
+
+    const row = await getComment(env.DB, id);
+    if (!row || row.deleted_at != null) throw new HttpError(404, 'comment not found');
+    if (identity.did !== row.author_did) throw new HttpError(403, 'you can only edit your own comment');
+
+    const now = Date.now();
+    if (now - row.created_at > EDIT_WINDOW_MS) throw new HttpError(403, 'the edit window for this comment has closed - you can still delete it');
+    if (row.edit_count >= MAX_EDITS) throw new HttpError(429, `edit limit reached (${MAX_EDITS})`);
+
+    const next = normalizeBody(body.body ?? '');
+    if (!next) throw new HttpError(400, 'comment body required');
+    if (next.length > MAX_BODY) throw new HttpError(400, `comment too long (max ${MAX_BODY} chars)`);
+    if (next === row.body) return shape(row); // no-op, don't burn an edit
+
+    await applyEdit(env.DB, id, row.body, next, row.edit_count, editMagnitude(row.body, next), now);
+    telemetry.event('edit', { comment_id: id, post_id: row.post_id, did: identity.did, version: row.edit_count });
+
+    const updated = await getComment(env.DB, id);
+    return shape(updated!);
 }
 
 // DELETE /comments/:id  ->  { ok }. Allowed for the comment's author or the admin.

@@ -11,7 +11,7 @@
 //   GET    /health                 liveness
 import type { Env } from './env';
 import { corsHeaders, errorResponse, json, readJson } from './http';
-import { handleCreate, handleDelete, handleList } from './comments';
+import { handleCreate, handleDelete, handleEdit, handleList } from './comments';
 import {
     handleBan,
     handleBanCommentIp,
@@ -97,9 +97,12 @@ export default {
                 return json(await handleSubscribe(request, env, await readJson(request)), { status: 201 }, cors);
             }
 
-            const del = path.match(/^\/comments\/([A-Za-z0-9]+)$/);
-            if (del && request.method === 'DELETE') {
-                return json(await handleDelete(request, env, del[1], telemetry), {}, cors);
+            const commentId = path.match(/^\/comments\/([A-Za-z0-9]+)$/);
+            if (commentId && request.method === 'DELETE') {
+                return json(await handleDelete(request, env, commentId[1], telemetry), {}, cors);
+            }
+            if (commentId && request.method === 'PATCH') {
+                return json(await handleEdit(request, env, commentId[1], await readJson(request), telemetry), {}, cors);
             }
 
             // --- moderation (issue #4), DID-gated admin ----------------------

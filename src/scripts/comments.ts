@@ -20,7 +20,15 @@ interface Comment {
     body: string;
     createdAt: number;
     deleted: boolean;
+    editedAt: number | null;
+    editCount: number;
+    charsChanged: number;
 }
+
+// Mirror the Worker's edit policy so the menu only offers Edit when it'll be
+// accepted (the Worker re-enforces both; this just avoids a dead menu item).
+const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
+const MAX_EDITS = 3;
 interface Me {
     loggedIn: boolean;
     isAdmin?: boolean;
@@ -214,6 +222,13 @@ class CommentsWidget {
             );
         }
         headBits.push(el('span', { class: 'comment-time' }, relativeTime(c.createdAt)));
+        if (!c.deleted && c.editCount > 0) {
+            // Change-magnitude only - the old text is never exposed (resolved
+            // redaction concern, #15). The tooltip carries the count + magnitude.
+            const mag = c.charsChanged > 0 ? ` · ~${c.charsChanged} char${c.charsChanged === 1 ? '' : 's'}` : '';
+            const tip = `edited ${c.editCount}×${c.charsChanged > 0 ? `, ~${c.charsChanged} chars changed` : ''}`;
+            headBits.push(el('span', { class: 'comment-edited', title: tip }, `edited${mag}`));
+        }
         const head = el('div', { class: 'comment-head' }, ...headBits);
 
         const body = el('div', { class: 'comment-body' });
@@ -386,6 +401,15 @@ class CommentsWidget {
         if (c.parentId) pop.append(item('View parent', () => this.gotoComment(c.parentId!)));
         if (this.comments.some((x) => x.parentId === c.id)) pop.append(item('View replies', () => this.gotoFirstChild(c.id)));
 
+        // Edit: author only, within the window and under the cap (delete stays
+        // available after either runs out).
+        const canEdit =
+            this.me.loggedIn &&
+            this.me.did === c.author.did &&
+            Date.now() - c.createdAt <= EDIT_WINDOW_MS &&
+            c.editCount < MAX_EDITS;
+        if (canEdit) pop.append(item('Edit', () => this.openEdit(c)));
+
         // Delete: the author always, or any admin. Ban: admins only, never your
         // own comment. Backend re-enforces both via requireAdmin / the delete gate.
         const canDelete = this.me.loggedIn && (this.me.did === c.author.did || !!this.me.isAdmin);
@@ -482,6 +506,64 @@ class CommentsWidget {
             t.classList.remove('comment-toast-show');
             setTimeout(() => t.remove(), 250);
         }, 1600);
+    }
+
+    // Inline edit (#15). Replaces the rendered body with a prefilled textarea;
+    // on save it PATCHes and reloads. Cancel restores the body untouched.
+    private openEdit(c: Comment) {
+        const li = this.root.querySelector<HTMLElement>(`li.comment[data-id="${c.id}"]`);
+        if (!li || li.querySelector('.comment-editor')) return;
+        const bodyEl = li.querySelector<HTMLElement>('.comment-body');
+
+        const ta = el('textarea', { class: 'comment-input', rows: '4' }) as HTMLTextAreaElement;
+        ta.value = c.body;
+        const error = el('p', { class: 'comment-error', hidden: 'hidden' });
+        const save = el('button', { class: 'comment-submit', type: 'button' }, 'Save');
+        const restore = () => {
+            editor.remove();
+            if (bodyEl) bodyEl.hidden = false;
+        };
+        const cancel = el('button', { class: 'comment-link comment-cancel', type: 'button', click: restore }, 'cancel');
+
+        const doSave = async () => {
+            const text = ta.value.trim();
+            if (!text) return;
+            error.hidden = true;
+            save.setAttribute('disabled', 'disabled');
+            try {
+                const res = await api(`/comments/${c.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ body: text }),
+                });
+                if (!res.ok) {
+                    const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
+                    throw new Error(msg || 'Could not save your edit.');
+                }
+                await this.init();
+            } catch (e) {
+                error.textContent = e instanceof Error ? e.message : 'Could not save your edit.';
+                error.hidden = false;
+                save.removeAttribute('disabled');
+            }
+        };
+        save.addEventListener('click', doSave);
+        ta.addEventListener('keydown', (e) => {
+            const ke = e as KeyboardEvent;
+            if ((ke.metaKey || ke.ctrlKey) && ke.key === 'Enter') {
+                e.preventDefault();
+                void doSave();
+            }
+        });
+
+        const editor = el('div', { class: 'comment-composer comment-editor' }, ta, error, el('div', { class: 'comment-editor-actions' }, save, cancel));
+        if (bodyEl) {
+            bodyEl.hidden = true;
+            bodyEl.after(editor);
+        } else {
+            li.append(editor);
+        }
+        ta.focus();
     }
 
     // Admin: ban the comment's author DID (permanent or temp). Backend gated.

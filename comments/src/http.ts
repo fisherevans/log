@@ -19,7 +19,7 @@ export function corsHeaders(env: Env, request: Request): Record<string, string> 
         return {
             'Access-Control-Allow-Origin': origin,
             'Access-Control-Allow-Credentials': 'true',
-            'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
+            'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type, X-Dev-Did, X-Dev-Handle',
             Vary: 'Origin',
         };

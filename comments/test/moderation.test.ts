@@ -22,7 +22,7 @@ function adminFetch(path: string, init: RequestInit = {}): Promise<Response> {
 }
 
 function me(did?: string): Promise<any> {
-    const headers = did ? { 'X-Dev-Did': did } : {};
+    const headers: Record<string, string> = did ? { 'X-Dev-Did': did } : {};
     return SELF.fetch('https://comments.fisher.sh/oauth/me', { headers }).then((r) => r.json());
 }
 
@@ -45,7 +45,7 @@ describe('bans', () => {
     it('permanently bans a DID and blocks their comments', async () => {
         const res = await adminFetch('/admin/ban', { method: 'POST', body: JSON.stringify({ type: 'did', subject: 'did:plc:troll' }) });
         expect(res.status).toBe(200);
-        expect((await res.json()).expiresAt).toBeNull();
+        expect(((await res.json()) as { expiresAt: number | null }).expiresAt).toBeNull();
         expect((await postAs('did:plc:troll', { postId: POST, body: 'spam' })).status).toBe(403);
     });
 
