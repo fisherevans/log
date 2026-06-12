@@ -1,4 +1,5 @@
 ---
+import { SOCIAL_LINKS } from '../consts';
 const today = new Date();
 ---
 
@@ -6,9 +7,7 @@ const today = new Date();
     <div class="inner">
         <span>&copy; {today.getFullYear()} fisher evans</span>
         <span class="links">
-            <a href="https://fisher.sh">fisher.sh</a>
-            <a href="https://github.com/fisherevans">github</a>
-            <a href="/rss.xml">rss</a>
+            {SOCIAL_LINKS.map((link) => <a href={link.href}>{link.label}</a>)}
         </span>
     </div>
 </footer>

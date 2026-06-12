@@ -13,7 +13,11 @@ const { title, description, date, updatedDate, heroImage, tags } = Astro.props;
 
 <html lang="en">
     <head>
-        <BaseHead title={title} description={description ?? ''} />
+        <BaseHead
+            title={title}
+            description={description ?? ''}
+            article={{ publishedTime: date, modifiedTime: updatedDate, tags }}
+        />
         <style>
             .hero {
                 max-width: var(--max-width);

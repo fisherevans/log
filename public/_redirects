@@ -1,0 +1,7 @@
+# RSS feed aliases. Auto-discovery works off the <link rel="alternate"> tag in
+# the page head regardless of filename, but some readers probe common paths
+# when handed a bare domain. These cover the usual guesses.
+/feed.xml   /rss.xml   301
+/atom.xml   /rss.xml   301
+/feed       /rss.xml   301
+/rss        /rss.xml   301
