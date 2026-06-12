@@ -60,6 +60,9 @@ const REPLY_SVG =
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5 3 7l4 3.5"/><path d="M3 7h6.5a3.5 3.5 0 0 1 3.5 3.5V12"/></svg>';
 const MENU_SVG =
     '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>';
+// The Bluesky butterfly. Trusted constant, fill follows currentColor.
+const BLUESKY_SVG =
+    '<svg viewBox="0 0 600 530" fill="currentColor" aria-hidden="true"><path d="M135.7 44.4c71.6 53.8 148.6 162.8 176.9 221.3 28.3-58.5 105.3-167.5 176.9-221.3 51.7-38.8 135.5-68.8 135.5 26.8 0 19.1-10.9 160.4-17.3 183.3-22.3 79.6-103.4 99.9-175.5 87.6 126 21.4 158.1 92.4 88.9 163.4-131.5 134.8-188.9-33.8-203.7-77-2.7-7.9-4-11.6-4.1-8.4-.1-3.2-1.4.5-4.1 8.4-14.8 43.2-72.2 211.8-203.7 77-69.2-71-37.1-142 88.9-163.4-72.1 12.3-153.2-8-175.5-87.6C10.9 231.6 0 90.3 0 71.2 0-24.4 83.8 5.6 135.7 44.4Z"/></svg>';
 function icon(svg: string): HTMLElement {
     const s = document.createElement('span');
     s.className = 'comment-icon';
@@ -351,7 +354,7 @@ class CommentsWidget {
             if (h) window.location.href = `${COMMENTS_API_URL}/oauth/login?handle=${encodeURIComponent(h)}`;
         };
         const btn = el('button', {
-            class: 'comment-submit',
+            class: 'comment-submit comment-signin-btn',
             type: 'button',
             click: () => {
                 if (handle.hidden) {
@@ -359,7 +362,7 @@ class CommentsWidget {
                     handle.focus();
                 } else go();
             },
-        }, 'Sign in with Bluesky');
+        }, icon(BLUESKY_SVG), el('span', {}, 'Sign in with Bluesky'));
         handle.addEventListener('keydown', (e) => {
             if ((e as KeyboardEvent).key === 'Enter') go(e);
         });
