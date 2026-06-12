@@ -13,3 +13,11 @@ Fizzics is a physics library I built for [Smash Bash](/posts/2014/03/18/smash-ba
 
 [Source on GitHub](https://github.com/fisherevans/Fizzics)
 
+<iframe
+  src="https://www.youtube.com/embed/yO6LMZWsBEA"
+  title="Fizzics v1.0 Demo"
+  loading="lazy"
+  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>

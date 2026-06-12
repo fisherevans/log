@@ -14,7 +14,22 @@ My first real game-dev project.
 
 ### Update #1
 
-
+<iframe
+  src="https://www.youtube.com/embed/IxDtreRA4dU"
+  title="TWC - Update #1"
+  loading="lazy"
+  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
 
 ### Update #2
 
+<iframe
+  src="https://www.youtube.com/embed/KkkSmBo4tss"
+  title="TWC - Update #2"
+  loading="lazy"
+  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>

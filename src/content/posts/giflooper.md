@@ -19,3 +19,11 @@ Originally posted to [/r/perfectloops](https://www.reddit.com/r/perfectloops). I
 
 ## Demo
 
+<iframe
+  src="https://www.youtube.com/embed/Ds9yRJSjGyQ"
+  title="GIFLooper Demo"
+  loading="lazy"
+  style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;"
+  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen
+></iframe>
