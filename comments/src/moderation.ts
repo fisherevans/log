@@ -12,18 +12,23 @@ import {
     type BanSubject,
     addBan,
     getComment,
+    isGrant,
     removeBan,
     setGlobalEnabled,
     setPostEnabled,
     softDeleteComment,
 } from './db';
 
-// The admin gate. Returns the admin identity or throws. Swap this body for a
-// Hydra-session check when the admin SPA lands - callers are unaffected.
+// The admin gate. Returns the admin identity or throws. Authorization now reads
+// the DID-keyed grant store (the `admin` group; see migrations/0003_grants.sql),
+// which is the shared source of truth across the edge + the k3s admin apps.
+// env.ADMIN_DID is kept as a transitional fallback for one deploy and dropped in
+// Phase 3 once the grant is seeded.
 export async function requireAdmin(request: Request, env: Env): Promise<Identity> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'admin sign-in required');
-    if (identity.did !== env.ADMIN_DID) throw new HttpError(403, 'not an admin');
+    const ok = (await isGrant(env.DB, identity.did, 'admin')) || (!!env.ADMIN_DID && identity.did === env.ADMIN_DID);
+    if (!ok) throw new HttpError(403, 'not an admin');
     return identity;
 }
 

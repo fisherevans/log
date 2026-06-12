@@ -19,6 +19,7 @@ import {
     handleToggleGlobal,
     handleUnban,
 } from './moderation';
+import { handleAddGrant, handleListGrants, handleRemoveGrant, handleResolveGrant } from './grants';
 import { handleSubscribe } from './subscribe';
 import { Telemetry } from './datadog';
 import {
@@ -61,6 +62,22 @@ export default {
             }
             if (request.method === 'POST' && path === '/oauth/logout') {
                 return await handleLogout(request, env, cors);
+            }
+
+            // --- grants: DID-keyed authorization store (auth pivot) -----------
+            // /resolve is the login app's bearer-gated read; the rest is the
+            // admin-gated DevOps management surface.
+            if (path === '/admin/grants/resolve' && request.method === 'GET') {
+                return json(await handleResolveGrant(request, env), {}, cors);
+            }
+            if (path === '/admin/grants') {
+                if (request.method === 'GET') return json(await handleListGrants(request, env), {}, cors);
+                if (request.method === 'POST') {
+                    return json(await handleAddGrant(request, env, await readJson(request)), {}, cors);
+                }
+                if (request.method === 'DELETE') {
+                    return json(await handleRemoveGrant(request, env, await readJson(request)), {}, cors);
+                }
             }
 
             if (path === '/comments') {

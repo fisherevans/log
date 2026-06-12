@@ -16,6 +16,7 @@ export interface Env {
     DATADOG_API_KEY?: string; // DataDog HTTP intake key
     DATADOG_SITE?: string; // DataDog site (default us5.datadoghq.com)
     OAUTH_PRIVATE_KEY?: string; // ATProto OAuth client private JWK (JSON)
+    LOGIN_GRANTS_TOKEN?: string; // shared bearer the k3s login app uses to read /admin/grants/resolve
 
     // Local-dev only. When "1", identity can be injected via headers (see
     // identity.ts). Never set in production.

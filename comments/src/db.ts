@@ -158,6 +158,88 @@ export async function removeBan(db: D1Database, type: BanSubject, subject: strin
     await db.prepare(`DELETE FROM bans WHERE subject_type = ? AND subject = ?`).bind(type, subject).run();
 }
 
+// ---- grants (DID-keyed authorization; see migrations/0003_grants.sql) --------
+//
+// principals maps a DID -> a stable OIDC subject (the identity-linking bridge);
+// grants maps a DID -> group memberships. resolveSubjectAndGroups is what the
+// login app reads to mint an admin token; isGrant is the edge admin gate.
+
+export interface ResolvedGrant {
+    subject: string | null; // stable OIDC subject for this DID, if provisioned
+    groups: string[]; // group memberships
+}
+
+export async function isGrant(db: D1Database, did: string, group: string): Promise<boolean> {
+    const row = await db
+        .prepare(`SELECT 1 FROM grants WHERE did = ?1 AND group_name = ?2 LIMIT 1`)
+        .bind(did, group)
+        .first<{ 1: number }>();
+    return row != null;
+}
+
+export async function resolveSubjectAndGroups(db: D1Database, did: string): Promise<ResolvedGrant> {
+    const principal = await db
+        .prepare(`SELECT subject FROM principals WHERE did = ?`)
+        .bind(did)
+        .first<{ subject: string }>();
+    const groups = await db
+        .prepare(`SELECT group_name FROM grants WHERE did = ? ORDER BY group_name`)
+        .bind(did)
+        .all<{ group_name: string }>();
+    return {
+        subject: principal?.subject ?? null,
+        groups: (groups.results ?? []).map((r) => r.group_name),
+    };
+}
+
+export async function setPrincipalSubject(db: D1Database, did: string, subject: string, when: number): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO principals (did, subject, created_at) VALUES (?, ?, ?)
+             ON CONFLICT(did) DO UPDATE SET subject = excluded.subject`,
+        )
+        .bind(did, subject, when)
+        .run();
+}
+
+export async function addGrant(db: D1Database, did: string, group: string, when: number): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO grants (did, group_name, created_at) VALUES (?, ?, ?)
+             ON CONFLICT(did, group_name) DO NOTHING`,
+        )
+        .bind(did, group, when)
+        .run();
+}
+
+export async function removeGrant(db: D1Database, did: string, group: string): Promise<void> {
+    await db.prepare(`DELETE FROM grants WHERE did = ? AND group_name = ?`).bind(did, group).run();
+}
+
+// All grants + subject for one DID, or every provisioned DID (admin listing).
+export async function listGrants(
+    db: D1Database,
+    did?: string,
+): Promise<Array<{ did: string; subject: string | null; groups: string[] }>> {
+    if (did) {
+        const r = await resolveSubjectAndGroups(db, did);
+        return [{ did, subject: r.subject, groups: r.groups }];
+    }
+    const principals = await db.prepare(`SELECT did, subject FROM principals`).all<{ did: string; subject: string }>();
+    const grants = await db.prepare(`SELECT did, group_name FROM grants`).all<{ did: string; group_name: string }>();
+    const map = new Map<string, { did: string; subject: string | null; groups: string[] }>();
+    for (const p of principals.results ?? []) map.set(p.did, { did: p.did, subject: p.subject, groups: [] });
+    for (const g of grants.results ?? []) {
+        let e = map.get(g.did);
+        if (!e) {
+            e = { did: g.did, subject: null, groups: [] };
+            map.set(g.did, e);
+        }
+        e.groups.push(g.group_name);
+    }
+    return [...map.values()];
+}
+
 // ---- rate limiting + reputation --------------------------------------------
 
 // Count a DID's comments since a cutoff (epoch ms). Includes deleted rows so
