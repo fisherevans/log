@@ -2,7 +2,7 @@
 // Subscribe CTA (issue #7): prominent RSS + a native email form posting to the
 // comments Worker. Occasional, big-posts-only emails, sent manually - no send
 // automation. RSS auto-discovery is already in the page head; this surfaces it.
-import { COMMENTS_API_URL } from '../consts';
+import { COMMENTS_API_URL, BLUESKY_PROFILE_URL } from '../consts';
 ---
 
 <section class="subscribe" aria-label="Subscribe">
@@ -19,7 +19,7 @@ import { COMMENTS_API_URL } from '../consts';
             <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
         </form>
         <p class="subscribe-rss">
-            Prefer a reader? <a href="/rss.xml">Subscribe via RSS</a>.
+            Or <a href={BLUESKY_PROFILE_URL} rel="me">follow on Bluesky</a>, or grab the <a href="/rss.xml">RSS feed</a>.
         </p>
     </div>
 </section>
