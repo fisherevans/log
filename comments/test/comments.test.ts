@@ -117,6 +117,46 @@ describe('comments CRUD', () => {
     });
 });
 
+function del(id: string, hard = false, who: { did: string } = USER): Promise<Response> {
+    return SELF.fetch(`https://comments.fisher.sh/comments/${id}${hard ? '?hard=1' : ''}`, {
+        method: 'DELETE',
+        headers: { 'X-Dev-Did': who.did },
+    });
+}
+
+// Hard delete (#?): soft leaves a tombstone; hard removes the row, but only on a
+// leaf - a comment with replies can't be removed (it would orphan them).
+describe('hard delete', () => {
+    it('removes a leaf comment entirely (no tombstone)', async () => {
+        const c = (await (await post({ postId: POST, body: 'gone soon' })).json()) as any;
+        const res = await del(c.id, true);
+        expect(res.status).toBe(200);
+        expect(((await res.json()) as any).removed).toBe(true);
+        const { comments } = await list(POST);
+        expect(comments.find((x) => x.id === c.id)).toBeUndefined();
+    });
+
+    it('refuses to remove a comment that has replies, but soft delete works', async () => {
+        const parent = (await (await post({ postId: POST, body: 'parent' })).json()) as any;
+        await post({ postId: POST, parentId: parent.id, body: 'child' });
+        expect((await del(parent.id, true)).status).toBe(409);
+        expect((await del(parent.id, false)).status).toBe(200);
+    });
+
+    it('removes an existing tombstone leaf', async () => {
+        const c = (await (await post({ postId: POST, body: 'x' })).json()) as any;
+        await del(c.id, false); // soft -> tombstone
+        expect((await del(c.id, true)).status).toBe(200); // hard remove the tombstone
+        const { comments } = await list(POST);
+        expect(comments.find((x) => x.id === c.id)).toBeUndefined();
+    });
+
+    it('refuses hard delete from a non-author', async () => {
+        const c = (await (await post({ postId: POST, body: 'mine' })).json()) as any;
+        expect((await del(c.id, true, { did: 'did:plc:mallory' })).status).toBe(403);
+    });
+});
+
 function edit(id: string, body: string, who: { did: string } = USER): Promise<Response> {
     return SELF.fetch(`https://comments.fisher.sh/comments/${id}`, {
         method: 'PATCH',
