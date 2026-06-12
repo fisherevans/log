@@ -48,7 +48,7 @@ export async function enforceAbuse(
     await requireTurnstile(env, turnstileToken, remoteIp);
 
     // 2. Bans.
-    if (await isBanned(env.DB, identity.did, ipHash)) {
+    if (await isBanned(env.DB, identity.did, ipHash, now)) {
         throw new HttpError(403, 'you are not permitted to comment');
     }
 

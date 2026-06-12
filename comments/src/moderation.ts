@@ -12,24 +12,31 @@ import {
     type BanSubject,
     addBan,
     getComment,
+    isGlobalEnabled,
     isGrant,
+    isPostEnabled,
     removeBan,
     setGlobalEnabled,
     setPostEnabled,
     softDeleteComment,
 } from './db';
 
-// The admin gate. Returns the admin identity or throws. Authorization reads the
-// DID-keyed grant store (the `admin` group; see migrations/0003_grants.sql), the
-// shared source of truth across the edge + the k3s admin apps. env.ADMIN_DID is
-// kept as an intentional break-glass admin: the env-configured DID always passes,
-// so a corrupted/empty grants table can't lock the operator out of moderation
-// (parallel to the login app's ?recover=1 password break-glass; see auth.md).
+// Is this identity an admin? Authorization reads the DID-keyed grant store (the
+// `admin` group; see migrations/0003_grants.sql), the shared source of truth
+// across the edge + the k3s admin apps. env.ADMIN_DID is kept as an intentional
+// break-glass admin: the env-configured DID always passes, so a corrupted/empty
+// grants table can't lock the operator out of moderation (parallel to the login
+// app's ?recover=1 password break-glass; see auth.md). One chokepoint so the
+// `/oauth/me` isAdmin flag, delete-any, and requireAdmin all agree.
+export async function isAdminIdentity(env: Env, identity: Identity): Promise<boolean> {
+    return (await isGrant(env.DB, identity.did, 'admin')) || (!!env.ADMIN_DID && identity.did === env.ADMIN_DID);
+}
+
+// The admin gate. Returns the admin identity or throws.
 export async function requireAdmin(request: Request, env: Env): Promise<Identity> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'admin sign-in required');
-    const ok = (await isGrant(env.DB, identity.did, 'admin')) || (!!env.ADMIN_DID && identity.did === env.ADMIN_DID);
-    if (!ok) throw new HttpError(403, 'not an admin');
+    if (!(await isAdminIdentity(env, identity))) throw new HttpError(403, 'not an admin');
     return identity;
 }
 
@@ -37,6 +44,7 @@ interface BanBody {
     type?: BanSubject;
     subject?: string;
     reason?: string;
+    days?: number; // temp ban: expires this many days out. Omitted/0 = permanent.
 }
 
 export async function handleBan(request: Request, env: Env, body: BanBody, telemetry: Telemetry): Promise<unknown> {
@@ -45,9 +53,22 @@ export async function handleBan(request: Request, env: Env, body: BanBody, telem
     const subject = (body.subject ?? '').trim();
     if (type !== 'did' && type !== 'ip') throw new HttpError(400, "type must be 'did' or 'ip'");
     if (!subject) throw new HttpError(400, 'subject required');
-    await addBan(env.DB, type, subject, body.reason ?? null, Date.now());
-    telemetry.event('ban', { subject_type: type, subject, reason: body.reason ?? null });
-    return { ok: true };
+    const now = Date.now();
+    const days = typeof body.days === 'number' && body.days > 0 ? body.days : null;
+    if (body.days != null && (typeof body.days !== 'number' || body.days < 0 || !Number.isFinite(body.days))) {
+        throw new HttpError(400, 'days must be a positive number');
+    }
+    const expiresAt = days ? now + days * 86_400_000 : null;
+    await addBan(env.DB, type, subject, body.reason ?? null, now, expiresAt);
+    telemetry.event('ban', { subject_type: type, subject, reason: body.reason ?? null, expires_at: expiresAt });
+    return { ok: true, expiresAt };
+}
+
+// GET /admin/status?post_id= -> the two switch states, for the admin modal.
+export async function handleStatus(request: Request, env: Env, postId: string): Promise<unknown> {
+    await requireAdmin(request, env);
+    const [global, post] = await Promise.all([isGlobalEnabled(env.DB), isPostEnabled(env.DB, postId)]);
+    return { global, post };
 }
 
 export async function handleUnban(request: Request, env: Env, body: BanBody, telemetry: Telemetry): Promise<unknown> {

@@ -57,7 +57,7 @@ function linkIcon(): HTMLElement {
 
 // ---- modals -----------------------------------------------------------------
 
-function overlay(build: (close: () => void) => HTMLElement): void {
+export function overlay(build: (close: () => void) => HTMLElement): void {
     const back = document.createElement('div');
     back.className = 'comment-modal-back';
     const close = () => back.remove();

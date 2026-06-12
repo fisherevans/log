@@ -499,6 +499,38 @@ const { postId } = Astro.props;
         opacity: 0.95;
         transform: translate(-50%, 0);
     }
+
+    /* --- admin moderation (#14) -------------------------------------------- */
+
+    .comments :global(.comments-header) {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1em;
+    }
+    .comments :global(.comment-admin-link) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: var(--accent);
+    }
+    :global(.comment-admin-toggles) {
+        display: flex;
+        flex-direction: column;
+        gap: 0.7em;
+        margin: 0.8em 0 1.2em;
+    }
+    :global(.comment-admin-toggle) {
+        display: flex;
+        align-items: center;
+        gap: 0.6em;
+        font-size: 0.95rem;
+        cursor: pointer;
+    }
+    :global(.comment-admin-toggle input) {
+        width: 1.05em;
+        height: 1.05em;
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
 </style>
 
 <script>
