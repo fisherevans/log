@@ -2,9 +2,10 @@
 //
 // Flow: the blog sends the reader to GET /oauth/login?handle=..., we run the
 // ATProto OAuth dance (handle resolution -> PDS discovery -> PAR -> DPoP-bound
-// tokens) via @atproto/oauth-client-node, capture the verified DID + profile on
-// the callback, mint a Worker session (session.ts), and redirect back to the
-// blog. We never request write scope.
+// tokens) via the runtime-agnostic @atproto/oauth-client core (NOT the -node
+// wrapper, which pulls in undici and breaks on Workers - see getClient), capture
+// the verified DID + profile on the callback, mint a Worker session (session.ts),
+// and redirect back to the blog. We never request write scope.
 //
 // The heavy library is loaded with a dynamic import inside getClient so it only
 // runs when an /oauth/* route is actually hit - the rest of the Worker (and the
@@ -15,11 +16,38 @@
 // it feeds (session.ts) and everything downstream ARE tested. Verify end to end
 // after the first deploy; the ATProto-on-Workers runtime (nodejs_compat) is the
 // most likely place to need adjustment.
-import type { NodeOAuthClient } from '@atproto/oauth-client-node';
+import type { OAuthClient } from '@atproto/oauth-client';
 import type { Env } from './env';
 import { HttpError } from './http';
 import { createSession, destroySession } from './session';
 import { getIdentity } from './identity';
+
+// ---- Workers runtime shim ---------------------------------------------------
+//
+// The atproto resolver libs (@atproto-labs/fetch, used by the handle + DID
+// resolvers) construct `new Request(url, { redirect: 'error' })`. The Workers
+// runtime rejects 'error' at Request-construction time ("Invalid redirect
+// value"), so the OAuth dance dies before any fetch runs. Patch the global
+// Request constructor once to coerce 'error' -> 'manual' (these endpoints don't
+// redirect on success, so it's equivalent). Idempotent; harmless for every other
+// Request. This is the edge-runtime analog of what @atproto/oauth-client-node
+// gets for free on Node.
+{
+    const BaseRequest = globalThis.Request;
+    if (!(BaseRequest as { __redirectPatched?: boolean }).__redirectPatched) {
+        class PatchedRequest extends BaseRequest {
+            constructor(input: RequestInfo | URL, init?: RequestInit) {
+                if (init?.redirect === 'error') {
+                    super(input, { ...init, redirect: 'manual' });
+                } else {
+                    super(input, init);
+                }
+            }
+        }
+        (PatchedRequest as { __redirectPatched?: boolean }).__redirectPatched = true;
+        globalThis.Request = PatchedRequest as unknown as typeof Request;
+    }
+}
 
 // ---- D1-backed stores -------------------------------------------------------
 
@@ -68,20 +96,82 @@ export function clientMetadata(env: Env): Record<string, unknown> {
     };
 }
 
-let cached: NodeOAuthClient | null = null;
+let cached: OAuthClient | null = null;
 
-async function getClient(env: Env): Promise<NodeOAuthClient> {
+// WebCrypto-backed runtime for the OAuth client. We can't use
+// @atproto/oauth-client-node: it eagerly imports @atproto-labs/fetch-node ->
+// undici (Node's HTTP stack) at module load, which throws on the Workers
+// runtime. So we build on the runtime-agnostic core OAuthClient and supply a
+// Workers-native runtime (WebCrypto + global fetch) + a string handleResolver
+// (HTTP appview resolution, no node:dns). Mirrors NodeOAuthClient's defaults.
+const DIGEST_NAMES: Record<string, string> = {
+    sha256: 'SHA-256',
+    sha384: 'SHA-384',
+    sha512: 'SHA-512',
+};
+
+// Workers' fetch rejects redirect: 'error'. The atproto resolvers use it in two
+// forms - as an init option and baked into a Request - so normalize both to
+// 'manual' (the resolver endpoints don't redirect on success).
+function workersFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    if (init?.redirect === 'error') {
+        return globalThis.fetch(input, { ...init, redirect: 'manual' });
+    }
+    if (input instanceof Request && input.redirect === 'error') {
+        return globalThis.fetch(new Request(input, { redirect: 'manual' }), init);
+    }
+    return globalThis.fetch(input, init);
+}
+
+async function getClient(env: Env): Promise<OAuthClient> {
     if (cached) return cached;
     if (!env.OAUTH_PRIVATE_KEY) throw new HttpError(503, 'OAuth is not configured');
-    const { NodeOAuthClient, JoseKey } = await import('@atproto/oauth-client-node');
+    const { JoseKey } = await import('@atproto/jwk-jose');
+    const { OAuthClient } = await import('@atproto/oauth-client');
     const key = await JoseKey.fromImportable(env.OAUTH_PRIVATE_KEY, 'key1');
-    cached = new NodeOAuthClient({
+
+    // The core client stores DPoP keys as Key instances; our D1 kvStore only
+    // serializes JSON. Wrap it to (de)serialize the DPoP key as a JWK, exactly
+    // like oauth-client-node's toDpopKeyStore (which we can't import).
+    const toDpopKeyStore = (store: ReturnType<typeof kvStore<Record<string, unknown>>>) => ({
+        async set(sub: string, { dpopKey, ...data }: Record<string, unknown> & { dpopKey: { privateJwk?: unknown } }) {
+            const dpopJwk = dpopKey.privateJwk;
+            if (!dpopJwk) throw new Error('Private DPoP JWK is missing.');
+            await store.set(sub, { ...data, dpopJwk });
+        },
+        async get(sub: string) {
+            const result = await store.get(sub);
+            if (!result) return undefined;
+            const { dpopJwk, ...data } = result as Record<string, unknown>;
+            const dpopKey = await JoseKey.fromJWK(dpopJwk as never);
+            return { ...data, dpopKey };
+        },
+        del: (sub: string) => store.del(sub),
+    });
+
+    cached = new OAuthClient({
         clientMetadata: clientMetadata(env) as never,
         keyset: [key],
-        // bsky.social resolves handles + serves the auth metadata for bsky PDSs.
+        // String resolver -> HTTP appview resolution (no node:dns).
         handleResolver: 'https://bsky.social',
-        stateStore: kvStore(env, 'oauth_state') as never,
-        sessionStore: kvStore(env, 'oauth_session') as never,
+        responseMode: 'query',
+        // Workers' fetch only accepts redirect: 'follow' | 'manual'. The atproto
+        // handle + DID resolvers issue fetch with redirect: 'error' (unsupported
+        // at the edge) and throw "Invalid redirect value". Normalize 'error' ->
+        // 'manual' in both forms it arrives: an init option, or a Request object.
+        // These endpoints don't redirect on success, so it's equivalent.
+        fetch: workersFetch as typeof fetch,
+        runtimeImplementation: {
+            createKey: (algs: string[]) => JoseKey.generate(algs),
+            getRandomValues: (length: number) => crypto.getRandomValues(new Uint8Array(length)),
+            digest: async (data: Uint8Array, alg: { name: string }) => {
+                const name = DIGEST_NAMES[alg.name];
+                if (!name) throw new Error(`Unsupported digest algorithm: ${alg.name}`);
+                return new Uint8Array(await crypto.subtle.digest(name, data));
+            },
+        },
+        stateStore: toDpopKeyStore(kvStore(env, 'oauth_state')) as never,
+        sessionStore: toDpopKeyStore(kvStore(env, 'oauth_session')) as never,
     });
     return cached;
 }
