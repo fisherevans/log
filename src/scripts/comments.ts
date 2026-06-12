@@ -4,6 +4,7 @@
 // the Worker. No third-party iframe - this renders into the page's own DOM and
 // inherits the site's styles (see Comments.astro).
 import { COMMENTS_API_URL, TURNSTILE_SITEKEY } from '../consts';
+import { renderMarkdown, wireLinks, openSyntaxHelp } from './markdown';
 
 interface Author {
     did: string;
@@ -194,7 +195,13 @@ class CommentsWidget {
         headBits.push(el('span', { class: 'comment-time' }, relativeTime(c.createdAt)));
         const head = el('div', { class: 'comment-head' }, ...headBits);
 
-        const body = el('div', { class: 'comment-body' }, c.deleted ? el('em', {}, 'comment deleted') : c.body);
+        const body = el('div', { class: 'comment-body' });
+        if (c.deleted) {
+            body.append(el('em', { class: 'comment-deleted' }, 'comment deleted'));
+        } else {
+            body.innerHTML = renderMarkdown(c.body);
+            wireLinks(body);
+        }
 
         const actions = el('div', { class: 'comment-actions' });
         if (!c.deleted && this.me.loggedIn && this.me.did === c.author.did) {
@@ -219,6 +226,31 @@ class CommentsWidget {
             placeholder: parent ? `Reply to ${parent.author.handle ?? 'comment'}…` : 'Add a comment…',
         }) as HTMLTextAreaElement;
 
+        // Write | Preview tabs. Preview renders through the same safe pipeline the
+        // posted comment will use, so what you see is what gets stored.
+        const preview = el('div', { class: 'comment-body comment-preview', hidden: 'hidden' });
+        const writeTab = el('button', { class: 'comment-tab comment-tab-on', type: 'button' }, 'Write');
+        const previewTab = el('button', { class: 'comment-tab', type: 'button' }, 'Preview');
+        const help = el('button', { class: 'comment-link comment-format-help', type: 'button', click: () => openSyntaxHelp() }, 'formatting');
+        const showWrite = () => {
+            preview.hidden = true;
+            ta.hidden = false;
+            writeTab.classList.add('comment-tab-on');
+            previewTab.classList.remove('comment-tab-on');
+        };
+        const showPreview = () => {
+            const text = ta.value.trim();
+            preview.innerHTML = text ? renderMarkdown(text) : '<p class="comments-status">Nothing to preview.</p>';
+            wireLinks(preview);
+            ta.hidden = true;
+            preview.hidden = false;
+            previewTab.classList.add('comment-tab-on');
+            writeTab.classList.remove('comment-tab-on');
+        };
+        writeTab.addEventListener('click', showWrite);
+        previewTab.addEventListener('click', showPreview);
+        const tabs = el('div', { class: 'comment-tabs' }, writeTab, previewTab, help);
+
         const error = el('p', { class: 'comment-error', hidden: 'hidden' });
         const turnstileMount = el('div', { class: 'comment-turnstile' });
         const submit = el('button', { class: 'comment-submit', type: 'button' }, parent ? 'Reply' : 'Post comment');
@@ -230,7 +262,7 @@ class CommentsWidget {
             }
         });
 
-        submit.addEventListener('click', async () => {
+        const send = async () => {
             const text = ta.value.trim();
             if (!text) return;
             error.hidden = true;
@@ -253,9 +285,18 @@ class CommentsWidget {
                 submit.removeAttribute('disabled');
                 if (turnstileId && window.turnstile) window.turnstile.reset(turnstileId);
             }
+        };
+        submit.addEventListener('click', send);
+        // Cmd/Ctrl+Enter submits from the textarea.
+        ta.addEventListener('keydown', (e) => {
+            const ke = e as KeyboardEvent;
+            if ((ke.metaKey || ke.ctrlKey) && ke.key === 'Enter') {
+                e.preventDefault();
+                void send();
+            }
         });
 
-        const box = el('div', { class: parent ? 'comment-composer comment-composer-reply' : 'comment-composer' }, ta, turnstileMount, error, submit);
+        const box = el('div', { class: parent ? 'comment-composer comment-composer-reply' : 'comment-composer' }, tabs, ta, preview, turnstileMount, error, submit);
         if (parent) {
             box.prepend(el('button', { class: 'comment-link comment-cancel', type: 'button', click: () => box.remove() }, 'dismiss'));
         }
