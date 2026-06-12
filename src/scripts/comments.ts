@@ -29,6 +29,12 @@ interface Comment {
 // accepted (the Worker re-enforces both; this just avoids a dead menu item).
 const EDIT_WINDOW_MS = 24 * 60 * 60 * 1000;
 const MAX_EDITS = 3;
+
+// Threading (#12): render the top level in pages, and cap inline nesting at
+// MAX_DEPTH levels - deeper chains collapse to a "view replies" drill-in so the
+// indentation never marches off-screen.
+const PAGE_SIZE = 10;
+const MAX_DEPTH = 3;
 interface Me {
     loggedIn: boolean;
     isAdmin?: boolean;
@@ -118,6 +124,8 @@ class CommentsWidget {
     private enabled = true;
     private hashApplied = false;
     private hashBound = false;
+    private topShown = PAGE_SIZE; // how many top-level comments are revealed
+    private focusStack: string[] = []; // drill-in path; empty = root thread
 
     constructor(
         private root: HTMLElement,
@@ -170,7 +178,10 @@ class CommentsWidget {
             return;
         }
 
-        frag.append(this.composer(null));
+        // In a drill-in, the breadcrumb replaces the top-level composer (you're
+        // looking at one subtree, not the root); reply still works per-comment.
+        if (this.focusStack.length) frag.append(this.breadcrumb());
+        else frag.append(this.composer(null));
 
         if (this.comments.length === 0) {
             frag.append(el('p', { class: 'comments-status' }, 'Be the first to comment.'));
@@ -186,7 +197,8 @@ class CommentsWidget {
         return live === 0 ? 'Comments' : live === 1 ? '1 comment' : `${live} comments`;
     }
 
-    // Build a nested thread from the flat list (oldest-first, by parentId).
+    // Build the thread from the flat list (oldest-first, by parentId). The root
+    // view paginates the top level; a drill-in renders one comment's subtree.
     private thread(): HTMLElement {
         const byParent = new Map<string | null, Comment[]>();
         for (const c of this.comments) {
@@ -195,19 +207,76 @@ class CommentsWidget {
             byParent.set(c.parentId, arr);
         }
         const list = el('ul', { class: 'comments-list' });
-        const renderLevel = (parentId: string | null, depth: number, into: HTMLElement) => {
-            for (const c of byParent.get(parentId) ?? []) {
-                into.append(this.commentNode(c, depth));
-                const kids = byParent.get(c.id);
-                if (kids && kids.length) {
-                    const sub = el('ul', { class: 'comments-list comments-replies' });
-                    renderLevel(c.id, Math.min(depth + 1, 4), sub);
-                    into.append(sub);
-                }
-            }
-        };
-        renderLevel(null, 0, list);
+
+        if (this.focusStack.length) {
+            const focusId = this.focusStack[this.focusStack.length - 1];
+            const c = this.comments.find((x) => x.id === focusId);
+            if (c) this.renderSubtree(byParent, c, 0, list);
+            return list;
+        }
+
+        const top = byParent.get(null) ?? [];
+        for (const c of top.slice(0, this.topShown)) this.renderSubtree(byParent, c, 0, list);
+        const remaining = top.length - this.topShown;
+        if (remaining > 0) {
+            list.append(
+                el('li', { class: 'comments-loadmore-row' },
+                    el('button', { class: 'comment-submit comment-loadmore', type: 'button', click: () => { this.topShown += PAGE_SIZE; this.render(); } },
+                        `Load ${Math.min(PAGE_SIZE, remaining)} more`),
+                ),
+            );
+        }
         return list;
+    }
+
+    // Render a comment then its replies: inline until MAX_DEPTH, then a drill-in.
+    private renderSubtree(byParent: Map<string | null, Comment[]>, c: Comment, depth: number, into: HTMLElement) {
+        into.append(this.commentNode(c, depth));
+        const kids = byParent.get(c.id);
+        if (!kids || !kids.length) return;
+        if (depth + 1 >= MAX_DEPTH) {
+            const n = this.countDescendants(byParent, c.id);
+            into.append(
+                el('li', { class: 'comments-drillin-row' },
+                    el('button', { class: 'comment-link comment-drillin', type: 'button', click: () => this.drillInto(c.id) },
+                        `view ${n} ${n === 1 ? 'reply' : 'replies'} →`),
+                ),
+            );
+            return;
+        }
+        const sub = el('ul', { class: 'comments-list comments-replies' });
+        for (const kid of kids) this.renderSubtree(byParent, kid, depth + 1, sub);
+        into.append(sub);
+    }
+
+    private countDescendants(byParent: Map<string | null, Comment[]>, id: string): number {
+        const kids = byParent.get(id) ?? [];
+        return kids.reduce((n, k) => n + 1 + this.countDescendants(byParent, k.id), 0);
+    }
+
+    private drillInto(id: string) {
+        this.focusStack.push(id);
+        this.render();
+        const root = this.root.closest('section.comments') ?? this.root;
+        root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Drill-in breadcrumb: "All comments › … › current". Each crumb pops to its
+    // level; the last is the comment in focus.
+    private breadcrumb(): HTMLElement {
+        const bar = el('nav', { class: 'comments-breadcrumb', 'aria-label': 'Thread location' });
+        bar.append(el('button', { class: 'comment-link', type: 'button', click: () => { this.focusStack = []; this.render(); } }, 'All comments'));
+        this.focusStack.forEach((id, i) => {
+            bar.append(el('span', { class: 'comments-crumb-sep', 'aria-hidden': 'true' }, '›'));
+            const c = this.comments.find((x) => x.id === id);
+            const label = c ? c.author.displayName || c.author.handle || 'comment' : 'comment';
+            if (i === this.focusStack.length - 1) {
+                bar.append(el('span', { class: 'comments-crumb-current' }, label));
+            } else {
+                bar.append(el('button', { class: 'comment-link', type: 'button', click: () => { this.focusStack = this.focusStack.slice(0, i + 1); this.render(); } }, label));
+            }
+        });
+        return bar;
     }
 
     private commentNode(c: Comment, _depth: number): HTMLElement {
@@ -492,13 +561,47 @@ class CommentsWidget {
         if (kid) this.gotoComment(kid.id);
     }
 
-    // On first render, if the URL targets a comment (#comment-<id>), land on it.
+    // On first render, if the URL targets a comment (#comment-<id>), reveal it
+    // (expand pagination / drill in to its subtree) and land on it.
     private maybeApplyHash() {
         if (this.hashApplied) return;
         const m = location.hash.match(/^#comment-([A-Za-z0-9]+)$/);
         if (!m) return;
-        this.hashApplied = true;
-        requestAnimationFrame(() => this.gotoComment(m[1]));
+        this.hashApplied = true; // set before re-render so the nested call no-ops
+        const id = m[1];
+        if (this.comments.some((c) => c.id === id) && this.revealPathTo(id)) {
+            this.render();
+        }
+        requestAnimationFrame(() => this.gotoComment(id));
+    }
+
+    // Make a comment visible: page in enough top-level comments, and if it sits
+    // deeper than MAX_DEPTH, focus the ancestor that brings it onto the deepest
+    // visible row. Returns true if anything changed.
+    private revealPathTo(id: string): boolean {
+        const byId = new Map(this.comments.map((c) => [c.id, c]));
+        const chain: string[] = [];
+        for (let cur = byId.get(id); cur; cur = cur.parentId ? byId.get(cur.parentId) : undefined) {
+            chain.unshift(cur.id);
+        }
+        if (!chain.length) return false;
+        let changed = false;
+
+        const rootAncestor = chain[0];
+        const top = this.comments.filter((c) => c.parentId === null);
+        const idx = top.findIndex((c) => c.id === rootAncestor);
+        if (idx >= 0 && idx + 1 > this.topShown) {
+            this.topShown = top.length; // simplest: reveal all top-level
+            changed = true;
+        }
+
+        const depth = chain.length - 1;
+        const wantFocus = depth >= MAX_DEPTH ? [chain[depth - (MAX_DEPTH - 1)]] : [];
+        if (JSON.stringify(wantFocus) !== JSON.stringify(this.focusStack)) {
+            this.focusStack = wantFocus;
+            changed = true;
+        }
+        return changed;
     }
 
     private toast(msg: string) {

@@ -566,6 +566,48 @@ const { postId } = Astro.props;
         width: 1.1em;
         height: 1.1em;
     }
+
+    /* --- threading: load-more, drill-in, breadcrumb (#12) ------------------ */
+
+    /* These rows are <li> in .comments-list but not .comment, so kill the global
+       chevron + indent the same way. */
+    .comments :global(.comments-loadmore-row),
+    .comments :global(.comments-drillin-row) {
+        padding-left: 0;
+        list-style: none;
+    }
+    .comments :global(.comments-loadmore-row::before),
+    .comments :global(.comments-drillin-row::before) {
+        content: none;
+    }
+    .comments :global(.comments-loadmore-row) {
+        margin-top: 1em;
+    }
+    .comments :global(.comment-loadmore) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        letter-spacing: 0;
+    }
+    .comments :global(.comment-drillin) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: var(--accent);
+        padding: 0.3em 0;
+    }
+    .comments :global(.comments-breadcrumb) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.4em;
+        margin-bottom: 1.5em;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.85rem;
+    }
+    .comments :global(.comments-crumb-sep) {
+        color: var(--muted);
+    }
+    .comments :global(.comments-crumb-current) {
+        color: var(--fg);
+        font-weight: 600;
+    }
 </style>
 
 <script>
