@@ -24,7 +24,7 @@ routes = [
 [[d1_databases]]
 binding = "DB"
 database_name = "log-comments"
-database_id = "REPLACE_AFTER_D1_CREATE"
+database_id = "6f88cf9e-fefe-4fb1-84c0-5865cd8c82a9"
 migrations_dir = "migrations"
 
 [vars]
