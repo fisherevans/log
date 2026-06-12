@@ -133,6 +133,10 @@ const { postId } = Astro.props;
         background: var(--code-bg);
         border: 1px solid var(--rule);
         flex: none;
+        /* Optical nudge: serif names read slightly high in their line box, so a
+           geometrically-centered avatar looks low. Lift it a hair to match. */
+        position: relative;
+        top: -0.08em;
     }
     .comments :global(.comment-author) {
         font-weight: 600;
@@ -240,11 +244,29 @@ const { postId } = Astro.props;
     .comments :global(.comment-body p) {
         margin: 0 0 0.6em;
     }
-    /* Markdown lists keep the site's accent chevron (global `ul > li::before`);
-       just tighten the bottom margin - comments are short. */
+    /* Markdown lists use plain bullets (a white disc / decimal), NOT the site's
+       accent chevron - that stylized marker is for blog-post prose, not comments.
+       Re-enable native markers (global.css sets `ul,ol { list-style: none }`) and
+       kill the global `li::before` chevron + its indent. */
     .comments :global(.comment-body ul),
     .comments :global(.comment-body ol) {
         margin: 0 0 0.6em;
+        padding-left: 1.5em;
+    }
+    .comments :global(.comment-body ul) {
+        list-style: disc outside;
+    }
+    .comments :global(.comment-body ol) {
+        list-style: decimal outside;
+    }
+    .comments :global(.comment-body li) {
+        padding-left: 0;
+    }
+    .comments :global(.comment-body li::before) {
+        content: none;
+    }
+    .comments :global(.comment-body li::marker) {
+        color: var(--fg);
     }
     .comments :global(.comment-body code) {
         font-family: 'DraftingMono', ui-monospace, monospace;
