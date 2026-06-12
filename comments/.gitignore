@@ -1,0 +1,7 @@
+node_modules/
+# wrangler local state + built output
+.wrangler/
+dist/
+# local secrets for `wrangler dev` (DEV_AUTH, test Turnstile keys, etc.)
+.dev.vars
+*.log

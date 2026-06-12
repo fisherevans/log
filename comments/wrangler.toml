@@ -1,0 +1,42 @@
+# Cloudflare Worker config for the log.fisher.sh comments backend.
+#
+# This file holds only NON-SECRET config. Runtime secrets (Turnstile secret,
+# IP-hash salt, DataDog API key, OAuth private key) are pushed out-of-band via
+# `wrangler secret put` from the nottingham-cloud deploy target - never here, never
+# in git. See ../comments/README.md and nottingham-cloud systems/cloudflare.md.
+
+name = "log-comments"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+# @atproto/oauth-client-node + node:crypto used by the OAuth flow need Node builtins.
+compatibility_flags = ["nodejs_compat"]
+
+# Custom domain. wrangler manages the DNS record for a custom_domain route, so the
+# Worker answers at https://comments.fisher.sh once deployed. The blog UI calls
+# this origin; CORS is restricted to ALLOWED_ORIGIN below.
+routes = [
+    { pattern = "comments.fisher.sh", custom_domain = true },
+]
+
+# D1 binding. database_id is a non-secret identifier - fill it in after the
+# `wrangler d1 create log-comments` provisioning step (nottingham-cloud
+# `make provision-comments-d1`), then commit it here.
+[[d1_databases]]
+binding = "DB"
+database_name = "log-comments"
+database_id = "REPLACE_AFTER_D1_CREATE"
+migrations_dir = "migrations"
+
+[vars]
+# The blog origin allowed to call this API (CORS + cookie scoping).
+ALLOWED_ORIGIN = "https://log.fisher.sh"
+# Public base URL of this Worker (OAuth client metadata + callback URLs).
+PUBLIC_URL = "https://comments.fisher.sh"
+# Fisher's Bluesky DID - the hard-coded v1 admin (handle @fisher.sh). Public, not
+# a secret. The moderation surface checks the authed DID against this.
+ADMIN_DID = "did:plc:auevmn4wzowwhiuq6jo3ysl6"
+
+# --- Local dev overrides -----------------------------------------------------
+# `wrangler dev` runs against a local miniflare D1 (no remote auth needed). Local
+# secrets go in comments/.dev.vars (gitignored). DEV_AUTH=1 there unlocks the
+# header-injected identity path for testing without a real Bluesky login.
