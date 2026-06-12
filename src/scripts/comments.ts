@@ -4,7 +4,7 @@
 // the Worker. No third-party iframe - this renders into the page's own DOM and
 // inherits the site's styles (see Comments.astro).
 import { COMMENTS_API_URL, TURNSTILE_SITEKEY } from '../consts';
-import { renderMarkdown, wireLinks, openSyntaxHelp } from './markdown';
+import { renderMarkdown, wireLinks, openSyntaxHelp, overlay } from './markdown';
 
 interface Author {
     did: string;
@@ -23,6 +23,7 @@ interface Comment {
 }
 interface Me {
     loggedIn: boolean;
+    isAdmin?: boolean;
     did?: string;
     handle?: string | null;
     displayName?: string | null;
@@ -144,7 +145,13 @@ class CommentsWidget {
 
     private render() {
         const frag = document.createDocumentFragment();
-        frag.append(el('h2', { class: 'comments-heading' }, this.headingText()));
+        const heading = el('h2', { class: 'comments-heading' }, this.headingText());
+        if (this.me.isAdmin) {
+            const mod = el('button', { class: 'comment-link comment-admin-link', type: 'button', title: 'Moderation', click: () => this.openAdminModal() }, 'moderation');
+            frag.append(el('div', { class: 'comments-header' }, heading, mod));
+        } else {
+            frag.append(heading);
+        }
 
         if (!this.enabled) {
             frag.append(el('p', { class: 'comments-status' }, 'Comments are closed for this post.'));
@@ -378,8 +385,14 @@ class CommentsWidget {
         pop.append(item('Copy rich text', () => this.copyRich(c)));
         if (c.parentId) pop.append(item('View parent', () => this.gotoComment(c.parentId!)));
         if (this.comments.some((x) => x.parentId === c.id)) pop.append(item('View replies', () => this.gotoFirstChild(c.id)));
-        if (this.me.loggedIn && this.me.did === c.author.did) {
-            pop.append(item('Delete', () => this.delete(c), 'comment-menu-danger'));
+
+        // Delete: the author always, or any admin. Ban: admins only, never your
+        // own comment. Backend re-enforces both via requireAdmin / the delete gate.
+        const canDelete = this.me.loggedIn && (this.me.did === c.author.did || !!this.me.isAdmin);
+        if (canDelete) pop.append(item('Delete', () => this.delete(c), 'comment-menu-danger'));
+        if (this.me.isAdmin && c.author.did && c.author.did !== this.me.did) {
+            pop.append(item('Ban author', () => this.ban(c, null), 'comment-menu-danger'));
+            pop.append(item('Ban author · 10 days', () => this.ban(c, 10), 'comment-menu-danger'));
         }
 
         btn.addEventListener('click', (e) => {
@@ -469,6 +482,80 @@ class CommentsWidget {
             t.classList.remove('comment-toast-show');
             setTimeout(() => t.remove(), 250);
         }, 1600);
+    }
+
+    // Admin: ban the comment's author DID (permanent or temp). Backend gated.
+    private async ban(c: Comment, days: number | null) {
+        const who = c.author.handle ? `@${c.author.handle}` : 'this user';
+        const prompt = days ? `Ban ${who} for ${days} days?` : `Permanently ban ${who}?`;
+        if (!confirm(prompt)) return;
+        try {
+            const res = await api('/admin/ban', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type: 'did', subject: c.author.did, days: days ?? undefined, reason: `via comment ${c.id}` }),
+            });
+            if (!res.ok) throw new Error();
+            this.toast(days ? `Banned ${who} for ${days} days` : `Banned ${who}`);
+        } catch {
+            this.toast('Ban failed');
+        }
+    }
+
+    // Admin: per-post + site-wide comment switches. Fetches current state, then
+    // each toggle writes immediately. requireAdmin gates the reads and writes.
+    private openAdminModal() {
+        overlay((close) => {
+            const box = el('div', { class: 'comment-modal' });
+            const note = el('p', { class: 'comment-modal-note' }, 'Loading…');
+            const rows = el('div', { class: 'comment-admin-toggles' });
+            const done = el('button', { class: 'comment-modal-btn', type: 'button', click: close }, 'Done');
+            box.append(el('h3', {}, 'Moderation'), note, rows, done);
+
+            void api(`/admin/status?post_id=${encodeURIComponent(this.postId)}`)
+                .then((r) => (r.ok ? (r.json() as Promise<{ global: boolean; post: boolean }>) : Promise.reject()))
+                .then((st) => {
+                    note.textContent = 'Turning comments off hides the composer and rejects new comments.';
+                    rows.replaceChildren(
+                        this.toggleRow('This post', st.post, (v) =>
+                            api(`/admin/posts/${encodeURIComponent(this.postId)}`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ enabled: v }),
+                            }),
+                        ),
+                        this.toggleRow('Site-wide', st.global, (v) =>
+                            api('/admin/global', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ enabled: v }),
+                            }),
+                        ),
+                    );
+                })
+                .catch(() => {
+                    note.textContent = 'Could not load moderation status.';
+                });
+            return box;
+        });
+    }
+
+    private toggleRow(label: string, initial: boolean, write: (enabled: boolean) => Promise<Response>): HTMLElement {
+        const input = el('input', { type: 'checkbox' }) as HTMLInputElement;
+        input.checked = initial;
+        input.addEventListener('change', async () => {
+            input.disabled = true;
+            try {
+                const res = await write(input.checked);
+                if (!res.ok) throw new Error();
+                this.toast('Saved');
+            } catch {
+                input.checked = !input.checked; // revert on failure
+                this.toast('Save failed');
+            }
+            input.disabled = false;
+        });
+        return el('label', { class: 'comment-admin-toggle' }, input, el('span', {}, label));
     }
 
     private async delete(c: Comment) {

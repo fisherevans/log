@@ -15,6 +15,7 @@ import { handleCreate, handleDelete, handleList } from './comments';
 import {
     handleBan,
     handleBanCommentIp,
+    handleStatus,
     handleTogglePost,
     handleToggleGlobal,
     handleUnban,
@@ -102,6 +103,10 @@ export default {
             }
 
             // --- moderation (issue #4), DID-gated admin ----------------------
+            if (path === '/admin/status' && request.method === 'GET') {
+                const postId = url.searchParams.get('post_id') ?? '';
+                return json(await handleStatus(request, env, postId), {}, cors);
+            }
             if (request.method === 'POST') {
                 if (path === '/admin/ban') {
                     return json(await handleBan(request, env, await readJson(request), telemetry), {}, cors);

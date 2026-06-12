@@ -15,6 +15,7 @@ import {
 import { mintId } from './ids';
 import { enforceAbuse } from './abuse';
 import { hashIp } from './hash';
+import { isAdminIdentity } from './moderation';
 import type { Telemetry } from './datadog';
 
 const MAX_BODY = 4000;
@@ -160,7 +161,7 @@ export async function handleDelete(request: Request, env: Env, id: string, telem
     if (!row || row.deleted_at != null) throw new HttpError(404, 'comment not found');
 
     const isAuthor = identity.did === row.author_did;
-    const isAdmin = identity.did === env.ADMIN_DID;
+    const isAdmin = await isAdminIdentity(env, identity);
     if (!isAuthor && !isAdmin) throw new HttpError(403, 'not allowed to delete this comment');
 
     await softDeleteComment(env.DB, id, Date.now());

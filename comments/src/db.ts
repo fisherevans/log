@@ -119,38 +119,59 @@ export async function setPostEnabled(db: D1Database, postId: string, enabled: bo
         .run();
 }
 
+// The two switches read independently, for the admin modal (the public path uses
+// commentsEnabled, which ANDs them). Both default to enabled when unset.
+export async function isGlobalEnabled(db: D1Database): Promise<boolean> {
+    const row = await db.prepare(`SELECT value FROM settings WHERE key = 'comments_enabled'`).first<{ value: string }>();
+    return !(row && row.value === '0');
+}
+
+export async function isPostEnabled(db: D1Database, postId: string): Promise<boolean> {
+    const row = await db
+        .prepare(`SELECT comments_enabled FROM post_settings WHERE post_id = ?`)
+        .bind(postId)
+        .first<{ comments_enabled: number }>();
+    return !(row && row.comments_enabled === 0);
+}
+
 // ---- bans -------------------------------------------------------------------
 
 export type BanSubject = 'did' | 'ip';
 
-// True if either the DID or the ip_hash is on the ban list. ipHash may be null
-// (no salt configured / no IP), in which case only the DID is checked.
-export async function isBanned(db: D1Database, did: string, ipHash: string | null): Promise<boolean> {
+// True if either the DID or the ip_hash is on the ban list and the ban hasn't
+// expired. ipHash may be null (no salt configured / no IP), in which case only
+// the DID is checked. `now` is epoch-ms; a row with expires_at <= now is ignored.
+export async function isBanned(db: D1Database, did: string, ipHash: string | null, now: number): Promise<boolean> {
     const row = await db
         .prepare(
             `SELECT 1 FROM bans
-             WHERE (subject_type = 'did' AND subject = ?1)
-                OR (subject_type = 'ip' AND ?2 IS NOT NULL AND subject = ?2)
+             WHERE ((subject_type = 'did' AND subject = ?1)
+                 OR (subject_type = 'ip' AND ?2 IS NOT NULL AND subject = ?2))
+               AND (expires_at IS NULL OR expires_at > ?3)
              LIMIT 1`,
         )
-        .bind(did, ipHash)
+        .bind(did, ipHash, now)
         .first<{ 1: number }>();
     return row != null;
 }
 
+// Add or refresh a ban. expiresAt is epoch-ms (NULL = permanent). Re-banning an
+// existing subject overwrites both reason and expiry, so a temp ban can be made
+// permanent (or extended) by re-issuing it.
 export async function addBan(
     db: D1Database,
     type: BanSubject,
     subject: string,
     reason: string | null,
     when: number,
+    expiresAt: number | null = null,
 ): Promise<void> {
     await db
         .prepare(
-            `INSERT INTO bans (subject_type, subject, reason, created_at) VALUES (?, ?, ?, ?)
-             ON CONFLICT(subject_type, subject) DO UPDATE SET reason = excluded.reason`,
+            `INSERT INTO bans (subject_type, subject, reason, created_at, expires_at) VALUES (?, ?, ?, ?, ?)
+             ON CONFLICT(subject_type, subject) DO UPDATE SET reason = excluded.reason, expires_at = excluded.expires_at`,
         )
-        .bind(type, subject, reason, when)
+        .bind(type, subject, reason, when, expiresAt)
         .run();
 }
 

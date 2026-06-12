@@ -21,6 +21,7 @@ import type { Env } from './env';
 import { errorChain, HttpError } from './http';
 import { createSession, destroySession } from './session';
 import { getIdentity } from './identity';
+import { isAdminIdentity } from './moderation';
 
 // ---- Workers runtime shim ---------------------------------------------------
 //
@@ -265,10 +266,14 @@ export async function handleCallback(request: Request, env: Env): Promise<Respon
     }
 }
 
-// GET /oauth/me  -> who's logged in (for the UI to render sign-in state).
+// GET /oauth/me  -> who's logged in (for the UI to render sign-in state). The
+// isAdmin flag lets the UI show moderation controls; it's advisory only - every
+// /admin/* endpoint re-checks via requireAdmin, so a forged flag buys nothing.
 export async function handleMe(request: Request, env: Env, cors: Record<string, string>): Promise<Response> {
     const identity = await getIdentity(request, env);
-    return Response.json(identity ? { loggedIn: true, ...identity } : { loggedIn: false }, { headers: cors });
+    if (!identity) return Response.json({ loggedIn: false }, { headers: cors });
+    const isAdmin = await isAdminIdentity(env, identity);
+    return Response.json({ loggedIn: true, isAdmin, ...identity }, { headers: cors });
 }
 
 // POST /oauth/logout  -> clear the session.
