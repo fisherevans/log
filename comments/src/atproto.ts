@@ -198,8 +198,18 @@ export async function handleLogin(request: Request, env: Env): Promise<Response>
 
 // GET /oauth/callback?...  -> verify, capture profile, mint session, back to blog.
 export async function handleCallback(request: Request, env: Env): Promise<Response> {
-    const client = await getClient(env);
     const params = new URL(request.url).searchParams;
+    // The auth server can redirect back with an OAuth error (e.g. the user
+    // declined consent: ?error=access_denied). Surface it as a clean 400 rather
+    // than letting client.callback throw an opaque 500.
+    const authError = params.get('error');
+    if (authError) {
+        throw new HttpError(400, `Bluesky sign-in failed: ${params.get('error_description') || authError}`);
+    }
+    if (!params.get('code') || !params.get('state')) {
+        throw new HttpError(400, 'Missing OAuth callback parameters (code/state)');
+    }
+    const client = await getClient(env);
     const { session } = await client.callback(params);
     const did = session.did;
 
