@@ -18,8 +18,13 @@ export const BLUESKY_PROFILE_URL = `https://bsky.app/profile/${BLUESKY_HANDLE}`;
 // The native UI calls this origin client-side. TURNSTILE_SITEKEY is the public
 // Turnstile key - leave empty until it's minted; the widget is then omitted and
 // the Worker (which only enforces when its secret is set) still accepts requests.
-export const COMMENTS_API_URL = "https://comments.fisher.sh";
-export const TURNSTILE_SITEKEY = "0x4AAAAAADjdWj1G2urGdLYq";
+//
+// Both are overridable via PUBLIC_* env at build/dev time, so a local sandbox can
+// point at a `wrangler dev` Worker (PUBLIC_COMMENTS_API_URL=http://localhost:8787)
+// and disable Turnstile (PUBLIC_TURNSTILE_SITEKEY=""). `??` only falls back when
+// the var is unset, so an explicit empty string disables the widget.
+export const COMMENTS_API_URL = import.meta.env.PUBLIC_COMMENTS_API_URL ?? "https://comments.fisher.sh";
+export const TURNSTILE_SITEKEY = import.meta.env.PUBLIC_TURNSTILE_SITEKEY ?? "0x4AAAAAADjdWj1G2urGdLYq";
 
 // External links surfaced in the footer (single source of truth - add/remove here).
 export const SOCIAL_LINKS = [

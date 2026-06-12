@@ -143,3 +143,25 @@ Secrets (`IP_HASH_SALT`, `TURNSTILE_SECRET`, `DATADOG_API_KEY`,
 `OAUTH_PRIVATE_KEY`) are pushed via `wrangler secret put` from the deploy target -
 never in `wrangler.toml` or git. After `wrangler d1 create log-comments`, paste
 the printed `database_id` into `wrangler.toml`.
+
+## Local UX sandbox
+
+Play with the full comment UX in a browser without touching production or the
+live blog. Bluesky OAuth can't redirect to localhost, so a DEV-only login shim
+mints a session instead (gated on `DEV_AUTH=1`, 404 in prod).
+
+```sh
+# 1. Worker: local D1 + dev auth (comments/.dev.vars sets DEV_AUTH=1,
+#    ALLOWED_ORIGIN=http://localhost:4321, IP_HASH_SALT)
+cd comments && npx wrangler d1 migrations apply log-comments --local
+npx wrangler dev --port 8787 --local
+
+# 2. Blog: point it at the local Worker, disable Turnstile
+cd .. && PUBLIC_COMMENTS_API_URL=http://localhost:8787 PUBLIC_TURNSTILE_SITEKEY= npm run dev
+
+# 3. Log in (one-time, sets the session cookie as ADMIN_DID/fisher.sh):
+#    open http://localhost:8787/oauth/dev-login   (redirects to the blog)
+#    then visit any post and comment. ?did=&handle= override the dev identity.
+```
+
+The local D1 is ephemeral miniflare state; reset it by deleting `.wrangler/state`.

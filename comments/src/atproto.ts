@@ -277,6 +277,28 @@ export async function handleLogout(request: Request, env: Env, cors: Record<stri
     return Response.json({ ok: true }, { headers: { ...cors, 'Set-Cookie': setCookie } });
 }
 
+// GET /oauth/dev-login  -> DEV ONLY. Mints a real session cookie for a fixed
+// identity (defaults to ADMIN_DID/fisher.sh) so the comment UX can be exercised
+// in a browser locally without the Bluesky OAuth round-trip (which can't redirect
+// to localhost). 404 unless DEV_AUTH=1; never reachable in production.
+export async function handleDevLogin(request: Request, env: Env): Promise<Response> {
+    if (env.DEV_AUTH !== '1') return new Response('not found', { status: 404 });
+    const params = new URL(request.url).searchParams;
+    const did = params.get('did') || env.ADMIN_DID || 'did:plc:devuser';
+    const handle = params.get('handle') || 'fisher.sh';
+    const setCookie = await createSession(env, {
+        did,
+        handle,
+        displayName: handle,
+        avatar: null,
+        accountCreatedAt: null,
+    });
+    return new Response(null, {
+        status: 302,
+        headers: { Location: env.ALLOWED_ORIGIN, 'Set-Cookie': setCookie },
+    });
+}
+
 // ---- profile ----------------------------------------------------------------
 
 interface Profile {
