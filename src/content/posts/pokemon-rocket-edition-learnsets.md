@@ -152,6 +152,13 @@ I hope it helps!
 
 Search by name, click to add a Pokemon to the comparison list, click again to remove. You can stack as many as you want side-by-side, and the URL hash tracks your selection so the "Open standalone" link preserves what you're looking at.
 
+<iframe
+  src="https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html"
+  title="Rocket Edition Pokedex"
+  loading="lazy"
+  style="width:100%;height:720px;border:1px solid var(--rule);border-radius:6px;background:#1c1a17;"
+></iframe>
 
-
-[Open the explorer in its own tab ↗](https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html)
+<p style="text-align:right;font-size:0.85em;margin-top:0.4em;">
+  <a href="https://media.fisher.sh/blog/2023/09/18/pokemon-rocket-edition-learnsets/explorer.html" target="_blank" rel="noopener">Open the explorer in its own tab ↗</a>
+</p>

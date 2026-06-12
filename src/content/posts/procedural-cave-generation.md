@@ -14,7 +14,7 @@ What's better than procedural generation with an organic twist?
 
 ![Procedural Cave Generation Banner Image](https://media.fisher.sh/blog/2014/05/20/procedural-cave-generation/procedural-cave-generation-banner-image.png)
 
-In one of my **[previous](http://fisherevans.com/blog/post/dungeon-generation)** posts I used a method to generate random dungeons based on graphs. In my implementation the rooms were rectangles, connected by hallways that would turn at 90 degrees  perfect for a dungeon. But caves have a different set of requirements:
+In one of my **[previous](http://fisherevans.com/blog/post/dungeon-generation)** posts I used a method to generate random dungeons based on graphs. In my implementation the rooms were rectangles, connected by hallways that would turn at 90 degrees - perfect for a dungeon. But caves have a different set of requirements:
 
 - Cave passages need to be fluid and have curves.  
 - Cave walls need to be rugged, not confined to the 90 degree X and Y grid.  
@@ -23,7 +23,7 @@ In one of my **[previous](http://fisherevans.com/blog/post/dungeon-generation)**
 
 With these requirements in mind, I thought that if I randomly generate points on a grid and connected them with a **[Relative Neighborhood Graph](http://en.wikipedia.org/wiki/Relative_neighborhood_graph)** I could somehow morph the edges to create the curves and more "natural" walls.
 
-To start, I generated the random points. The process is pretty straightforward  I have a predefined area within which I want the cave (defined by a width, height, and some padding).
+To start, I generated the random points. The process is pretty straightforward - I have a predefined area within which I want the cave (defined by a width, height, and some padding).
 
 ```java
 int x, y;

@@ -81,13 +81,13 @@ Overall, about a third of the submissions were male, two thirds were female and 
 
 ### **Influence**
 
-On average, when asked to rate the personal influence of Science and Technology, people said that science was rated at 7.9 and Technology at 8.5. Though the average was close, the standard deviation is far different between the two. The Science ratings were more evenly distributed in the 6-10 range, where Technology had an overwhelming peak right at 10
+On average, when asked to rate the personal influence of Science and Technology, people said that science was rated at 7.9 and Technology at 8.5. Though the average was close, the standard deviation is far different between the two. The Science ratings were more evenly distributed in the 6-10 range, where Technology had an overwhelming peak right at 10.
 
 ![personal influence of science](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/personal-influence-of-science.png)
 
 ![personal influence of technology](https://media.fisher.sh/blog/2015/05/26/science-vs-technology/personal-influence-of-technology.png)
 
-When rating Technology, the gender distribution was about even, but for Science there is a clear difference. Almost no males rated Science at a 10, where nearly half the female submissions rated it a 10
+When rating Technology, the gender distribution was about even, but for Science there is a clear difference. Almost no males rated Science at a 10, where nearly half the female submissions rated it a 10.
 
 In general though, people considered Technology to be more influential in their lives. When asked which was more important to (the advancement of) the humankind though, Science came out well on top (if we consider "Equal" to be neutral.)
 

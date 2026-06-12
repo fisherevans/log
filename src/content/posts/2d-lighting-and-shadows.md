@@ -64,7 +64,7 @@ To make the render distance (which is determined by the light the character is h
 
 ![darken edges](https://media.fisher.sh/blog/2013/08/16/2d-lighting-and-shadows/darken-edges.png)
 
-And for a final comparison. The difference is night and day  lighting adds so much more to the game than I thought it would.
+And for a final comparison. The difference is night and day - lighting adds so much more to the game than I thought it would.
 
 ![comparison](https://media.fisher.sh/blog/2013/08/16/2d-lighting-and-shadows/comparison.png)
 
@@ -78,7 +78,7 @@ When I load the map, I create the 2D world with JBox2D based on a collision laye
 
 ![example light point, and shadow line](https://media.fisher.sh/blog/2013/08/16/2d-lighting-and-shadows/example-light-point-and-shadow-line.png)
 
-This diagram shows the light image, 5 points, the shadow line and the triangle of light we're working with. For each shadow line (here the line is A,B), you can make a triangle of light that should be shown (here it's the triangle L,A,B). If we think of this triangle as a point and 2 vectors (point L with vectors LA and LB) we can scale the vectors equally to create a similar (larger) triangle (L,X,Y). Then, if we subtract the original triangle from this bigger one we end up with a polygon (A,X,Y,B) that encloses the space the shadow this line produces from this light. Once we have that polygon, we can simply draw it over the light buffer as so:
+This diagram shows the light image, 5 points, the shadow line and the triangle of light we're working with. For each shadow line (here the line is A,B), you can make a triangle of light that should be shown (here it's the triangle L,A,B). If we think of this triangle as a point and 2 vectors (point L with vectors L>A and L>B) we can scale the vectors equally to create a similar (larger) triangle (L,X,Y). Then, if we subtract the original triangle from this bigger one we end up with a polygon (A,X,Y,B) that encloses the space the shadow this line produces from this light. Once we have that polygon, we can simply draw it over the light buffer as so:
 
 ![shadow polygon left after cutting](https://media.fisher.sh/blog/2013/08/16/2d-lighting-and-shadows/shadow-polygon-left-after-cutting.png)
 
