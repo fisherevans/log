@@ -19,7 +19,7 @@ export const BLUESKY_PROFILE_URL = `https://bsky.app/profile/${BLUESKY_HANDLE}`;
 // Turnstile key - leave empty until it's minted; the widget is then omitted and
 // the Worker (which only enforces when its secret is set) still accepts requests.
 export const COMMENTS_API_URL = "https://comments.fisher.sh";
-export const TURNSTILE_SITEKEY = "";
+export const TURNSTILE_SITEKEY = "0x4AAAAAADjdWj1G2urGdLYq";
 
 // External links surfaced in the footer (single source of truth - add/remove here).
 export const SOCIAL_LINKS = [
