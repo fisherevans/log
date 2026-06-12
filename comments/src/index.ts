@@ -20,10 +20,12 @@ import {
     handleUnban,
 } from './moderation';
 import { handleSubscribe } from './subscribe';
+import { Telemetry } from './datadog';
 
 export default {
-    async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         const cors = corsHeaders(env, request);
+        const telemetry = new Telemetry(env, ctx);
 
         // CORS preflight.
         if (request.method === 'OPTIONS') {
@@ -44,7 +46,7 @@ export default {
                 }
                 if (request.method === 'POST') {
                     const body = await readJson<Parameters<typeof handleCreate>[2]>(request);
-                    return json(await handleCreate(request, env, body), { status: 201 }, cors);
+                    return json(await handleCreate(request, env, body, telemetry), { status: 201 }, cors);
                 }
             }
 
@@ -54,27 +56,35 @@ export default {
 
             const del = path.match(/^\/comments\/([A-Za-z0-9]+)$/);
             if (del && request.method === 'DELETE') {
-                return json(await handleDelete(request, env, del[1]), {}, cors);
+                return json(await handleDelete(request, env, del[1], telemetry), {}, cors);
             }
 
             // --- moderation (issue #4), DID-gated admin ----------------------
             if (request.method === 'POST') {
                 if (path === '/admin/ban') {
-                    return json(await handleBan(request, env, await readJson(request)), {}, cors);
+                    return json(await handleBan(request, env, await readJson(request), telemetry), {}, cors);
                 }
                 if (path === '/admin/unban') {
-                    return json(await handleUnban(request, env, await readJson(request)), {}, cors);
+                    return json(await handleUnban(request, env, await readJson(request), telemetry), {}, cors);
                 }
                 if (path === '/admin/global') {
-                    return json(await handleToggleGlobal(request, env, await readJson(request)), {}, cors);
+                    return json(await handleToggleGlobal(request, env, await readJson(request), telemetry), {}, cors);
                 }
                 const banIp = path.match(/^\/admin\/comments\/([A-Za-z0-9]+)\/ban-ip$/);
                 if (banIp) {
-                    return json(await handleBanCommentIp(request, env, banIp[1], await readJson(request)), {}, cors);
+                    return json(
+                        await handleBanCommentIp(request, env, banIp[1], await readJson(request), telemetry),
+                        {},
+                        cors,
+                    );
                 }
                 const togglePost = path.match(/^\/admin\/posts\/([A-Za-z0-9]+)$/);
                 if (togglePost) {
-                    return json(await handleTogglePost(request, env, togglePost[1], await readJson(request)), {}, cors);
+                    return json(
+                        await handleTogglePost(request, env, togglePost[1], await readJson(request), telemetry),
+                        {},
+                        cors,
+                    );
                 }
             }
 

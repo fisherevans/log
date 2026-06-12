@@ -83,6 +83,24 @@ npm test          # vitest-pool-workers, against a fresh local D1 with migration
 npm run typecheck # tsc --noEmit
 ```
 
+## Observability (DataDog)
+
+The Worker ships to DataDog's HTTP intake via `ctx.waitUntil` (non-blocking,
+best-effort, no-op when `DATADOG_API_KEY` is unset). The org is on **US5** -
+override with the `DATADOG_SITE` var if that changes.
+
+- **Metric** `comment.created` (count), tagged `post:<id>`, `trust:new|trusted`,
+  `result:allowed|blocked`. Emitted on every create attempt, including blocked
+  ones, so the rate is the spike/anomaly signal.
+- **Logs** - one structured event per action (`comment`, `block`, `delete`,
+  `admin_delete`, `ban`, `unban`, `toggle_post`, `toggle_global`) to the logs
+  intake. This is the durable audit trail.
+
+**DataDog-side (config, not code):** create a monitor on the `comment.created`
+rate - an anomaly or threshold alert (e.g. sum > N over 5m) routed to the
+existing Discord webhook. This is provisioned in the DataDog org (or
+`nottingham-cloud terraform/datadog`), not from this repo.
+
 ## Deploy
 
 Driven from `nottingham-cloud` (`make *-comments-worker`), not from here. See
