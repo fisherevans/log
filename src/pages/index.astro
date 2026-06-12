@@ -1,14 +1,23 @@
 ---
-import { getCollection } from 'astro:content';
-import { postHref } from '../lib/posts';
+import { getCollection, render } from 'astro:content';
+import { hasMoreThanExcerpt, postHref } from '../lib/posts';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import PostList from '../components/PostList.astro';
+import SubscribeModal from '../components/SubscribeModal.astro';
+import { SITE_DESCRIPTION, SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-    .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const [featured, ...older] = posts;
+const { Content } = await render(featured);
+const PAGE_SIZE = 25;
+const olderFirstPage = older.slice(0, PAGE_SIZE);
+const hasMoreOlder = older.length > PAGE_SIZE;
+const featuredHasMore = hasMoreThanExcerpt(featured);
 ---
 
 <!doctype html>
@@ -18,76 +27,160 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft))
         <style>
             .intro {
                 margin: 0 0 2.5rem;
-                color: var(--muted);
-                font-style: italic;
+                color: var(--fg);
                 font-size: 1.05em;
+                line-height: 1.6;
             }
-            .post-list { display: flex; flex-direction: column; gap: 0; list-style: none; margin: 0; padding: 0; }
-            .post-list li {
-                padding: 1.25em 0;
+            .intro .linklike {
+                background: none;
+                border: none;
+                padding: 0;
+                font: inherit;
+                color: var(--accent);
+                cursor: pointer;
+                border-bottom: 1px dotted var(--accent);
+            }
+            .intro .linklike:hover {
+                color: var(--hover);
+            }
+
+            .section-label {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.72rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin: 0 0 1.1em;
+            }
+
+            .latest {
+                padding-bottom: 2.5rem;
+                margin-bottom: 2.5rem;
                 border-bottom: 1px solid var(--rule);
             }
-            .post-list li:first-child { padding-top: 0.5em; }
-            .post-list li:last-child { border-bottom: none; }
-            .post-list li::before { content: none; }
-            .post-list .title-link {
+            .feat-title {
+                margin: 0;
+                line-height: 1.15;
+            }
+            .feat-title a {
                 color: var(--fg);
-                border-bottom: 1px dotted transparent;
                 font-family: 'Marauder', serif;
                 font-weight: 700;
-                font-variation-settings: 'opsz' 20;
-                font-size: 1.5rem;
-                line-height: 1.2;
+                font-variation-settings: 'opsz' 28;
+                font-size: 2rem;
             }
-            .post-list .title-link:hover {
+            .feat-title a:hover {
                 color: var(--hover);
                 background-color: var(--hover-bg);
-                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
-                border-bottom: 1px solid var(--hover);
+                box-shadow:
+                    0.15em 0 0 var(--hover-bg),
+                    -0.15em 0 0 var(--hover-bg);
             }
-            .post-list .description {
-                margin: 0.4em 0 0;
-                color: var(--fg);
-                opacity: 0.85;
-            }
-            .post-list .row-meta {
-                margin-top: 0.5em;
+            .feat-meta {
+                margin: 0.6em 0 1.4em;
                 display: flex;
                 flex-wrap: wrap;
                 gap: 0.5em 1em;
                 align-items: baseline;
                 font-size: 0.85em;
             }
-            .post-list .date {
+            .feat-meta .date {
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.78em;
                 color: var(--muted);
                 letter-spacing: 0.03em;
             }
-            .post-list .chips { display: flex; flex-wrap: wrap; gap: 0.35em; }
+            .feat-meta .chips {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.35em;
+            }
+
+            /* Show only the first EXCERPT_BLOCKS (3) top-level blocks; the rest of
+               the post lives behind "Continue reading". Keep n+4 in sync with
+               EXCERPT_BLOCKS in lib/posts.ts. The child selectors are :global
+               because <Content/>'s rendered blocks don't carry this component's
+               scope attribute. */
+            .excerpt > :global(:nth-child(n + 4)) {
+                display: none;
+            }
+            .excerpt > :global(:first-child) {
+                margin-top: 0;
+            }
+            .continue {
+                display: inline-block;
+                margin-top: 1.4em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+                color: var(--accent);
+            }
+            .continue:hover {
+                color: var(--hover);
+            }
+
+            .older {
+                margin-top: 0.5rem;
+            }
+            .pagination {
+                margin-top: 2em;
+                display: flex;
+                justify-content: flex-end;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+            }
         </style>
     </head>
     <body>
         <Header />
         <main>
-            <p class="intro">{SITE_DESCRIPTION}</p>
-            <ul class="post-list">
-                {posts.map((post) => (
-                    <li>
-                        <a class="title-link" href={postHref(post)}>{post.data.title}</a>
-                        {post.data.description && <p class="description">{post.data.description}</p>}
-                        <div class="row-meta">
-                            <span class="date"><FormattedDate date={post.data.date} /></span>
-                            {post.data.tags.length > 0 && (
-                                <span class="chips">
-                                    {post.data.tags.map((tag) => <a class="chip" href={`/tags/${tag}/`}>{tag}</a>)}
-                                </span>
-                            )}
+            <p class="intro">
+                Welcome to my blog. You can <button type="button" class="linklike" data-subscribe-open
+                    >subscribe</button
+                > if you'd like. Or follow me, <a href={BLUESKY_PROFILE_URL}>@{BLUESKY_HANDLE}</a> on Bluesky.
+            </p>
+
+            <section class="latest">
+                <p class="section-label">Latest post</p>
+                <h2 class="feat-title"><a href={postHref(featured)}>{featured.data.title}</a></h2>
+                <div class="feat-meta">
+                    <span class="date"><FormattedDate date={featured.data.date} /></span>
+                    {
+                        featured.data.tags.length > 0 && (
+                            <span class="chips">
+                                {featured.data.tags.map((tag) => (
+                                    <a class="chip" href={`/tags/${tag}/`}>
+                                        {tag}
+                                    </a>
+                                ))}
+                            </span>
+                        )
+                    }
+                </div>
+                <div class="prose excerpt">
+                    <Content />
+                </div>
+                {
+                    featuredHasMore && (
+                        <a class="continue" href={`${postHref(featured)}#continue`}>
+                            Continue reading &rarr;
+                        </a>
+                    )
+                }
+            </section>
+
+            <section class="older">
+                <p class="section-label">Older posts</p>
+                <PostList posts={olderFirstPage} />
+                {
+                    hasMoreOlder && (
+                        <div class="pagination">
+                            <a href="/page/2">Older posts &rarr;</a>
                         </div>
-                    </li>
-                ))}
-            </ul>
+                    )
+                }
+            </section>
         </main>
+        <SubscribeModal />
         <Footer />
     </body>
 </html>

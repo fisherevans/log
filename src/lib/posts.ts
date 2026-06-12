@@ -22,3 +22,16 @@ export function postSlug(post: CollectionEntry<'posts'>): string {
 export function postHref(post: CollectionEntry<'posts'>): string {
     return `/posts/${postSlug(post)}/`;
 }
+
+// The landing page features the latest post's first EXCERPT_BLOCKS top-level
+// content blocks, then "Continue reading" jumps into the next block. This count
+// is shared by the landing CSS (which hides later blocks) and the post page
+// (which flashes block index EXCERPT_BLOCKS on a #continue load) so the cut and
+// the jump target line up. Keep them in sync if this changes.
+export const EXCERPT_BLOCKS = 3;
+
+// Rough check (markdown block count) for whether the excerpt actually truncates
+// the post - used to decide whether to show "Continue reading".
+export function hasMoreThanExcerpt(post: CollectionEntry<'posts'>): boolean {
+    return post.body != null && post.body.trim().split(/\n{2,}/).filter(Boolean).length > EXCERPT_BLOCKS;
+}

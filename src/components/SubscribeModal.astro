@@ -1,0 +1,80 @@
+---
+// A modal wrapper around the email form, opened by any [data-subscribe-open]
+// element on the page (e.g. the landing-page intro "subscribe" link). The form
+// itself is the shared SubscribeForm; its client script wires the submit.
+import SubscribeForm from './SubscribeForm.astro';
+---
+
+<div class="submodal-back" data-subscribe-modal hidden>
+    <div class="submodal" role="dialog" aria-modal="true" aria-label="Subscribe by email">
+        <button class="submodal-close" type="button" data-subscribe-close aria-label="Close">&times;</button>
+        <SubscribeForm />
+    </div>
+</div>
+
+<style>
+    .submodal-back {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5em;
+        background: rgba(0, 0, 0, 0.55);
+    }
+    .submodal-back[hidden] {
+        display: none;
+    }
+    .submodal {
+        position: relative;
+        background: var(--bg);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        padding: 1.6em 1.6em 1.4em;
+        max-width: 30em;
+        width: 100%;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    .submodal-close {
+        position: absolute;
+        top: 0.5em;
+        right: 0.6em;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.2em;
+    }
+    .submodal-close:hover {
+        color: var(--fg);
+    }
+</style>
+
+<script>
+    const back = document.querySelector<HTMLElement>('[data-subscribe-modal]');
+    if (back) {
+        const open = () => {
+            back.hidden = false;
+            back.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+        };
+        const close = () => {
+            back.hidden = true;
+        };
+        document.querySelectorAll('[data-subscribe-open]').forEach((el) =>
+            el.addEventListener('click', (e) => {
+                e.preventDefault();
+                open();
+            }),
+        );
+        back.querySelector('[data-subscribe-close]')?.addEventListener('click', close);
+        back.addEventListener('click', (e) => {
+            if (e.target === back) close();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !back.hidden) close();
+        });
+    }
+</script>

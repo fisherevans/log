@@ -90,5 +90,22 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
             </article>
         </main>
         <Footer />
+        <script>
+            // Arriving from the landing page's "Continue reading" link: jump to
+            // and briefly highlight the first block past the excerpt. Index 3 =
+            // EXCERPT_BLOCKS (lib/posts.ts) - the landing shows blocks 0-2.
+            if (location.hash === '#continue') {
+                requestAnimationFrame(() => {
+                    const target = document.querySelectorAll('.prose > *')[3];
+                    if (target instanceof HTMLElement) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        target.animate(
+                            [{ backgroundColor: 'rgba(224, 160, 80, 0.18)' }, { backgroundColor: 'rgba(224, 160, 80, 0)' }],
+                            { duration: 2000, easing: 'ease-out' },
+                        );
+                    }
+                });
+            }
+        </script>
     </body>
 </html>
