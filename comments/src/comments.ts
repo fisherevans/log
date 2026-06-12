@@ -13,6 +13,7 @@ import {
     softDeleteComment,
 } from './db';
 import { mintId } from './ids';
+import { enforceAbuse } from './abuse';
 
 const MAX_BODY = 4000;
 
@@ -85,10 +86,11 @@ export async function handleCreate(request: Request, env: Env, body: CreateBody)
     }
 
     // --- abuse checks (issue #4) ------------------------------------------
-    // Turnstile verification, ban-list checks, per-IP/per-DID rate limiting, and
-    // progressive-trust caps are inserted here by issue #4, before the insert.
+    // Turnstile, ban lists, per-IP/per-DID rate limiting, and progressive-trust
+    // caps, cheapest-first. Throws 403/429 to reject before the insert.
     const ip = clientIp(request);
     const ipHash = await maybeHashIp(env, ip);
+    await enforceAbuse(env, identity, ipHash, body.turnstileToken, ip);
 
     const id = mintId();
     const createdAt = Date.now();
