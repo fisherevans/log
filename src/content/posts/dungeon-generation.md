@@ -1,4 +1,5 @@
 ---
+id: nLzzUwANLa
 title: Dungeon Generation
 date: 2014-05-18
 description: "Algorithmic dungeon generation: random rooms, hallway carving, and

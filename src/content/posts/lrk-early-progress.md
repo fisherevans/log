@@ -1,4 +1,5 @@
 ---
+id: CdD3kCbMmM
 title: Lost Relics of Kazar - early progress
 date: 2013-07-08
 description: "First leg of Lost Relics of Kazar: early adventure-mode demos and

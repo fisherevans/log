@@ -1,4 +1,5 @@
 ---
+id: InTq4USBbA
 title: Syncing my calendars, both ways
 date: 2026-06-04
 description: A small tool that keeps my work and personal calendars in sync in both directions - personal life blocks off my work day, and my work day shows up on my phone.

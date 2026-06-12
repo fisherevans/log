@@ -1,4 +1,5 @@
 ---
+id: eTBzz39Ubi
 title: 2D Lighting and Shadows
 date: 2013-08-16
 description: How I built dynamic 2D lighting and shadows for a Slick2D game

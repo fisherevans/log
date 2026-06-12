@@ -1,4 +1,5 @@
 ---
+id: z1GeYp5S0q
 title: Lost Relics of Kazar - lighting
 date: 2013-08-16
 description: "Final leg of the Lost Relics of Kazar project: a 2D lighting
