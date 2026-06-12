@@ -1,4 +1,5 @@
 ---
+id: UTnTV91Ilq
 title: "Pokemon: Rocket Edition - Learnsets"
 date: 2023-09-18
 description: A reference dump of the tweaked evolutions and level-up movesets in

@@ -1,4 +1,5 @@
 ---
+id: nBe0IqJgX0
 title: GIFLooper
 date: 2014-06-24
 description: A little tool to turn a GIF into a perfect loop, made back when

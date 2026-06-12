@@ -1,4 +1,5 @@
 ---
+id: zX409mv80o
 title: Every blog has a first post
 date: 2026-05-31
 description: 'The first post of the blog (edit: kind of)'

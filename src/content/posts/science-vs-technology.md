@@ -1,4 +1,5 @@
 ---
+id: vd0z98td5X
 title: Science vs. Technology
 date: 2015-05-26
 description: A small informal survey on whether people think science or

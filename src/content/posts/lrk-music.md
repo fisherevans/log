@@ -1,4 +1,5 @@
 ---
+id: zRMOJJR0iX
 title: Lost Relics of Kazar - music and progress
 date: 2013-08-12
 description: "Third leg of Lost Relics of Kazar: music system and the next round

@@ -1,4 +1,5 @@
 ---
+id: ugPDHzB8VD
 title: Rechargeable Glow-Disc Box
 date: 2021-11-23
 description: A portable, rechargeable, UV-charging box for glow discs - with

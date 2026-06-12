@@ -1,4 +1,5 @@
 ---
+id: jYdwxRAJrh
 title: Lost Relics of Kazar - notifications
 date: 2013-07-29
 description: "Second leg of Lost Relics of Kazar: in-game notification system

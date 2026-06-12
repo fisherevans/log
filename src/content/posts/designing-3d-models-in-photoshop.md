@@ -1,4 +1,5 @@
 ---
+id: J68byuBssE
 title: Designing 3D Models in Photoshop
 date: 2023-11-27
 description: A workflow for designing custom plaques, tags, and signs by
