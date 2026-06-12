@@ -531,6 +531,26 @@ const { postId } = Astro.props;
         accent-color: var(--accent);
         cursor: pointer;
     }
+
+    /* --- edits (#15) ------------------------------------------------------- */
+
+    /* "edited" marker: a quiet magnitude indicator, not a link to old text. */
+    .comments :global(.comment-edited) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.72rem;
+        color: var(--muted);
+        font-style: italic;
+        margin-left: 0.5em;
+        cursor: help;
+    }
+    .comments :global(.comment-editor) {
+        margin: 0.4em 0 0.2em;
+    }
+    .comments :global(.comment-editor-actions) {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+    }
 </style>
 
 <script>
