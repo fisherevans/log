@@ -46,9 +46,11 @@ function el(tag: string, attrs: Attrs = {}, ...kids: (Node | string)[]): HTMLEle
     return node;
 }
 
-// A reply arrow icon. innerHTML is a fixed trusted constant (never user input).
+// Icons. innerHTML is a fixed trusted constant (never user input).
 const REPLY_SVG =
     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3.5 3 7l4 3.5"/><path d="M3 7h6.5a3.5 3.5 0 0 1 3.5 3.5V12"/></svg>';
+const MENU_SVG =
+    '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.4"/><circle cx="8" cy="8" r="1.4"/><circle cx="13" cy="8" r="1.4"/></svg>';
 function icon(svg: string): HTMLElement {
     const s = document.createElement('span');
     s.className = 'comment-icon';
@@ -102,6 +104,8 @@ class CommentsWidget {
     private me: Me = { loggedIn: false };
     private comments: Comment[] = [];
     private enabled = true;
+    private hashApplied = false;
+    private hashBound = false;
 
     constructor(
         private root: HTMLElement,
@@ -110,6 +114,15 @@ class CommentsWidget {
     ) {}
 
     async init() {
+        // Same-document hash navigation (a shared permalink opened while already
+        // on the page) doesn't reload, so jump on hashchange too.
+        if (!this.hashBound) {
+            this.hashBound = true;
+            window.addEventListener('hashchange', () => {
+                const m = location.hash.match(/^#comment-([A-Za-z0-9]+)$/);
+                if (m) this.gotoComment(m[1]);
+            });
+        }
         this.setStatus('Loading comments…');
         try {
             const [me, data] = await Promise.all([
@@ -147,6 +160,7 @@ class CommentsWidget {
             frag.append(this.thread());
         }
         this.root.replaceChildren(frag);
+        this.maybeApplyHash();
     }
 
     private headingText(): string {
@@ -204,16 +218,14 @@ class CommentsWidget {
         }
 
         const actions = el('div', { class: 'comment-actions' });
-        if (!c.deleted && this.me.loggedIn && this.me.did === c.author.did) {
-            actions.append(el('button', { class: 'comment-link', type: 'button', click: () => this.delete(c) }, 'delete'));
-        }
+        if (!c.deleted) actions.append(this.actionsMenu(c));
         if (!c.deleted && this.me.loggedIn) {
             const reply = el('button', { class: 'comment-link comment-action-reply', type: 'button', title: 'Reply', 'aria-label': 'Reply', click: () => this.openReply(c) });
             reply.append(icon(REPLY_SVG));
             actions.append(reply);
         }
 
-        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id }, head, body, actions);
+        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id, id: `comment-${c.id}` }, head, body, actions);
     }
 
     // Inline composer. parent=null for the top-level box; a comment for a reply.
@@ -334,6 +346,129 @@ class CommentsWidget {
             handle,
             btn,
         );
+    }
+
+    // Per-comment "..." menu (#13). Universal items (permalink, copy, navigate)
+    // for everyone; the author's delete folds in here. Admin moderation items
+    // (ban, delete-others) land with the admin modal in #14.
+    private actionsMenu(c: Comment): HTMLElement {
+        const wrap = el('div', { class: 'comment-menu' });
+        const btn = el('button', {
+            class: 'comment-link comment-menu-btn',
+            type: 'button',
+            title: 'More',
+            'aria-label': 'More actions',
+            'aria-haspopup': 'menu',
+        });
+        btn.append(icon(MENU_SVG));
+        const pop = el('div', { class: 'comment-menu-pop', role: 'menu', hidden: 'hidden' });
+
+        const close = () => {
+            pop.hidden = true;
+            document.removeEventListener('click', onDoc, true);
+        };
+        const onDoc = (e: Event) => {
+            if (!wrap.contains(e.target as Node)) close();
+        };
+        const item = (label: string, onClick: () => void, cls = '') =>
+            el('button', { class: `comment-menu-item ${cls}`.trim(), type: 'button', role: 'menuitem', click: () => { close(); onClick(); } }, label);
+
+        pop.append(item('Permalink', () => this.copyPermalink(c)));
+        pop.append(item('Copy markdown', () => this.copyMarkdown(c)));
+        pop.append(item('Copy rich text', () => this.copyRich(c)));
+        if (c.parentId) pop.append(item('View parent', () => this.gotoComment(c.parentId!)));
+        if (this.comments.some((x) => x.parentId === c.id)) pop.append(item('View replies', () => this.gotoFirstChild(c.id)));
+        if (this.me.loggedIn && this.me.did === c.author.did) {
+            pop.append(item('Delete', () => this.delete(c), 'comment-menu-danger'));
+        }
+
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (pop.hidden) {
+                pop.hidden = false;
+                document.addEventListener('click', onDoc, true);
+            } else close();
+        });
+        wrap.append(btn, pop);
+        return wrap;
+    }
+
+    private permalink(c: Comment): string {
+        return `${location.origin}${location.pathname}#comment-${c.id}`;
+    }
+
+    private async copyPermalink(c: Comment) {
+        const url = this.permalink(c);
+        history.replaceState(null, '', `#comment-${c.id}`);
+        this.gotoComment(c.id);
+        await this.copy(() => navigator.clipboard.writeText(url), 'Permalink copied');
+    }
+
+    private async copyMarkdown(c: Comment) {
+        await this.copy(() => navigator.clipboard.writeText(c.body), 'Markdown copied');
+    }
+
+    // Rich copy: HTML (sanitized via the same render path) + a plain-text fallback
+    // so pasting into a doc keeps formatting, but a plain target still works.
+    private async copyRich(c: Comment) {
+        const html = renderMarkdown(c.body);
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        const text = tmp.textContent ?? c.body;
+        await this.copy(async () => {
+            if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({
+                        'text/html': new Blob([html], { type: 'text/html' }),
+                        'text/plain': new Blob([text], { type: 'text/plain' }),
+                    }),
+                ]);
+            } else {
+                await navigator.clipboard.writeText(text);
+            }
+        }, 'Copied');
+    }
+
+    private async copy(run: () => Promise<unknown>, ok: string) {
+        try {
+            await run();
+            this.toast(ok);
+        } catch {
+            this.toast('Copy failed');
+        }
+    }
+
+    private gotoComment(id: string) {
+        const li = this.root.querySelector<HTMLElement>(`li.comment[data-id="${id}"]`);
+        if (!li) return;
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.remove('comment-flash');
+        void li.offsetWidth; // reflow so the animation restarts on repeat clicks
+        li.classList.add('comment-flash');
+    }
+
+    private gotoFirstChild(id: string) {
+        const kid = this.comments.find((x) => x.parentId === id);
+        if (kid) this.gotoComment(kid.id);
+    }
+
+    // On first render, if the URL targets a comment (#comment-<id>), land on it.
+    private maybeApplyHash() {
+        if (this.hashApplied) return;
+        const m = location.hash.match(/^#comment-([A-Za-z0-9]+)$/);
+        if (!m) return;
+        this.hashApplied = true;
+        requestAnimationFrame(() => this.gotoComment(m[1]));
+    }
+
+    private toast(msg: string) {
+        const t = el('div', { class: 'comment-toast' }, msg);
+        document.body.append(t);
+        requestAnimationFrame(() => t.classList.add('comment-toast-show'));
+        setTimeout(() => {
+            t.classList.remove('comment-toast-show');
+            setTimeout(() => t.remove(), 250);
+        }, 1600);
     }
 
     private async delete(c: Comment) {

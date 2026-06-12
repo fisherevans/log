@@ -411,6 +411,94 @@ const { postId } = Astro.props;
         border-radius: 4px;
         padding: 0.05em 0.35em;
     }
+
+    /* --- "..." actions menu (#13) ------------------------------------------ */
+
+    .comments :global(.comment-menu) {
+        position: relative;
+        display: inline-flex;
+    }
+    .comments :global(.comment-menu-btn) {
+        display: inline-flex;
+        align-items: center;
+    }
+    .comments :global(.comment-menu-pop[hidden]) {
+        display: none;
+    }
+    .comments :global(.comment-menu-pop) {
+        position: absolute;
+        top: calc(100% + 0.35em);
+        left: 0;
+        z-index: 20;
+        min-width: 11em;
+        display: flex;
+        flex-direction: column;
+        padding: 0.3em;
+        background: var(--bg);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    }
+    .comments :global(.comment-menu-item) {
+        text-align: left;
+        background: none;
+        border: none;
+        border-radius: 5px;
+        padding: 0.45em 0.6em;
+        cursor: pointer;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.85rem;
+        color: var(--fg);
+    }
+    .comments :global(.comment-menu-item:hover) {
+        background: var(--hover-bg);
+        color: var(--hover);
+    }
+    .comments :global(.comment-menu-danger) {
+        color: #e0683c;
+    }
+    .comments :global(.comment-menu-danger:hover) {
+        background: rgba(224, 104, 60, 0.14);
+        color: #e0683c;
+    }
+
+    /* Permalink target highlight (#16): a brief accent wash on the landed comment. */
+    .comments :global(.comment-flash) {
+        animation: comment-flash 2s ease-out;
+    }
+    @keyframes comment-flash {
+        0%,
+        25% {
+            background: color-mix(in srgb, var(--accent) 16%, transparent);
+        }
+        100% {
+            background: transparent;
+        }
+    }
+
+    /* Transient copy/permalink feedback. */
+    :global(.comment-toast) {
+        position: fixed;
+        left: 50%;
+        bottom: 2em;
+        transform: translate(-50%, 0.6em);
+        z-index: 1100;
+        padding: 0.55em 1em;
+        background: var(--fg);
+        color: var(--bg);
+        border-radius: 999px;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        font-size: 0.82rem;
+        opacity: 0;
+        transition:
+            opacity 0.2s,
+            transform 0.2s;
+        pointer-events: none;
+    }
+    :global(.comment-toast-show) {
+        opacity: 0.95;
+        transform: translate(-50%, 0);
+    }
 </style>
 
 <script>
