@@ -1,52 +1,47 @@
 ---
-// Subscribe CTA (issue #7): prominent RSS + a native email form posting to the
-// comments Worker. Occasional, big-posts-only emails, sent manually - no send
-// automation. RSS auto-discovery is already in the page head; this surfaces it.
-import { COMMENTS_API_URL, BLUESKY_PROFILE_URL } from '../consts';
+// Subscribe CTA (issue #7), compact for the site footer. A native email form
+// posting to the comments Worker (emails land in D1, sent manually - no
+// automation), plus the follow options. Deliberately subtle: this is footer
+// furniture, not blog-post content.
+import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
 ---
 
 <section class="subscribe" aria-label="Subscribe">
-    <div class="subscribe-inner">
-        <p class="subscribe-lede">
-            Get new posts when they land. Occasional, big-posts-only - no noise.
-        </p>
-        <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
-            <div class="subscribe-row">
-                <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
-                <button type="submit">Subscribe</button>
-            </div>
-            <div data-subscribe-turnstile class="subscribe-turnstile"></div>
-            <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
-        </form>
-        <p class="subscribe-rss">
-            Or <a href={BLUESKY_PROFILE_URL} rel="me">follow on Bluesky</a>, or grab the <a href="/rss.xml">RSS feed</a>.
-        </p>
-    </div>
+    <p class="subscribe-lede">Get new posts by email. Occasional, big-posts-only - no noise.</p>
+    <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
+        <div class="subscribe-row">
+            <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+            <button type="submit">Subscribe</button>
+        </div>
+        <div data-subscribe-turnstile class="subscribe-turnstile"></div>
+        <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
+    </form>
+    <p class="subscribe-alt">
+        Or follow <a href={BLUESKY_PROFILE_URL} rel="me">@{BLUESKY_HANDLE} on Bluesky</a>, or grab the <a href="/rss.xml">RSS feed</a>.
+    </p>
 </section>
 
 <style>
     .subscribe {
-        max-width: var(--max-width);
-        margin: 2.5em auto 0;
-        padding: 1.5em 1em 0;
-        border-top: 1px solid var(--rule);
+        font-size: 0.85rem;
     }
     .subscribe-lede {
-        margin: 0 0 0.9em;
-        color: var(--fg);
+        margin: 0 0 0.7em;
+        color: var(--muted);
     }
     .subscribe-row {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.5em;
+        gap: 0.4em;
+        max-width: 30em;
     }
     .subscribe-form input[type='email'] {
-        flex: 1 1 16em;
+        flex: 1 1 14em;
         background: var(--code-bg);
         color: var(--fg);
         border: 1px solid var(--rule);
-        border-radius: 6px;
-        padding: 0.55em 0.7em;
+        border-radius: 5px;
+        padding: 0.45em 0.6em;
         font: inherit;
     }
     .subscribe-form input[type='email']:focus-visible {
@@ -55,24 +50,22 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL } from '../consts';
     }
     .subscribe-form button {
         font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.85rem;
-        letter-spacing: 0.03em;
+        font-size: 0.78rem;
+        letter-spacing: 0.02em;
         background: transparent;
-        color: var(--accent);
+        color: var(--muted);
         border: 1px solid var(--rule);
-        border-radius: 6px;
-        padding: 0.5em 1em;
+        border-radius: 5px;
+        padding: 0.45em 0.85em;
         cursor: pointer;
         transition:
             color 0.15s,
-            background 0.15s,
             border-color 0.15s;
     }
     .subscribe-form button:hover,
     .subscribe-form button:focus-visible {
-        background: var(--hover-bg);
-        color: var(--hover);
-        border-color: var(--hover-bg);
+        color: var(--accent);
+        border-color: var(--accent);
         outline: none;
     }
     .subscribe-form button:disabled {
@@ -83,20 +76,17 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL } from '../consts';
         display: none;
     }
     .subscribe-turnstile {
-        margin-top: 0.6em;
+        margin-top: 0.5em;
     }
     .subscribe-status:empty {
         display: none;
     }
     .subscribe-status {
-        margin: 0.6em 0 0;
+        margin: 0.5em 0 0;
         color: var(--muted);
-        font-size: 0.9rem;
     }
-    .subscribe-rss {
-        margin: 0.9em 0 0;
-        font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.82rem;
+    .subscribe-alt {
+        margin: 0.7em 0 0;
         color: var(--muted);
     }
 </style>
