@@ -118,3 +118,99 @@ export async function setPostEnabled(db: D1Database, postId: string, enabled: bo
         .bind(postId, enabled ? 1 : 0)
         .run();
 }
+
+// ---- bans -------------------------------------------------------------------
+
+export type BanSubject = 'did' | 'ip';
+
+// True if either the DID or the ip_hash is on the ban list. ipHash may be null
+// (no salt configured / no IP), in which case only the DID is checked.
+export async function isBanned(db: D1Database, did: string, ipHash: string | null): Promise<boolean> {
+    const row = await db
+        .prepare(
+            `SELECT 1 FROM bans
+             WHERE (subject_type = 'did' AND subject = ?1)
+                OR (subject_type = 'ip' AND ?2 IS NOT NULL AND subject = ?2)
+             LIMIT 1`,
+        )
+        .bind(did, ipHash)
+        .first<{ 1: number }>();
+    return row != null;
+}
+
+export async function addBan(
+    db: D1Database,
+    type: BanSubject,
+    subject: string,
+    reason: string | null,
+    when: number,
+): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO bans (subject_type, subject, reason, created_at) VALUES (?, ?, ?, ?)
+             ON CONFLICT(subject_type, subject) DO UPDATE SET reason = excluded.reason`,
+        )
+        .bind(type, subject, reason, when)
+        .run();
+}
+
+export async function removeBan(db: D1Database, type: BanSubject, subject: string): Promise<void> {
+    await db.prepare(`DELETE FROM bans WHERE subject_type = ? AND subject = ?`).bind(type, subject).run();
+}
+
+// ---- rate limiting + reputation --------------------------------------------
+
+// Count a DID's comments since a cutoff (epoch ms). Includes deleted rows so
+// delete-and-repost can't defeat the flood cap.
+export async function countByDidSince(db: D1Database, did: string, since: number): Promise<number> {
+    const row = await db
+        .prepare(`SELECT COUNT(*) AS n FROM comments WHERE author_did = ? AND created_at >= ?`)
+        .bind(did, since)
+        .first<{ n: number }>();
+    return row?.n ?? 0;
+}
+
+export async function countByIpSince(db: D1Database, ipHash: string, since: number): Promise<number> {
+    const row = await db
+        .prepare(`SELECT COUNT(*) AS n FROM comments WHERE ip_hash = ? AND created_at >= ?`)
+        .bind(ipHash, since)
+        .first<{ n: number }>();
+    return row?.n ?? 0;
+}
+
+// A DID's lifetime comment count (including deleted), for progressive trust.
+export async function lifetimeCountByDid(db: D1Database, did: string): Promise<number> {
+    const row = await db
+        .prepare(`SELECT COUNT(*) AS n FROM comments WHERE author_did = ?`)
+        .bind(did)
+        .first<{ n: number }>();
+    return row?.n ?? 0;
+}
+
+export interface Reputation {
+    author_did: string;
+    first_seen_at: number;
+    account_created_at: number | null;
+}
+
+export async function getReputation(db: D1Database, did: string): Promise<Reputation | null> {
+    return await db.prepare(`SELECT * FROM did_reputation WHERE author_did = ?`).bind(did).first<Reputation>();
+}
+
+// Record a DID's first sighting (no-op if already present). accountCreatedAt is
+// the Bluesky account age captured at login; backfilled if it arrives later.
+export async function recordFirstSeen(
+    db: D1Database,
+    did: string,
+    when: number,
+    accountCreatedAt: number | null,
+): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO did_reputation (author_did, first_seen_at, account_created_at) VALUES (?, ?, ?)
+             ON CONFLICT(author_did) DO UPDATE SET
+               account_created_at = COALESCE(excluded.account_created_at, did_reputation.account_created_at)`,
+        )
+        .bind(did, when, accountCreatedAt)
+        .run();
+}

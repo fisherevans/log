@@ -12,6 +12,9 @@ export interface Identity {
     handle: string | null;
     displayName: string | null;
     avatar: string | null;
+    // Bluesky account creation time (epoch ms), captured at login when available.
+    // Feeds progressive trust (an old account skips the new-account cap).
+    accountCreatedAt?: number | null;
 }
 
 export async function getIdentity(request: Request, env: Env): Promise<Identity | null> {

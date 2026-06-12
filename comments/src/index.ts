@@ -12,6 +12,13 @@
 import type { Env } from './env';
 import { corsHeaders, errorResponse, json, readJson } from './http';
 import { handleCreate, handleDelete, handleList } from './comments';
+import {
+    handleBan,
+    handleBanCommentIp,
+    handleTogglePost,
+    handleToggleGlobal,
+    handleUnban,
+} from './moderation';
 
 export default {
     async fetch(request: Request, env: Env, _ctx: ExecutionContext): Promise<Response> {
@@ -43,6 +50,27 @@ export default {
             const del = path.match(/^\/comments\/([A-Za-z0-9]+)$/);
             if (del && request.method === 'DELETE') {
                 return json(await handleDelete(request, env, del[1]), {}, cors);
+            }
+
+            // --- moderation (issue #4), DID-gated admin ----------------------
+            if (request.method === 'POST') {
+                if (path === '/admin/ban') {
+                    return json(await handleBan(request, env, await readJson(request)), {}, cors);
+                }
+                if (path === '/admin/unban') {
+                    return json(await handleUnban(request, env, await readJson(request)), {}, cors);
+                }
+                if (path === '/admin/global') {
+                    return json(await handleToggleGlobal(request, env, await readJson(request)), {}, cors);
+                }
+                const banIp = path.match(/^\/admin\/comments\/([A-Za-z0-9]+)\/ban-ip$/);
+                if (banIp) {
+                    return json(await handleBanCommentIp(request, env, banIp[1], await readJson(request)), {}, cors);
+                }
+                const togglePost = path.match(/^\/admin\/posts\/([A-Za-z0-9]+)$/);
+                if (togglePost) {
+                    return json(await handleTogglePost(request, env, togglePost[1], await readJson(request)), {}, cors);
+                }
             }
 
             return json({ error: 'not found' }, { status: 404 }, cors);
