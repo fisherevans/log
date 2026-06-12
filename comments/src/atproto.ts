@@ -18,33 +18,39 @@
 // most likely place to need adjustment.
 import type { OAuthClient } from '@atproto/oauth-client';
 import type { Env } from './env';
-import { HttpError } from './http';
+import { errorChain, HttpError } from './http';
 import { createSession, destroySession } from './session';
 import { getIdentity } from './identity';
 
 // ---- Workers runtime shim ---------------------------------------------------
 //
-// The atproto resolver libs (@atproto-labs/fetch, used by the handle + DID
-// resolvers) construct `new Request(url, { redirect: 'error' })`. The Workers
-// runtime rejects 'error' at Request-construction time ("Invalid redirect
-// value"), so the OAuth dance dies before any fetch runs. Patch the global
-// Request constructor once to coerce 'error' -> 'manual' (these endpoints don't
-// redirect on success, so it's equivalent). Idempotent; harmless for every other
-// Request. This is the edge-runtime analog of what @atproto/oauth-client-node
-// gets for free on Node.
+// The atproto resolver libs (@atproto-labs/fetch) construct Requests with two
+// fields the Workers runtime rejects at construction time:
+//  - `redirect: 'error'`  -> "Invalid redirect value" (Workers allows only
+//    'follow'/'manual'). Coerce to 'manual'; these endpoints don't redirect on
+//    success, so it's equivalent.
+//  - `cache: 'no-store'`  -> "The 'cache' field ... is not implemented." Drop it;
+//    Workers' fetch honors cache-control headers by default, which is fine here.
+// Without this the OAuth dance dies before any fetch runs (jwks worked because it
+// builds no requests; /oauth/login + /callback resolve PDS metadata and hit it).
+// Patch the global Request constructor once (idempotent; harmless for every other
+// Request). The edge-runtime analog of what @atproto/oauth-client-node gets free.
+function sanitizeRequestInit<T extends RequestInit>(init?: T): T | undefined {
+    if (!init || (init.redirect !== 'error' && !('cache' in init))) return init;
+    const clone = { ...init };
+    if (clone.redirect === 'error') clone.redirect = 'manual';
+    delete (clone as { cache?: unknown }).cache;
+    return clone;
+}
 {
     const BaseRequest = globalThis.Request;
-    if (!(BaseRequest as { __redirectPatched?: boolean }).__redirectPatched) {
+    if (!(BaseRequest as { __atprotoPatched?: boolean }).__atprotoPatched) {
         class PatchedRequest extends BaseRequest {
             constructor(input: RequestInfo | URL, init?: RequestInit) {
-                if (init?.redirect === 'error') {
-                    super(input, { ...init, redirect: 'manual' });
-                } else {
-                    super(input, init);
-                }
+                super(input, sanitizeRequestInit(init));
             }
         }
-        (PatchedRequest as { __redirectPatched?: boolean }).__redirectPatched = true;
+        (PatchedRequest as { __atprotoPatched?: boolean }).__atprotoPatched = true;
         globalThis.Request = PatchedRequest as unknown as typeof Request;
     }
 }
@@ -110,17 +116,10 @@ const DIGEST_NAMES: Record<string, string> = {
     sha512: 'SHA-512',
 };
 
-// Workers' fetch rejects redirect: 'error'. The atproto resolvers use it in two
-// forms - as an init option and baked into a Request - so normalize both to
-// 'manual' (the resolver endpoints don't redirect on success).
+// Same sanitizing for the fetch() init form (the Request-construction form is
+// handled by the global Request patch above): strip redirect:'error' / cache.
 function workersFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-    if (init?.redirect === 'error') {
-        return globalThis.fetch(input, { ...init, redirect: 'manual' });
-    }
-    if (input instanceof Request && input.redirect === 'error') {
-        return globalThis.fetch(new Request(input, { redirect: 'manual' }), init);
-    }
-    return globalThis.fetch(input, init);
+    return globalThis.fetch(input, sanitizeRequestInit(init));
 }
 
 async function getClient(env: Env): Promise<OAuthClient> {
@@ -187,46 +186,83 @@ export async function handleJwks(env: Env): Promise<Response> {
     return Response.json(client.jwks);
 }
 
+// /oauth/login + /oauth/callback are full-page browser navigations, so on error
+// they get a small styled HTML page with a link back to the blog - not the raw
+// JSON the API routes return. The real error is logged for the operator.
+function oauthErrorPage(env: Env, status: number, message: string): Response {
+    const blog = env.ALLOWED_ORIGIN;
+    const safe = message.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+    const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign-in problem</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.6 system-ui, sans-serif; margin: 0; min-height: 100vh;
+         display: grid; place-items: center; background: #faf9f7; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) { body { background: #16140f; color: #ece8e0; } }
+  main { max-width: 30rem; padding: 2rem; text-align: center; }
+  h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  p { margin: .5rem 0; color: #6b6357; }
+  a { color: inherit; }
+</style></head>
+<body><main>
+  <h1>Couldn't finish signing in</h1>
+  <p>${safe}</p>
+  <p><a href="${blog}">&larr; Back to the blog</a></p>
+</main></body></html>`;
+    return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+}
+
 // GET /oauth/login?handle=alice.bsky.social  -> 302 to the user's auth server.
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
     const handle = new URL(request.url).searchParams.get('handle')?.trim();
-    if (!handle) throw new HttpError(400, 'handle required');
-    const client = await getClient(env);
-    const url = await client.authorize(handle, { scope: 'atproto' });
-    return Response.redirect(url.toString(), 302);
+    if (!handle) return oauthErrorPage(env, 400, 'No Bluesky handle was provided.');
+    try {
+        const client = await getClient(env);
+        const url = await client.authorize(handle, { scope: 'atproto' });
+        return Response.redirect(url.toString(), 302);
+    } catch (err) {
+        console.error('oauth login failed', errorChain(err), (err as Error)?.stack);
+        return oauthErrorPage(env, 502, `Couldn't start sign-in for "${handle}". Double-check the handle and try again.`);
+    }
 }
 
 // GET /oauth/callback?...  -> verify, capture profile, mint session, back to blog.
 export async function handleCallback(request: Request, env: Env): Promise<Response> {
     const params = new URL(request.url).searchParams;
     // The auth server can redirect back with an OAuth error (e.g. the user
-    // declined consent: ?error=access_denied). Surface it as a clean 400 rather
-    // than letting client.callback throw an opaque 500.
+    // declined consent: ?error=access_denied).
     const authError = params.get('error');
     if (authError) {
-        throw new HttpError(400, `Bluesky sign-in failed: ${params.get('error_description') || authError}`);
+        return oauthErrorPage(env, 400, `Bluesky sign-in was cancelled or failed: ${params.get('error_description') || authError}`);
     }
     if (!params.get('code') || !params.get('state')) {
-        throw new HttpError(400, 'Missing OAuth callback parameters (code/state)');
+        return oauthErrorPage(env, 400, 'This sign-in link is missing required parameters.');
     }
-    const client = await getClient(env);
-    const { session } = await client.callback(params);
-    const did = session.did;
+    try {
+        const client = await getClient(env);
+        const { session } = await client.callback(params);
+        const did = session.did;
 
-    const profile = await fetchProfile(did);
-    const setCookie = await createSession(env, {
-        did,
-        handle: profile.handle,
-        displayName: profile.displayName,
-        avatar: profile.avatar,
-        accountCreatedAt: profile.accountCreatedAt,
-    });
+        const profile = await fetchProfile(did);
+        const setCookie = await createSession(env, {
+            did,
+            handle: profile.handle,
+            displayName: profile.displayName,
+            avatar: profile.avatar,
+            accountCreatedAt: profile.accountCreatedAt,
+        });
 
-    // Back to the blog. The session cookie rides along on the redirect response.
-    return new Response(null, {
-        status: 302,
-        headers: { Location: env.ALLOWED_ORIGIN, 'Set-Cookie': setCookie },
-    });
+        // Back to the blog. The session cookie rides along on the redirect response.
+        return new Response(null, {
+            status: 302,
+            headers: { Location: env.ALLOWED_ORIGIN, 'Set-Cookie': setCookie },
+        });
+    } catch (err) {
+        console.error('oauth callback failed', errorChain(err), (err as Error)?.stack);
+        return oauthErrorPage(env, 502, 'Something went wrong completing your Bluesky sign-in. Please try again.');
+    }
 }
 
 // GET /oauth/me  -> who's logged in (for the UI to render sign-in state).
