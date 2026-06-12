@@ -15,6 +15,7 @@ import {
 import { mintId } from './ids';
 import { enforceAbuse } from './abuse';
 import { hashIp } from './hash';
+import type { Telemetry } from './datadog';
 
 const MAX_BODY = 4000;
 
@@ -66,7 +67,12 @@ interface CreateBody {
 }
 
 // POST /comments  -> the created comment. Auth required.
-export async function handleCreate(request: Request, env: Env, body: CreateBody): Promise<unknown> {
+export async function handleCreate(
+    request: Request,
+    env: Env,
+    body: CreateBody,
+    telemetry: Telemetry,
+): Promise<unknown> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'sign in to comment');
 
@@ -91,7 +97,20 @@ export async function handleCreate(request: Request, env: Env, body: CreateBody)
     // caps, cheapest-first. Throws 403/429 to reject before the insert.
     const ip = clientIp(request);
     const ipHash = await hashIp(env, ip);
-    await enforceAbuse(env, identity, ipHash, body.turnstileToken, ip);
+    let abuse;
+    try {
+        abuse = await enforceAbuse(env, identity, ipHash, body.turnstileToken, ip);
+    } catch (err) {
+        // A rejected submission is still an observable event (the spike/anomaly
+        // signal lives here as much as in successful creates).
+        telemetry.commentCreated(postId, 'new', 'blocked');
+        telemetry.event('block', {
+            post_id: postId,
+            did: identity.did,
+            reason: err instanceof HttpError ? err.message : 'error',
+        });
+        throw err;
+    }
 
     const id = mintId();
     const createdAt = Date.now();
@@ -108,16 +127,18 @@ export async function handleCreate(request: Request, env: Env, body: CreateBody)
         ipHash,
     });
 
-    // --- observability (issue #6) -----------------------------------------
-    // The comment.created metric + structured activity log ship here, via
-    // ctx.waitUntil so they never block the response.
+    // Observability (#6): comment.created metric + an activity-log entry, both
+    // non-blocking via ctx.waitUntil inside Telemetry.
+    const trust = abuse.trusted ? 'trusted' : 'new';
+    telemetry.commentCreated(postId, trust, 'allowed');
+    telemetry.event('comment', { post_id: postId, comment_id: id, did: identity.did, parent_id: parentId });
 
     const row = await getComment(env.DB, id);
     return shape(row!);
 }
 
 // DELETE /comments/:id  ->  { ok }. Allowed for the comment's author or the admin.
-export async function handleDelete(request: Request, env: Env, id: string): Promise<unknown> {
+export async function handleDelete(request: Request, env: Env, id: string, telemetry: Telemetry): Promise<unknown> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'sign in to delete');
 
@@ -129,5 +150,10 @@ export async function handleDelete(request: Request, env: Env, id: string): Prom
     if (!isAuthor && !isAdmin) throw new HttpError(403, 'not allowed to delete this comment');
 
     await softDeleteComment(env.DB, id, Date.now());
+    telemetry.event(isAdmin && !isAuthor ? 'admin_delete' : 'delete', {
+        comment_id: id,
+        post_id: row.post_id,
+        by: identity.did,
+    });
     return { ok: true };
 }

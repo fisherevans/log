@@ -14,6 +14,7 @@ export interface Env {
     IP_HASH_SALT?: string; // salt for hashing submitter IPs
     TURNSTILE_SECRET?: string; // Cloudflare Turnstile secret key
     DATADOG_API_KEY?: string; // DataDog HTTP intake key
+    DATADOG_SITE?: string; // DataDog site (default us5.datadoghq.com)
     OAUTH_PRIVATE_KEY?: string; // ATProto OAuth client private JWK (JSON)
 
     // Local-dev only. When "1", identity can be injected via headers (see

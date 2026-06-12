@@ -31,13 +31,17 @@ const TRUSTED_DID_DAILY_CAP = 100; // trusted DID: comments per rolling day
 const TRUST_MIN_COMMENTS = 15;
 const TRUST_MIN_AGE_MS = 30 * DAY; // Bluesky account age that earns trust
 
+export interface AbuseResult {
+    trusted: boolean;
+}
+
 export async function enforceAbuse(
     env: Env,
     identity: Identity,
     ipHash: string | null,
     turnstileToken: string | undefined,
     remoteIp: string,
-): Promise<void> {
+): Promise<AbuseResult> {
     const now = Date.now();
 
     // 1. Turnstile (no-op when no secret is configured).
@@ -64,6 +68,8 @@ export async function enforceAbuse(
 
     // Record first sighting (and capture account age if known) for future trust.
     await recordFirstSeen(env.DB, identity.did, now, identity.accountCreatedAt ?? null);
+
+    return { trusted };
 }
 
 // A DID is trusted once it has enough history here, or its Bluesky account is old
