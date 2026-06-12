@@ -1,11 +1,11 @@
 // Commenter identity. The verified identity attached to a comment.
 //
 // In production this comes from a Worker session cookie minted by the Bluesky
-// OAuth flow (issue #3 - see auth.ts, which fills in resolveSessionIdentity).
-// Until that lands, and for local testing, DEV_AUTH=1 lets a caller inject an
-// identity via X-Dev-Did / X-Dev-Handle headers. That path is gated on the env
-// flag and is never enabled in production.
+// OAuth flow (issue #3 - see atproto.ts + session.ts). For local testing,
+// DEV_AUTH=1 lets a caller inject an identity via X-Dev-Did / X-Dev-Handle
+// headers. That path is gated on the env flag and is never enabled in production.
 import type { Env } from './env';
+import { getSessionIdentity } from './session';
 
 export interface Identity {
     did: string;
@@ -29,13 +29,6 @@ export async function getIdentity(request: Request, env: Env): Promise<Identity 
             };
         }
     }
-    // Real session lookup is wired up in issue #3 (auth.ts). Until then, no
-    // production identity is available.
-    return await resolveSessionIdentity(request, env);
-}
-
-// Placeholder until the OAuth session store lands (#3). Returns null so create
-// is unauthenticated-by-default rather than accidentally open.
-async function resolveSessionIdentity(_request: Request, _env: Env): Promise<Identity | null> {
-    return null;
+    // Production path: the Worker session cookie minted by the Bluesky OAuth flow.
+    return await getSessionIdentity(env, request);
 }

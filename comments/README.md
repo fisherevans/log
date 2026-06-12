@@ -83,6 +83,36 @@ npm test          # vitest-pool-workers, against a fresh local D1 with migration
 npm run typecheck # tsc --noEmit
 ```
 
+## Bluesky OAuth (identity only)
+
+`atproto.ts` runs the ATProto OAuth dance (handle resolution -> PDS discovery ->
+PAR -> DPoP-bound tokens) via `@atproto/oauth-client-node`, used purely for
+identity - no posting, no write scope. On a successful callback it captures the
+DID + profile, mints a Worker session (`session.ts`), and redirects back to the
+blog. Comment create then reads the session cookie.
+
+Endpoints:
+
+| Path | Purpose |
+| --- | --- |
+| `GET /oauth/client-metadata.json` | OAuth client metadata (this is the `client_id`) |
+| `GET /oauth/jwks.json` | public JWKS for `private_key_jwt` |
+| `GET /oauth/login?handle=...` | start login; 302 to the user's auth server |
+| `GET /oauth/callback` | finish login; mints the session, 302 back to the blog |
+| `GET /oauth/me` | current identity, for the UI's signed-in state |
+| `POST /oauth/logout` | clear the session |
+
+Config: `OAUTH_PRIVATE_KEY` is an ES256 private JWK (JSON). Generate a keypair,
+keep the private JWK in Bitwarden (`comments-oauth-private-key`), and the Worker
+serves the matching public JWK at `/oauth/jwks.json`.
+
+> **Unverified locally.** The OAuth dance needs a public callback URL and a real
+> Bluesky login, so the local test suite does not exercise it (the library is
+> dynamically imported so it never loads in tests). The session/identity layer it
+> feeds *is* tested end to end. Verify the full flow after the first deploy; the
+> ATProto-on-Workers runtime (`nodejs_compat`) is the most likely spot to need a
+> tweak.
+
 ## Observability (DataDog)
 
 The Worker ships to DataDog's HTTP intake via `ctx.waitUntil` (non-blocking,
