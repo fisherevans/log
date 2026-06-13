@@ -1,19 +1,32 @@
 ---
 import { SOCIAL_LINKS } from '../consts';
 import SubscribeModal from './SubscribeModal.astro';
+import LinkModal from './LinkModal.astro';
 const today = new Date();
+const isFeed = (href: string) => href.endsWith('.xml');
 ---
 
 <footer>
     <div class="inner">
         <span>&copy; {today.getFullYear()} fisher evans</span>
         <span class="links">
-            {SOCIAL_LINKS.map((link) => <a href={link.href}>{link.label}</a>)}
+            {
+                SOCIAL_LINKS.map((link) => (
+                    <a
+                        href={link.href}
+                        data-link-preview={isFeed(link.href) ? '' : undefined}
+                        data-link-preview-label={isFeed(link.href) ? 'RSS feed' : undefined}
+                    >
+                        {link.label}
+                    </a>
+                ))
+            }
             <a href="#" class="sublink" data-subscribe-open role="button">subscribe</a>
         </span>
     </div>
 </footer>
 <SubscribeModal />
+<LinkModal />
 <style>
     footer {
         border-top: 1px solid var(--rule);

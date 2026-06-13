@@ -1,0 +1,168 @@
+---
+// Site-wide link-preview modal. Any [data-link-preview] anchor (the RSS feed
+// links) opens this instead of navigating: it shows the destination URL in a
+// selectable field (copy it by hand) plus a Copy button (copy automatically) -
+// the same "see where this goes" pattern the comment links use. RSS URLs are
+// meant to be pasted into a reader, not clicked, so surfacing the address is the
+// useful action. Opening this first closes any open subscribe modal so two
+// overlays never stack. Included once, via the Footer (present on every page).
+---
+
+<style is:global>
+    .linkmodal-back {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5em;
+        background: rgba(0, 0, 0, 0.55);
+    }
+    .linkmodal {
+        background: var(--bg);
+        color: var(--fg);
+        border: 1px solid var(--rule);
+        border-radius: 10px;
+        padding: 1.4em 1.5em;
+        max-width: 28em;
+        width: 100%;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    .linkmodal h3 {
+        margin: 0 0 0.6em;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.95rem;
+        letter-spacing: 0.03em;
+    }
+    .linkmodal-note {
+        color: var(--muted);
+        font-size: 0.9rem;
+        margin: 0.6em 0;
+        line-height: 1.5;
+    }
+    .linkmodal-url {
+        width: 100%;
+        box-sizing: border-box;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.85rem;
+        color: var(--fg);
+        background: var(--code-bg);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.6em 0.7em;
+        margin: 0.4em 0 1em;
+    }
+    .linkmodal-row {
+        display: flex;
+        gap: 0.6em;
+        justify-content: flex-end;
+    }
+    .linkmodal-btn {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.82rem;
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.45em 0.9em;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .linkmodal-btn:hover {
+        background: var(--hover-bg);
+        color: var(--hover);
+        border-color: var(--hover-bg);
+    }
+    .linkmodal-btn-ghost {
+        color: var(--muted);
+    }
+</style>
+
+<script>
+    function openLinkPreview(url: string, label: string) {
+        // Never stack overlays: drop any open subscribe modal first.
+        document
+            .querySelectorAll<HTMLElement>('[data-subscribe-modal]')
+            .forEach((m) => (m.hidden = true));
+
+        const back = document.createElement('div');
+        back.className = 'linkmodal-back';
+        const esc = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') close();
+        };
+        const close = () => {
+            back.remove();
+            document.removeEventListener('keydown', esc);
+        };
+        document.addEventListener('keydown', esc);
+        back.addEventListener('click', (e) => {
+            if (e.target === back) close();
+        });
+
+        const box = document.createElement('div');
+        box.className = 'linkmodal';
+
+        const h = document.createElement('h3');
+        h.textContent = label;
+
+        const note = document.createElement('p');
+        note.className = 'linkmodal-note';
+        note.textContent = 'Paste this address into your RSS reader - copy it by hand, or use the button.';
+
+        const input = document.createElement('input');
+        input.className = 'linkmodal-url';
+        input.type = 'text';
+        input.readOnly = true;
+        input.value = url;
+        input.setAttribute('aria-label', `${label} address`);
+        input.addEventListener('focus', () => input.select());
+
+        const copy = document.createElement('button');
+        copy.className = 'linkmodal-btn';
+        copy.type = 'button';
+        copy.textContent = 'Copy';
+        copy.addEventListener('click', async () => {
+            input.select();
+            try {
+                await navigator.clipboard.writeText(url);
+                copy.textContent = 'Copied';
+            } catch {
+                copy.textContent = 'Select & copy above';
+            }
+        });
+
+        const open = document.createElement('a');
+        open.className = 'linkmodal-btn linkmodal-btn-ghost';
+        open.textContent = 'Open';
+        open.href = url;
+        open.target = '_blank';
+        open.rel = 'noopener';
+
+        const done = document.createElement('button');
+        done.className = 'linkmodal-btn linkmodal-btn-ghost';
+        done.type = 'button';
+        done.textContent = 'Close';
+        done.addEventListener('click', close);
+
+        const row = document.createElement('div');
+        row.className = 'linkmodal-row';
+        row.append(copy, open, done);
+
+        box.append(h, note, input, row);
+        back.append(box);
+        document.body.append(back);
+        setTimeout(() => input.select(), 0);
+    }
+
+    document.querySelectorAll<HTMLAnchorElement>('[data-link-preview]').forEach((a) => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = a.getAttribute('href') || '';
+            const url = new URL(href, location.origin).toString();
+            const label = a.dataset.linkPreviewLabel || 'Link';
+            openLinkPreview(url, label);
+        });
+    });
+</script>

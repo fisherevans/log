@@ -17,7 +17,11 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts
         <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
     </form>
     <p class="subscribe-alt">
-        Or follow <a href={BLUESKY_PROFILE_URL} rel="me">@{BLUESKY_HANDLE} on Bluesky</a>, or grab the <a href="/rss.xml">RSS feed</a>.
+        Or follow <a href={BLUESKY_PROFILE_URL} rel="me">@{BLUESKY_HANDLE} on Bluesky</a>, or grab the <a
+            href="/rss.xml"
+            data-link-preview
+            data-link-preview-label="RSS feed">RSS feed</a
+        >.
     </p>
 </section>
 

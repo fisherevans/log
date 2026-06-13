@@ -51,6 +51,26 @@ import SubscribeForm from './SubscribeForm.astro';
     .submodal-close:hover {
         color: var(--fg);
     }
+
+    /* In the modal the form is the whole show (not footer furniture), so let it
+       use the full width and center its parts - the email row stretches edge to
+       edge and the Turnstile widget / status / follow line center under it,
+       instead of hugging the left with a wide empty gutter on the right. */
+    .submodal :global(.subscribe-row) {
+        max-width: none;
+    }
+    .submodal :global(.subscribe-form input[type='email']) {
+        flex: 1 1 auto;
+    }
+    .submodal :global(.subscribe-lede),
+    .submodal :global(.subscribe-status),
+    .submodal :global(.subscribe-alt) {
+        text-align: center;
+    }
+    .submodal :global(.subscribe-turnstile) {
+        display: flex;
+        justify-content: center;
+    }
 </style>
 
 <script>
