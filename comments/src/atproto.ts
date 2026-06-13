@@ -215,13 +215,33 @@ function oauthErrorPage(env: Env, status: number, message: string): Response {
     return new Response(html, { status, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
 }
 
-// GET /oauth/login?handle=alice.bsky.social  -> 302 to the user's auth server.
+// Only allow a post-login redirect back to the blog itself - anything off-origin
+// is dropped (returns undefined) so this can never be turned into an open
+// redirect. Compares full normalized origins, not a string prefix.
+function safeReturnTo(env: Env, candidate: string | null | undefined): string | undefined {
+    if (!candidate) return undefined;
+    try {
+        const url = new URL(candidate);
+        const allowed = new URL(env.ALLOWED_ORIGIN);
+        return url.origin === allowed.origin ? url.toString() : undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+// GET /oauth/login?handle=alice.bsky.social[&return_to=<blog url>]  -> 302 to the
+// user's auth server. return_to lets the blog send the reader back to the exact
+// post (scrolled to the comment composer) instead of the site root; it's carried
+// through the OAuth round-trip as the client `state` and validated in the
+// callback against ALLOWED_ORIGIN so it can't become an open redirect.
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
-    const handle = new URL(request.url).searchParams.get('handle')?.trim();
+    const params = new URL(request.url).searchParams;
+    const handle = params.get('handle')?.trim();
     if (!handle) return oauthErrorPage(env, 400, 'No Bluesky handle was provided.');
+    const returnTo = safeReturnTo(env, params.get('return_to'));
     try {
         const client = await getClient(env);
-        const url = await client.authorize(handle, { scope: 'atproto' });
+        const url = await client.authorize(handle, { scope: 'atproto', state: returnTo });
         return Response.redirect(url.toString(), 302);
     } catch (err) {
         console.error('oauth login failed', errorChain(err), (err as Error)?.stack);
@@ -243,7 +263,7 @@ export async function handleCallback(request: Request, env: Env): Promise<Respon
     }
     try {
         const client = await getClient(env);
-        const { session } = await client.callback(params);
+        const { session, state } = await client.callback(params);
         const did = session.did;
 
         const profile = await fetchProfile(did);
@@ -255,10 +275,12 @@ export async function handleCallback(request: Request, env: Env): Promise<Respon
             accountCreatedAt: profile.accountCreatedAt,
         });
 
-        // Back to the blog. The session cookie rides along on the redirect response.
+        // Back to where the reader started (return_to, carried as `state`) when it
+        // validates against the blog origin; otherwise the site root. The session
+        // cookie rides along on the redirect response.
         return new Response(null, {
             status: 302,
-            headers: { Location: env.ALLOWED_ORIGIN, 'Set-Cookie': setCookie },
+            headers: { Location: safeReturnTo(env, state) ?? env.ALLOWED_ORIGIN, 'Set-Cookie': setCookie },
         });
     } catch (err) {
         console.error('oauth callback failed', errorChain(err), (err as Error)?.stack);
