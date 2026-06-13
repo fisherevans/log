@@ -229,6 +229,10 @@ function safeReturnTo(env: Env, candidate: string | null | undefined): string | 
     }
 }
 
+// Bluesky's entryway / authorization server, used as the login input when the
+// reader didn't supply a handle (the resolver accepts an entryway URL directly).
+const BLUESKY_ENTRYWAY = 'https://bsky.social';
+
 // GET /oauth/login?handle=alice.bsky.social[&return_to=<blog url>]  -> 302 to the
 // user's auth server. return_to lets the blog send the reader back to the exact
 // post (scrolled to the comment composer) instead of the site root; it's carried
@@ -237,15 +241,25 @@ function safeReturnTo(env: Env, candidate: string | null | undefined): string | 
 export async function handleLogin(request: Request, env: Env): Promise<Response> {
     const params = new URL(request.url).searchParams;
     const handle = params.get('handle')?.trim();
-    if (!handle) return oauthErrorPage(env, 400, 'No Bluesky handle was provided.');
     const returnTo = safeReturnTo(env, params.get('return_to'));
+    // No handle? Start the flow at the Bluesky entryway so the reader signs in /
+    // picks their account on Bluesky directly - nothing to type. A handle is still
+    // honored when provided (direct links, third-party PDS users). The resolver
+    // accepts a handle, DID, PDS URL, or entryway URL as the login input.
+    const input = handle && handle.length ? handle : BLUESKY_ENTRYWAY;
     try {
         const client = await getClient(env);
-        const url = await client.authorize(handle, { scope: 'atproto', state: returnTo });
+        const url = await client.authorize(input, { scope: 'atproto', state: returnTo });
         return Response.redirect(url.toString(), 302);
     } catch (err) {
         console.error('oauth login failed', errorChain(err), (err as Error)?.stack);
-        return oauthErrorPage(env, 502, `Couldn't start sign-in for "${handle}". Double-check the handle and try again.`);
+        return oauthErrorPage(
+            env,
+            502,
+            handle
+                ? `Couldn't start sign-in for "${handle}". Double-check the handle and try again.`
+                : `Couldn't start sign-in with Bluesky. Please try again.`,
+        );
     }
 }
 

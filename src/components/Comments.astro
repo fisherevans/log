@@ -561,6 +561,16 @@ const { postId } = Astro.props;
         font-family: ui-sans-serif, system-ui, sans-serif;
         color: var(--accent);
     }
+    /* Right-side cluster in the comments header: moderation (admin) + log out. */
+    .comments :global(.comments-tools) {
+        display: flex;
+        align-items: baseline;
+        gap: 1em;
+        flex: none;
+    }
+    .comments :global(.comment-logout-link) {
+        font-family: ui-sans-serif, system-ui, sans-serif;
+    }
     :global(.comment-admin-toggles) {
         display: flex;
         flex-direction: column;

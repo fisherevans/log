@@ -5,6 +5,7 @@
 // inherits the site's styles (see Comments.astro).
 import { COMMENTS_API_URL, TURNSTILE_SITEKEY } from '../consts';
 import { renderMarkdown, wireLinks, openSyntaxHelp, overlay } from './markdown';
+import { loadTurnstile } from './turnstile';
 
 interface Author {
     did: string;
@@ -88,34 +89,6 @@ function relativeTime(ms: number): string {
     return new Date(ms).toLocaleDateString();
 }
 
-// ---- Turnstile (optional) ---------------------------------------------------
-
-declare global {
-    interface Window {
-        turnstile?: {
-            render: (el: HTMLElement, opts: { sitekey: string }) => string;
-            getResponse: (id: string) => string | undefined;
-            reset: (id?: string) => void;
-        };
-    }
-}
-
-let turnstileLoaded: Promise<void> | null = null;
-function loadTurnstile(): Promise<void> {
-    if (!TURNSTILE_SITEKEY) return Promise.resolve();
-    if (!turnstileLoaded) {
-        turnstileLoaded = new Promise((resolve) => {
-            const s = document.createElement('script');
-            s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-            s.async = true;
-            s.onload = () => resolve();
-            s.onerror = () => resolve(); // degrade: Worker only enforces if it has a secret
-            document.head.append(s);
-        });
-    }
-    return turnstileLoaded;
-}
-
 // ---- widget -----------------------------------------------------------------
 
 class CommentsWidget {
@@ -165,9 +138,16 @@ class CommentsWidget {
     private render() {
         const frag = document.createDocumentFragment();
         const heading = el('h2', { class: 'comments-heading' }, this.headingText());
+        const tools: HTMLElement[] = [];
         if (this.me.isAdmin) {
-            const mod = el('button', { class: 'comment-link comment-admin-link', type: 'button', title: 'Moderation', click: () => this.openAdminModal() }, 'moderation');
-            frag.append(el('div', { class: 'comments-header' }, heading, mod));
+            tools.push(el('button', { class: 'comment-link comment-admin-link', type: 'button', title: 'Moderation', click: () => this.openAdminModal() }, 'moderation'));
+        }
+        if (this.me.loggedIn) {
+            const who = this.me.handle ? `@${this.me.handle}` : 'your account';
+            tools.push(el('button', { class: 'comment-link comment-logout-link', type: 'button', title: `Sign out ${who}`, click: () => this.logout() }, 'log out'));
+        }
+        if (tools.length) {
+            frag.append(el('div', { class: 'comments-header' }, heading, el('div', { class: 'comments-tools' }, ...tools)));
         } else {
             frag.append(heading);
         }
@@ -371,27 +351,26 @@ class CommentsWidget {
         const tabs = el('div', { class: 'comment-tabs' }, writeTab, previewTab, help);
 
         const error = el('p', { class: 'comment-error', hidden: 'hidden' });
-        const turnstileMount = el('div', { class: 'comment-turnstile' });
+        const turnstileMount = el('div', { class: 'comment-turnstile', hidden: 'hidden' });
         const submit = el('button', { class: 'comment-submit', type: 'button' }, parent ? 'Reply' : 'Post comment');
 
         let turnstileId: string | undefined;
-        void loadTurnstile().then(() => {
-            if (TURNSTILE_SITEKEY && window.turnstile) {
-                turnstileId = window.turnstile.render(turnstileMount, { sitekey: TURNSTILE_SITEKEY });
-            }
-        });
 
-        const send = async () => {
-            const text = ta.value.trim();
-            if (!text) return;
-            error.hidden = true;
-            submit.setAttribute('disabled', 'disabled');
-            const token = turnstileId && window.turnstile ? window.turnstile.getResponse(turnstileId) : undefined;
+        const fail = (msg: string) => {
+            error.textContent = msg;
+            error.hidden = false;
+            submit.removeAttribute('disabled');
+            turnstileMount.hidden = true;
+            if (turnstileId !== undefined && window.turnstile) window.turnstile.reset(turnstileId);
+        };
+
+        // Submit once we have a Turnstile token (or none, when Turnstile is off).
+        const doPost = async (token: string | undefined) => {
             try {
                 const res = await api('/comments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ postId: this.postId, parentId: parent?.id ?? null, body: text, turnstileToken: token, pageUrl: location.href }),
+                    body: JSON.stringify({ postId: this.postId, parentId: parent?.id ?? null, body: ta.value.trim(), turnstileToken: token, pageUrl: location.href }),
                 });
                 if (!res.ok) {
                     const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
@@ -401,11 +380,30 @@ class CommentsWidget {
                 await this.init(); // reload the thread
                 if (created?.id) this.focusComment(created.id); // scroll to + flash your new comment
             } catch (e) {
-                error.textContent = e instanceof Error ? e.message : 'Could not post your comment.';
-                error.hidden = false;
-                submit.removeAttribute('disabled');
-                if (turnstileId && window.turnstile) window.turnstile.reset(turnstileId);
+                fail(e instanceof Error ? e.message : 'Could not post your comment.');
             }
+        };
+
+        // The human-check stays hidden until Post comment is clicked: then it
+        // appears in place and a passing token submits (mirrors the subscribe form),
+        // so no Turnstile widget sits in the page on load.
+        const send = async () => {
+            const text = ta.value.trim();
+            if (!text) return;
+            error.hidden = true;
+            submit.setAttribute('disabled', 'disabled');
+            if (!TURNSTILE_SITEKEY) return void doPost(undefined);
+            turnstileMount.hidden = false;
+            await loadTurnstile();
+            if (!window.turnstile) return void doPost(undefined);
+            turnstileMount.innerHTML = '';
+            turnstileId = window.turnstile.render(turnstileMount, {
+                sitekey: TURNSTILE_SITEKEY,
+                size: 'flexible',
+                callback: (token) => void doPost(token),
+                'error-callback': () => fail('Verification failed - try again.'),
+                'expired-callback': () => fail('Verification expired - try again.'),
+            });
         };
         submit.addEventListener('click', send);
         // Cmd/Ctrl+Enter submits from the textarea.
@@ -433,36 +431,35 @@ class CommentsWidget {
     }
 
     private signInPrompt(): HTMLElement {
-        const handle = el('input', { class: 'comment-input comment-handle-input', placeholder: 'you.bsky.social', hidden: 'hidden' }) as HTMLInputElement;
-        const go = (e?: Event) => {
-            e?.preventDefault();
-            const h = handle.value.trim().replace(/^@/, '');
-            // Come back to this exact post with the composer focused (#comment-compose),
-            // not the site root. The Worker validates return_to against the blog origin.
-            const returnTo = `${location.origin}${location.pathname}#comment-compose`;
-            if (h)
-                window.location.href =
-                    `${COMMENTS_API_URL}/oauth/login?handle=${encodeURIComponent(h)}` +
-                    `&return_to=${encodeURIComponent(returnTo)}`;
-        };
+        // Straight to Bluesky - no handle to type (autocomplete never filled it
+        // anyway). The Worker starts the OAuth flow at the Bluesky entryway when no
+        // handle is given; return_to brings the reader back to this post with the
+        // composer focused.
+        const returnTo = `${location.origin}${location.pathname}#comment-compose`;
         const btn = el('button', {
             class: 'comment-submit comment-signin-btn',
             type: 'button',
             click: () => {
-                if (handle.hidden) {
-                    handle.hidden = false;
-                    handle.focus();
-                } else go();
+                window.location.href = `${COMMENTS_API_URL}/oauth/login?return_to=${encodeURIComponent(returnTo)}`;
             },
         }, icon(BLUESKY_SVG), el('span', {}, 'Sign in with Bluesky'));
-        handle.addEventListener('keydown', (e) => {
-            if ((e as KeyboardEvent).key === 'Enter') go(e);
-        });
         return el('div', { class: 'comment-composer comment-signin' },
             el('p', { class: 'comments-status' }, 'Sign in with your Bluesky account to comment.'),
-            handle,
             btn,
         );
+    }
+
+    // Drop the session (POST /oauth/logout clears the cookie), then reload so the
+    // composer reverts to the sign-in prompt.
+    private async logout() {
+        try {
+            await api('/oauth/logout', { method: 'POST' });
+        } catch {
+            // best-effort; we still re-init below to reflect the cleared cookie
+        }
+        this.me = { loggedIn: false };
+        this.focusStack = [];
+        await this.init();
     }
 
     // Per-comment "..." menu (#13). Returns null when there's nothing to offer

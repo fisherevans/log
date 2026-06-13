@@ -8,44 +8,7 @@
 // on a passing token we submit and swap the slot to the confirmation. Errors drop
 // back to the email stage. No stage changes the slot height, so nothing jumps.
 import { COMMENTS_API_URL, TURNSTILE_SITEKEY } from '../consts';
-
-interface TurnstileRenderOpts {
-    sitekey: string;
-    size?: 'normal' | 'flexible' | 'compact';
-    callback?: (token: string) => void;
-    'error-callback'?: () => void;
-    'expired-callback'?: () => void;
-}
-declare global {
-    interface Window {
-        turnstile?: {
-            render: (el: HTMLElement, opts: TurnstileRenderOpts) => string;
-            getResponse: (id: string) => string | undefined;
-            reset: (id?: string) => void;
-        };
-    }
-}
-
-function loadTurnstile(): Promise<void> {
-    if (!TURNSTILE_SITEKEY) return Promise.resolve();
-    if (window.turnstile) return Promise.resolve();
-    const existing = document.querySelector<HTMLScriptElement>('script[src*="turnstile"]');
-    if (existing) {
-        // Another form already injected the script; wait for it to define the API.
-        return new Promise((resolve) => {
-            const tick = () => (window.turnstile ? resolve() : setTimeout(tick, 50));
-            tick();
-        });
-    }
-    return new Promise((resolve) => {
-        const s = document.createElement('script');
-        s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        s.async = true;
-        s.onload = () => resolve();
-        s.onerror = () => resolve();
-        document.head.append(s);
-    });
-}
+import { loadTurnstile } from './turnstile';
 
 // Wire every subscribe form on the page (idempotent: each form is wired once).
 export function initSubscribe() {
