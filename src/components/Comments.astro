@@ -130,7 +130,7 @@ const { postId } = Astro.props;
         background: var(--rule);
     }
     .comments :global(.comment) {
-        padding: 0.9em 0;
+        padding: 0.85em 0 0.6em;
         border-bottom: 1px solid var(--rule);
     }
     .comments :global(.comment-head) {
@@ -174,10 +174,13 @@ const { postId } = Astro.props;
         line-height: 1.5;
         overflow-wrap: anywhere;
     }
+    /* Reply is the only bottom action now (the "..." menu moved up to the head),
+       so the row is just a right-floated icon with a tight top gap. */
     .comments :global(.comment-actions) {
         display: flex;
-        gap: 1em;
-        margin-top: 0.5em;
+        gap: 0.6em;
+        margin-top: 0.1em;
+        justify-content: flex-end;
     }
     .comments :global(.comment-link) {
         background: none;
@@ -472,7 +475,8 @@ const { postId } = Astro.props;
     .comments :global(.comment-menu-pop) {
         position: absolute;
         top: calc(100% + 0.35em);
-        left: 0;
+        right: 0;
+        left: auto;
         z-index: 20;
         min-width: 11em;
         display: flex;
@@ -506,14 +510,15 @@ const { postId } = Astro.props;
         color: #e0683c;
     }
 
-    /* Permalink target highlight (#16): a brief accent wash on the landed comment. */
+    /* Permalink / new-comment highlight (#16): a slow, single accent wash on the
+       landed comment - long enough to notice, no repeat flashing. Matches the
+       post "Continue reading" highlight. */
     .comments :global(.comment-flash) {
-        animation: comment-flash 2s ease-out;
+        animation: comment-flash 3.2s ease-out;
     }
     @keyframes comment-flash {
-        0%,
-        25% {
-            background: color-mix(in srgb, var(--accent) 16%, transparent);
+        0% {
+            background: color-mix(in srgb, var(--accent) 18%, transparent);
         }
         100% {
             background: transparent;

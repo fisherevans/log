@@ -190,6 +190,7 @@ class CommentsWidget {
         }
         this.root.replaceChildren(frag);
         this.maybeApplyHash();
+        this.maybeFocusCompose();
     }
 
     private headingText(): string {
@@ -318,16 +319,20 @@ class CommentsWidget {
             wireLinks(body);
         }
 
-        const actions = el('div', { class: 'comment-actions' });
+        // The "..." menu sits at the top-right of the head row (after the
+        // timestamp), so the body can run full-width and the bottom of the comment
+        // stays tight. Reply is the only bottom action, floated to the right.
         const menu = this.actionsMenu(c);
-        if (menu) actions.append(menu);
+        if (menu) head.append(menu);
+
+        const parts: (Node | string)[] = [head, body];
         if (!c.deleted && this.me.loggedIn) {
             const reply = el('button', { class: 'comment-link comment-action-reply', type: 'button', title: 'Reply', 'aria-label': 'Reply', click: () => this.openReply(c) });
             reply.append(icon(REPLY_SVG));
-            actions.append(reply);
+            parts.push(el('div', { class: 'comment-actions' }, reply));
         }
 
-        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id, id: `comment-${c.id}` }, head, body, actions);
+        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id, id: `comment-${c.id}` }, ...parts);
     }
 
     // Inline composer. parent=null for the top-level box; a comment for a reply.
@@ -392,7 +397,9 @@ class CommentsWidget {
                     const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
                     throw new Error(msg || 'Could not post your comment.');
                 }
+                const created = (await res.json().catch(() => null)) as Comment | null;
                 await this.init(); // reload the thread
+                if (created?.id) this.focusComment(created.id); // scroll to + flash your new comment
             } catch (e) {
                 error.textContent = e instanceof Error ? e.message : 'Could not post your comment.';
                 error.hidden = false;
@@ -430,7 +437,13 @@ class CommentsWidget {
         const go = (e?: Event) => {
             e?.preventDefault();
             const h = handle.value.trim().replace(/^@/, '');
-            if (h) window.location.href = `${COMMENTS_API_URL}/oauth/login?handle=${encodeURIComponent(h)}`;
+            // Come back to this exact post with the composer focused (#comment-compose),
+            // not the site root. The Worker validates return_to against the blog origin.
+            const returnTo = `${location.origin}${location.pathname}#comment-compose`;
+            if (h)
+                window.location.href =
+                    `${COMMENTS_API_URL}/oauth/login?handle=${encodeURIComponent(h)}` +
+                    `&return_to=${encodeURIComponent(returnTo)}`;
         };
         const btn = el('button', {
             class: 'comment-submit comment-signin-btn',
@@ -598,10 +611,45 @@ class CommentsWidget {
     private gotoComment(id: string) {
         const li = this.root.querySelector<HTMLElement>(`li.comment[data-id="${id}"]`);
         if (!li) return;
-        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        this.scrollSoft(li);
         li.classList.remove('comment-flash');
         void li.offsetWidth; // reflow so the animation restarts on repeat clicks
         li.classList.add('comment-flash');
+    }
+
+    // Scroll only when needed: if the target already sits in the top two-thirds of
+    // the viewport, leave the page where it is; otherwise bring it up near the top
+    // (above the bottom third). Mirrors the post "Continue reading" jump so landing
+    // on a permalink or your freshly-posted comment never jolts the page.
+    private scrollSoft(target: HTMLElement) {
+        const rect = target.getBoundingClientRect();
+        const vh = window.innerHeight;
+        if (rect.top < 0 || rect.top > vh * (2 / 3)) {
+            window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - vh * 0.22), behavior: 'smooth' });
+        }
+    }
+
+    // Reveal a comment (page it in / drill to it) then scroll + flash it. Shared by
+    // the permalink hash handler and the post-a-comment flow.
+    private focusComment(id: string) {
+        if (this.revealPathTo(id)) this.render();
+        requestAnimationFrame(() => this.gotoComment(id));
+    }
+
+    // After an OAuth round-trip that returned to #comment-compose, bring the
+    // composer into view and focus it (runs once; clears the sentinel so a refresh
+    // doesn't re-trigger).
+    private composeFocused = false;
+    private maybeFocusCompose() {
+        if (this.composeFocused || location.hash !== '#comment-compose') return;
+        this.composeFocused = true;
+        const section = this.root.closest('section.comments');
+        const ta = this.root.querySelector<HTMLTextAreaElement>('textarea.comment-input');
+        requestAnimationFrame(() => {
+            if (section instanceof HTMLElement) this.scrollSoft(section);
+            history.replaceState(null, '', location.pathname + location.search);
+            ta?.focus();
+        });
     }
 
     private gotoFirstChild(id: string) {

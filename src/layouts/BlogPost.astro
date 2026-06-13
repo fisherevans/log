@@ -101,10 +101,18 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
                 requestAnimationFrame(() => {
                     const target = document.querySelectorAll('.prose > *')[idx];
                     if (target instanceof HTMLElement) {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        // Only scroll if the passage is below the top two-thirds (or
+                        // off-screen) - if it's already in view, don't jolt the page.
+                        // When we do scroll, land it near the top, above the bottom third.
+                        const rect = target.getBoundingClientRect();
+                        const vh = window.innerHeight;
+                        if (rect.top < 0 || rect.top > vh * (2 / 3)) {
+                            window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - vh * 0.22), behavior: 'smooth' });
+                        }
+                        // Slow, single highlight - long enough to catch the eye, no flashing.
                         target.animate(
-                            [{ backgroundColor: 'rgba(224, 160, 80, 0.18)' }, { backgroundColor: 'rgba(224, 160, 80, 0)' }],
-                            { duration: 2000, easing: 'ease-out' },
+                            [{ backgroundColor: 'rgba(224, 160, 80, 0.16)' }, { backgroundColor: 'rgba(224, 160, 80, 0)' }],
+                            { duration: 3200, easing: 'ease-out' },
                         );
                     }
                 });
