@@ -29,6 +29,7 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 color: var(--fg);
                 font-size: 1.05em;
                 line-height: 1.6;
+                text-align: center;
             }
             .intro .linklike {
                 background: none;
@@ -63,6 +64,16 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 background: var(--code-bg);
                 border: 1px solid var(--rule);
                 border-radius: 12px;
+            }
+            /* On narrow screens the full edge-to-edge bleed runs right up against
+               (or a hair past) the viewport - pull the card in so it sits inside a
+               clear gutter instead. */
+            @media (max-width: 700px) {
+                .latest {
+                    margin-left: 0;
+                    margin-right: 0;
+                    padding: 1.25rem 1rem 1.4rem;
+                }
             }
             .feat-title {
                 margin: 0;
