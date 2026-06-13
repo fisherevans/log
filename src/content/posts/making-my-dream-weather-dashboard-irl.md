@@ -1,8 +1,8 @@
 ---
+id: IC1nj9gZ5O
 title: Making my dream weather dashboard, irl
 date: 2026-06-01
-description: I feel like e-ink consumer devices are finally happening. Today, I
-  setup my new TRMNL X.
+description: I feel like e-ink consumer devices are finally happening. Today, I setup my new TRMNL X.
 tags:
   - smart-home
 hasVideo: false
