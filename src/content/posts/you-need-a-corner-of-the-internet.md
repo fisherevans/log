@@ -1,4 +1,5 @@
 ---
+id: JHlRUrtoKA
 title: Your corner of the internet
 date: 2026-06-12
 description: If you have one, I'd love to visit it. I might even bookmark it.
