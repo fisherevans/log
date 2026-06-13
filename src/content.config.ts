@@ -19,17 +19,26 @@ import { z } from 'astro/zod';
 const posts = defineCollection({
     loader: glob({ base: './src/content/posts', pattern: '**/*.{md,mdx}' }),
     schema: ({ image }) =>
-        z.object({
-            id: z.string().optional(),
-            title: z.string(),
-            description: z.string().optional(),
-            date: z.coerce.date(),
-            updatedDate: z.coerce.date().optional(),
-            heroImage: z.optional(image()),
-            tags: z.array(z.string()).default([]),
-            hasVideo: z.boolean().default(false),
-            draft: z.boolean().default(false),
-        }),
+        z
+            .object({
+                id: z.string().optional(),
+                title: z.string(),
+                description: z.string().optional(),
+                date: z.coerce.date(),
+                updatedDate: z.coerce.date().optional(),
+                heroImage: z.optional(image()),
+                tags: z.array(z.string()).default([]),
+                hasVideo: z.boolean().default(false),
+                draft: z.boolean().default(false),
+            })
+            // A published post must carry a stable `id` - comments key on it, so a
+            // post without one silently renders no comment section. Scribe mints one
+            // on save (v0.3.1+); this fails the build if an id-less post ever ships
+            // via any path (a draft is exempt - it isn't public yet).
+            .refine((data) => data.draft || (typeof data.id === 'string' && data.id.trim().length > 0), {
+                message: 'Published post is missing a stable `id` (comments key on it). Add an `id` or set draft: true.',
+                path: ['id'],
+            }),
 });
 
 // Tags collection. YAML files in src/content/tags/.
