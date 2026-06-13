@@ -6,7 +6,6 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 import PostList from '../components/PostList.astro';
-import SubscribeModal from '../components/SubscribeModal.astro';
 import { SITE_DESCRIPTION, SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -180,7 +179,28 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 }
             </section>
         </main>
-        <SubscribeModal />
         <Footer />
+        <script>
+            // Keep the excerpt from ending badly. The CSS already caps it at 3
+            // top-level blocks (so lists / code blocks - which are each a single
+            // top-level block - are never cut mid-way). Here we additionally trim
+            // a trailing heading so the teaser never ends on a dangling header,
+            // then point "Continue reading" at the first hidden block.
+            const ex = document.querySelector('.excerpt');
+            const cont = document.querySelector('.continue');
+            if (ex) {
+                const blocks = Array.from(ex.children) as HTMLElement[];
+                const isHeading = (el: Element) => /^H[1-6]$/.test(el.tagName);
+                let cut = Math.min(3, blocks.length);
+                while (cut > 1 && isHeading(blocks[cut - 1])) cut--;
+                blocks.forEach((b, i) => {
+                    if (i >= cut) b.style.display = 'none';
+                });
+                if (cont) {
+                    const base = (cont.getAttribute('href') || '').split('#')[0];
+                    cont.setAttribute('href', `${base}#continue=${cut}`);
+                }
+            }
+        </script>
     </body>
 </html>

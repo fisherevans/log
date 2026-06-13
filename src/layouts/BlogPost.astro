@@ -91,12 +91,15 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
         </main>
         <Footer />
         <script>
-            // Arriving from the landing page's "Continue reading" link: jump to
-            // and briefly highlight the first block past the excerpt. Index 3 =
-            // EXCERPT_BLOCKS (lib/posts.ts) - the landing shows blocks 0-2.
-            if (location.hash === '#continue') {
+            // Arriving from the landing page's "Continue reading" link
+            // (#continue=N): jump to and briefly highlight the first block past
+            // the excerpt. N is the exact cut the landing computed (it trims a
+            // trailing heading), so the jump lands on real content or its heading.
+            const m = location.hash.match(/^#continue(?:=(\d+))?$/);
+            if (m) {
+                const idx = m[1] ? Number(m[1]) : 3;
                 requestAnimationFrame(() => {
-                    const target = document.querySelectorAll('.prose > *')[3];
+                    const target = document.querySelectorAll('.prose > *')[idx];
                     if (target instanceof HTMLElement) {
                         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         target.animate(
