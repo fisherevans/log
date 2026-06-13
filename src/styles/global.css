@@ -150,6 +150,58 @@ h2 { font-size: var(--font-size-h2); font-weight: var(--weight-h2); font-variati
 h3 { font-size: var(--font-size-h3); font-weight: var(--weight-h3); font-variation-settings: 'opsz' var(--opsz-h3); }
 h4, h5, h6 { font-size: 1.1rem; font-weight: 700; font-variation-settings: 'opsz' 10; }
 
+/* Heading anchors: a hover-revealed link icon that copies a deep link to the
+ * section. Markup is appended by rehype-autolink-headings (astro.config.mjs);
+ * the click-to-copy behavior lives in BlogPost.astro. */
+.prose :is(h1, h2, h3, h4) { scroll-margin-top: 1.5rem; }
+.heading-anchor {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.35em;
+    padding: 0;
+    color: var(--muted);
+    border-bottom: none !important;
+    vertical-align: middle;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 160ms ease-out, color 160ms ease-out;
+}
+.heading-anchor svg { width: 0.62em; height: 0.62em; }
+.prose :is(h1, h2, h3, h4):hover .heading-anchor { opacity: 0.6; }
+.heading-anchor:hover,
+.heading-anchor:focus-visible {
+    opacity: 1;
+    color: var(--accent);
+    background: transparent !important;
+    box-shadow: none !important;
+}
+/* "Copied" confirmation toggled by the click handler. */
+.heading-anchor::after {
+    content: 'Copied';
+    position: absolute;
+    left: 50%;
+    bottom: 100%;
+    transform: translateX(-50%) translateY(-4px);
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--fg);
+    color: var(--bg);
+    font-family: 'DraftingMono', ui-monospace, monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 140ms ease-out;
+}
+.heading-anchor.copied { opacity: 1; color: var(--accent); }
+.heading-anchor.copied::after { opacity: 1; }
+/* On touch devices there's no hover, so keep the icon faintly visible. */
+@media (hover: none) {
+    .heading-anchor { opacity: 0.4; }
+}
+
 p { margin: 0 0 1em; }
 
 strong, b { font-weight: 700; }
@@ -354,3 +406,4 @@ a.chip:hover, a.chip:focus-visible {
     white-space: nowrap;
     border: 0;
 }
+
