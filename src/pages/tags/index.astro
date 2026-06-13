@@ -24,46 +24,90 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeC
         <Header />
         <main>
             <h1>tags</h1>
-            <ul class="tag-list">
+            <ul class="tag-grid">
                 {tags.map(([tag, count]) => (
                     <li>
-                        <div class="tag-row">
-                            <a class="chip" href={`/tags/${tag}/`}>{tag}</a>
-                            <span class="count">{count}</span>
-                        </div>
-                        {tagMetaMap[tag]?.description && (
-                            <p class="tag-description">{tagMetaMap[tag].description}</p>
-                        )}
+                        <a class="tag-card" href={`/tags/${tag}/`}>
+                            <span class="tag-card-head">
+                                <span class="tag-name">{tag}</span>
+                                <span class="count">{count} {count === 1 ? 'post' : 'posts'}</span>
+                            </span>
+                            {tagMetaMap[tag]?.description && (
+                                <span class="tag-card-desc">{tagMetaMap[tag].description}</span>
+                            )}
+                        </a>
                     </li>
                 ))}
             </ul>
         </main>
         <Footer />
         <style>
-            .tag-list {
-                list-style: none; padding: 0; margin: 0;
+            /* Responsive card grid: 1 / 2 / 3 columns as width allows (the column
+               count falls out of the min track width against the 800px content
+               column). */
+            .tag-grid {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+                gap: 0.9em;
             }
-            .tag-list li {
-                padding: 0.65em 0;
-                border-bottom: 1px solid var(--rule);
+            .tag-grid li {
+                margin: 0;
+                padding: 0;
             }
-            .tag-list li:last-child { border-bottom: none; }
-            .tag-list li::before { content: none; }
-            .tag-row {
-                display: inline-flex;
+            .tag-grid li::before { content: none; }
+
+            .tag-card {
+                display: flex;
+                flex-direction: column;
+                gap: 0.35em;
+                height: 100%;
+                box-sizing: border-box;
+                padding: 0.9em 1em;
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                border-radius: 10px;
+                color: var(--fg);
+                text-decoration: none;
+                transition:
+                    border-color 0.15s,
+                    background 0.15s;
+            }
+            /* Override the global link-highlight hover (orange wash + side bars) -
+               on a card we just want the border to pick up the accent. */
+            .tag-card:hover {
+                background: var(--code-bg);
+                border-color: var(--accent);
+                box-shadow: none;
+            }
+            .tag-card-head {
+                display: flex;
                 align-items: baseline;
-                gap: 0.4em;
+                justify-content: space-between;
+                gap: 0.5em;
+            }
+            .tag-name {
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 18;
+                font-size: 1.2rem;
+                color: var(--fg);
+            }
+            .tag-card:hover .tag-name {
+                color: var(--hover);
             }
             .count {
                 color: var(--muted);
                 font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.75em;
+                font-size: 0.72em;
+                white-space: nowrap;
             }
-            .tag-description {
-                margin: 0.25em 0 0;
+            .tag-card-desc {
                 color: var(--muted);
-                font-style: italic;
                 font-size: 0.9em;
+                line-height: 1.45;
             }
         </style>
     </body>

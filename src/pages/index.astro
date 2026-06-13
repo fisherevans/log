@@ -121,6 +121,16 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
             .excerpt > :global(:nth-child(n + 4)) {
                 display: none;
             }
+            /* Never paint a heading as the last visible excerpt block: the trim
+               script removes a trailing heading, which otherwise flashes on first
+               load. Drop a heading in the 3rd slot up front (and the 2nd too if the
+               3rd is also a heading), matching what the script computes. */
+            .excerpt > :global(:nth-child(3):is(h1, h2, h3, h4, h5, h6)) {
+                display: none;
+            }
+            .excerpt > :global(:nth-child(2):is(h1, h2, h3, h4, h5, h6):has(+ :is(h1, h2, h3, h4, h5, h6))) {
+                display: none;
+            }
             .excerpt > :global(:first-child) {
                 margin-top: 0;
             }
