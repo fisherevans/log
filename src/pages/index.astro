@@ -52,10 +52,17 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 margin: 0 0 1.1em;
             }
 
+            /* Featured post sits in a subtle card so it reads as one isolated unit,
+               distinct from the intro above and the older-posts list below. The
+               negative inline margins pull the card out to the content edges (and
+               its matching padding pulls the text back), so the card is wider than
+               the column but the content stays the same width as everything else. */
             .latest {
-                padding-bottom: 2.5rem;
-                margin-bottom: 2.5rem;
-                border-bottom: 1px solid var(--rule);
+                margin: 0 calc(-1 * var(--content-pad-x)) 2.5rem;
+                padding: 1.5rem var(--content-pad-x) 1.7rem;
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                border-radius: 12px;
             }
             .feat-title {
                 margin: 0;
@@ -127,6 +134,17 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.85rem;
             }
+            /* End-of-archive cap so the list doesn't just stop dead. */
+            .list-end {
+                margin-top: 2.2em;
+                padding-top: 1.5em;
+                border-top: 1px solid var(--rule);
+                text-align: center;
+                color: var(--muted);
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78rem;
+                letter-spacing: 0.06em;
+            }
         </style>
     </head>
     <body>
@@ -171,10 +189,12 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 <p class="section-label">Older posts</p>
                 <PostList posts={olderFirstPage} />
                 {
-                    hasMoreOlder && (
+                    hasMoreOlder ? (
                         <div class="pagination">
                             <a href="/page/2">Older posts &rarr;</a>
                         </div>
+                    ) : (
+                        <p class="list-end">That&rsquo;s everything &middot; no more posts.</p>
                     )
                 }
             </section>

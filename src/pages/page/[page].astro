@@ -47,6 +47,17 @@ const nextHref = page.currentPage < page.lastPage ? `/page/${page.currentPage + 
             .pagination .spacer {
                 margin-left: auto;
             }
+            /* End-of-archive cap on the final page so the list doesn't stop dead. */
+            .list-end {
+                margin-top: 2.2em;
+                padding-top: 1.5em;
+                border-top: 1px solid var(--rule);
+                text-align: center;
+                color: var(--muted);
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78rem;
+                letter-spacing: 0.06em;
+            }
         </style>
     </head>
     <body>
@@ -58,6 +69,7 @@ const nextHref = page.currentPage < page.lastPage ? `/page/${page.currentPage + 
                 <a href={prevHref}>&larr; Newer</a>
                 {nextHref && <a class="spacer" href={nextHref}>Older &rarr;</a>}
             </div>
+            {!nextHref && <p class="list-end">That&rsquo;s everything &middot; no more posts.</p>}
         </main>
         <Footer />
     </body>
