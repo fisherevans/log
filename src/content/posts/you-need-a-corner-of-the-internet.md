@@ -65,7 +65,7 @@ Personal websites. Blogs. Weird little corners of the internet. Sites with terri
 
 The web felt less like a feed and more like an adventure.
 
-You found interesting websites because someone linked to them. You followed rabbit holes. You bookmarked things. You shared them with friends. Discovery happened through people.
+You found interesting websites because someone linked you to them. You followed rabbit holes. You bookmarked things. You shared them with friends. Discovery happened through people.
 
 Today, discovery mostly happens through algorithms. Instead of exploring ideas, we're served content. Instead of wandering, our paths are optimized. Instead of finding interesting things through human relationships, we find them through endless scrolling, hoping that the next swipe will finally reveal that last "good video" before you close the app.
 
@@ -147,7 +147,7 @@ That's not what I'm advocating. The point isn't self-hosting.
 
 The point is ownership.
 
-A personal website can be a Squarespace page. It can be a Tumblr blog. It can be a simple site hosted on a free service. It can be anything that gives you a place on the internet that feels like yours, that can be accessed directly.
+A personal website can be a Squarespace page. It can be a Tumblr blog. It can be a simple site hosted on a free service. It can be anything that gives you a place on the internet that feels like yours, that can be accessed directly, and freely.
 
 If you can create a Facebook profile, you can create a personal website.
 
@@ -193,9 +193,9 @@ Interestingly, some of the more recent movements on the internet have been explo
 
 I'm still learning about many of these technologies, but I find the direction encouraging.
 
-In theory, a federated identity could allow you to host your own content while still controlling who can access it. You could maintain ownership of your space while preserving some of the comfort and safety that comes from sharing only with people you trust.
+In theory, a federated identity could allow you to host your own content while still controlling who can access it. You could maintain ownership of your space while preserving some of the comfort and safety that comes from sharing only with people you trust, without relying on a centralized identity platform.
 
-But I don't know if these systems are the answer yet. Very few of my friends are participating in any of these platforms and gating content behind one of them would ostracize them. For now, I still think a public, personal website is still the easiest method to share your content. Maybe if one of these options become more widespread and as ubiquitous as other social platforms, it will be an obvious solution.
+But I don't know if these systems are the answer yet. Very few of my friends are participating in any of these platforms and gating content behind one of them would ostracize them. For now, I still think a public, personal website is the easiest method to share your content. Maybe if one of these options become more widespread and as ubiquitous as other social platforms, it will be an obvious solution.
 
 What I do know is that they are at least trying to solve the right problem: how do we maintain authentic connections online without handing complete control of those relationships to a handful of companies?
 
