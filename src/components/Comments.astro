@@ -108,11 +108,26 @@ const { postId } = Astro.props;
         margin: 0;
         padding: 0;
     }
+    /* Connector-line nesting: a vertical rail per reply group + an elbow stub
+       from the rail to each reply's avatar, so parentage reads as a tree.
+       (li.comment::before is taken by the chevron-kill, so the stub is ::after.) */
     .comments :global(.comments-replies) {
         margin-top: 0.75em;
-        margin-left: 1.25em;
-        padding-left: 1em;
+        margin-left: 0.8em;
+        padding-left: 1.5em;
         border-left: 1px solid var(--rule);
+    }
+    .comments :global(.comments-replies > li.comment) {
+        position: relative;
+    }
+    .comments :global(.comments-replies > li.comment::after) {
+        content: '';
+        position: absolute;
+        left: -1.5em;
+        top: 1.55em;
+        width: 1.2em;
+        height: 1px;
+        background: var(--rule);
     }
     .comments :global(.comment) {
         padding: 0.9em 0;
