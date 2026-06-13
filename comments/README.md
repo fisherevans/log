@@ -149,8 +149,9 @@ Driven from `nottingham-cloud` (`make *-comments-worker`), not from here. See
 `D1: Edit` scopes added before any `wrangler deploy` / `wrangler d1` call works.
 
 Secrets (`IP_HASH_SALT`, `TURNSTILE_SECRET`, `DATADOG_API_KEY`,
-`OAUTH_PRIVATE_KEY`) are pushed via `wrangler secret put` from the deploy target -
-never in `wrangler.toml` or git. After `wrangler d1 create log-comments`, paste
+`OAUTH_PRIVATE_KEY`, `LOGIN_GRANTS_TOKEN`, and the optional `DISCORD_WEBHOOK_URL`
+for new-comment pings) are pushed via `wrangler secret put` from the deploy
+target - never in `wrangler.toml` or git. After `wrangler d1 create log-comments`, paste
 the printed `database_id` into `wrangler.toml`.
 
 ## Local UX sandbox

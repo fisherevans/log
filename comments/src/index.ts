@@ -103,7 +103,7 @@ export default {
                 }
                 if (request.method === 'POST') {
                     const body = await readJson<Parameters<typeof handleCreate>[2]>(request);
-                    return json(await handleCreate(request, env, body, telemetry), { status: 201 }, cors);
+                    return json(await handleCreate(request, env, body, telemetry, ctx), { status: 201 }, cors);
                 }
             }
 
