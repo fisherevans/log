@@ -9,12 +9,14 @@ import {
     applyEdit,
     commentsEnabled,
     countChildren,
+    countCommentsSince,
     getComment,
     hardDeleteComment,
     insertComment,
     listComments,
     softDeleteComment,
 } from './db';
+import { notifyNewComment } from './notify';
 import { mintId } from './ids';
 import { enforceAbuse } from './abuse';
 import { hashIp } from './hash';
@@ -107,6 +109,7 @@ interface CreateBody {
     parentId?: string | null;
     body?: string;
     turnstileToken?: string;
+    pageUrl?: string; // the post URL, for the Discord notification's deep link
 }
 
 // POST /comments  -> the created comment. Auth required.
@@ -115,6 +118,7 @@ export async function handleCreate(
     env: Env,
     body: CreateBody,
     telemetry: Telemetry,
+    ctx: ExecutionContext,
 ): Promise<unknown> {
     const identity = await getIdentity(request, env);
     if (!identity) throw new HttpError(401, 'sign in to comment');
@@ -175,6 +179,13 @@ export async function handleCreate(
     const trust = abuse.trusted ? 'trusted' : 'new';
     telemetry.commentCreated(postId, trust, 'allowed');
     telemetry.event('comment', { post_id: postId, comment_id: id, did: identity.did, parent_id: parentId });
+
+    // Discord ping for new comments (no-op without the webhook). pageUrl is only
+    // trusted if it points at our own blog. The per-hour cap keeps a burst from
+    // flooding the channel - a real spike is the DataDog monitor's job.
+    const pageUrl = typeof body.pageUrl === 'string' && body.pageUrl.startsWith(env.ALLOWED_ORIGIN) ? body.pageUrl : null;
+    const recentCount = await countCommentsSince(env.DB, createdAt - 60 * 60 * 1000);
+    notifyNewComment(env, ctx, { handle: identity.handle, displayName: identity.displayName, body: text, pageUrl, postId }, recentCount);
 
     const row = await getComment(env.DB, id);
     return shape(row!);

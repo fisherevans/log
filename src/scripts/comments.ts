@@ -386,7 +386,7 @@ class CommentsWidget {
                 const res = await api('/comments', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ postId: this.postId, parentId: parent?.id ?? null, body: text, turnstileToken: token }),
+                    body: JSON.stringify({ postId: this.postId, parentId: parent?.id ?? null, body: text, turnstileToken: token, pageUrl: location.href }),
                 });
                 if (!res.ok) {
                     const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };

@@ -85,6 +85,13 @@ export async function softDeleteComment(db: D1Database, id: string, when: number
         .run();
 }
 
+// Total comments created since a timestamp (epoch ms), across all posts. Feeds
+// the Discord-notify rate cap so a burst doesn't flood the channel.
+export async function countCommentsSince(db: D1Database, sinceMs: number): Promise<number> {
+    const row = await db.prepare(`SELECT COUNT(*) AS n FROM comments WHERE created_at >= ?`).bind(sinceMs).first<{ n: number }>();
+    return row?.n ?? 0;
+}
+
 // How many comments reply directly to this one (deleted or not). A non-zero
 // count blocks hard delete - removing the row would orphan the replies.
 export async function countChildren(db: D1Database, parentId: string): Promise<number> {
