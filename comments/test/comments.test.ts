@@ -117,6 +117,28 @@ describe('comments CRUD', () => {
     });
 });
 
+// CSRF: the SameSite=None session cookie means a write must come from our origin.
+describe('CSRF guard', () => {
+    it('rejects a state-changing request from a foreign origin', async () => {
+        const res = await SELF.fetch('https://comments.fisher.sh/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain', Origin: 'https://evil.example', 'X-Dev-Did': USER.did },
+            body: JSON.stringify({ postId: POST, body: 'csrf attempt' }),
+        });
+        expect(res.status).toBe(403);
+    });
+
+    it('allows a write with no Origin (non-browser) or from the allowed origin', async () => {
+        expect((await post({ postId: POST, body: 'no origin ok' })).status).toBe(201);
+        const res = await SELF.fetch('https://comments.fisher.sh/comments', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Origin: env.ALLOWED_ORIGIN, 'X-Dev-Did': USER.did },
+            body: JSON.stringify({ postId: POST, body: 'allowed origin ok' }),
+        });
+        expect(res.status).toBe(201);
+    });
+});
+
 function del(id: string, hard = false, who: { did: string } = USER): Promise<Response> {
     return SELF.fetch(`https://comments.fisher.sh/comments/${id}${hard ? '?hard=1' : ''}`, {
         method: 'DELETE',

@@ -10,7 +10,7 @@
 //   DELETE /comments/:id           delete own comment, or admin
 //   GET    /health                 liveness
 import type { Env } from './env';
-import { corsHeaders, errorResponse, json, readJson } from './http';
+import { HttpError, corsHeaders, errorResponse, json, readJson } from './http';
 import { handleCreate, handleDelete, handleEdit, handleList } from './comments';
 import {
     handleBan,
@@ -47,6 +47,20 @@ export default {
         const path = url.pathname.replace(/\/+$/, '') || '/';
 
         try {
+            // CSRF guard. The session cookie is SameSite=None (it must ride the
+            // cross-site call from the blog), so a forged page could otherwise
+            // fire a credentialed write as the victim - including admin actions,
+            // since ADMIN_DID is public. Browsers always attach Origin to a
+            // cross-origin write and JS can't forge it, so reject any write whose
+            // Origin is present and not ours. Absent Origin = non-browser / tests
+            // (no ambient cookie to abuse); GET/HEAD are exempt.
+            if (request.method !== 'GET' && request.method !== 'HEAD') {
+                const origin = request.headers.get('Origin');
+                if (origin && origin !== env.ALLOWED_ORIGIN) {
+                    throw new HttpError(403, 'cross-origin request refused');
+                }
+            }
+
             if (request.method === 'GET' && path === '/health') {
                 return json({ ok: true }, {}, cors);
             }
