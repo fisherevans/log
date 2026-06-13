@@ -1,16 +1,29 @@
 ---
-id: InTq4USBbA
-title: Syncing my calendars, both ways
-date: 2026-06-04
+title: 'calsync: It syncs calendars'
+date: 2026-06-12
 description: A small tool that keeps my work and personal calendars in sync in both directions - personal life blocks off my work day, and my work day shows up on my phone.
 tags:
   - tools
   - work
 hasVideo: false
-updatedDate: 2026-06-04
 draft: true
+id: InTq4USBbA
 ---
-A couple years ago I wrote a [little Google Apps Script](/posts/2024/03/18/personal-calendar-sync/) to copy my personal appointments onto my work calendar as "busy" blocks. It worked, but it only solved half of the problem I actually have. So I wrote a second, similar script to go the other way with slightly different features. Well, someone asked about it and I was embarassed by the state of it. So I merged the two into a signle script with a unified config block. I made: [calsync](https://github.com/fisherevans/calsync).
+Before the COVID shut down, I really didn't worry about accessing my work calendar while at home. I was just at work, from 9 to 5, Monday through Friday. I even left my laptop at work back then...
+
+But now that I work remotely and have kids, organizing my time has become much trickier. Family and personal events started impacting my work day a lot more. My life is spread accross a few different calendars:
+
+- Personal
+- Household
+- Lisa's *(for awareness)*
+- Work Meetings *(work account)*
+- On Call *(work account)*
+
+The hard part is that they cross work/life boundaries. A kid's dentist appointment on Household calendar doesn't automatically block my time in my work calendar. And my wife can't see when my meetings are when making plans that include me.
+
+A few years ago, I wrote a [little Google Apps Script](/posts/2024/03/18/personal-calendar-sync/) to copy my personal appointments onto my work calendar as "busy" blocks. It worked, but it only solved half of the problem I actually have. So I wrote a second, similar script to go the other way with slightly different features.
+
+Well, someone asked about it and I was embarrassed by the state of it. So I merged the two into a single script with a unified config block. I made: [calsync](https://github.com/fisherevans/calsync).
 
 The whole thing comes down to the wall between my work life and my personal life. Work lives in one Google account, my personal and shared calendars live in another, and getting them to cooperate across that wall - without handing either side access it shouldn't have - is the entire problem. There are really two halves to it.
 
