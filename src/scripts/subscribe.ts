@@ -1,11 +1,25 @@
 // Client for the native email-subscribe form (issue #7). Posts to the comments
 // Worker's /subscribe endpoint, Turnstile-gated when a sitekey is configured.
+//
+// The form is a three-stage, fixed-height flow (see SubscribeForm.astro):
+//   email row  -> Subscribe clicked -> Turnstile human-check -> confirmation
+// The Turnstile widget is only loaded + rendered once Subscribe is clicked (no
+// widget sitting there upfront), it replaces the email row in the same slot, and
+// on a passing token we submit and swap the slot to the confirmation. Errors drop
+// back to the email stage. No stage changes the slot height, so nothing jumps.
 import { COMMENTS_API_URL, TURNSTILE_SITEKEY } from '../consts';
 
+interface TurnstileRenderOpts {
+    sitekey: string;
+    size?: 'normal' | 'flexible' | 'compact';
+    callback?: (token: string) => void;
+    'error-callback'?: () => void;
+    'expired-callback'?: () => void;
+}
 declare global {
     interface Window {
         turnstile?: {
-            render: (el: HTMLElement, opts: { sitekey: string }) => string;
+            render: (el: HTMLElement, opts: TurnstileRenderOpts) => string;
             getResponse: (id: string) => string | undefined;
             reset: (id?: string) => void;
         };
@@ -13,7 +27,16 @@ declare global {
 }
 
 function loadTurnstile(): Promise<void> {
-    if (!TURNSTILE_SITEKEY || document.querySelector('script[src*="turnstile"]')) return Promise.resolve();
+    if (!TURNSTILE_SITEKEY) return Promise.resolve();
+    if (window.turnstile) return Promise.resolve();
+    const existing = document.querySelector<HTMLScriptElement>('script[src*="turnstile"]');
+    if (existing) {
+        // Another form already injected the script; wait for it to define the API.
+        return new Promise((resolve) => {
+            const tick = () => (window.turnstile ? resolve() : setTimeout(tick, 50));
+            tick();
+        });
+    }
     return new Promise((resolve) => {
         const s = document.createElement('script');
         s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -24,8 +47,7 @@ function loadTurnstile(): Promise<void> {
     });
 }
 
-// Wire every subscribe form on the page (the footer + the landing-page modal can
-// both be present). Idempotent: each form is wired at most once.
+// Wire every subscribe form on the page (idempotent: each form is wired once).
 export function initSubscribe() {
     document.querySelectorAll<HTMLFormElement>('[data-subscribe]').forEach((form) => {
         if (form.dataset.wired) return;
@@ -38,38 +60,77 @@ function wireForm(form: HTMLFormElement) {
     const email = form.querySelector<HTMLInputElement>('input[type="email"]')!;
     const status = form.querySelector<HTMLElement>('[data-subscribe-status]')!;
     const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
-    const turnstileMount = form.querySelector<HTMLElement>('[data-subscribe-turnstile]')!;
+    const checkMount = form.querySelector<HTMLElement>('[data-subscribe-turnstile]')!;
+    const stages: Record<string, HTMLElement | null> = {
+        email: form.querySelector('[data-subscribe-stage="email"]'),
+        check: form.querySelector('[data-subscribe-stage="check"]'),
+        done: form.querySelector('[data-subscribe-stage="done"]'),
+    };
 
     let turnstileId: string | undefined;
-    void loadTurnstile().then(() => {
-        if (TURNSTILE_SITEKEY && window.turnstile) {
-            turnstileId = window.turnstile.render(turnstileMount, { sitekey: TURNSTILE_SITEKEY });
-        }
-    });
+    let posting = false;
 
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const value = email.value.trim();
-        if (!value) return;
-        submit.disabled = true;
-        status.textContent = '';
-        const token = turnstileId && window.turnstile ? window.turnstile.getResponse(turnstileId) : undefined;
+    const setStage = (name: 'email' | 'check' | 'done') => {
+        for (const [k, el] of Object.entries(stages)) if (el) el.hidden = k !== name;
+    };
+
+    const backToEmail = (msg: string) => {
+        posting = false;
+        status.textContent = msg;
+        submit.disabled = false;
+        if (turnstileId !== undefined && window.turnstile) window.turnstile.reset(turnstileId);
+        setStage('email');
+        email.focus();
+    };
+
+    const post = async (token: string | undefined) => {
+        if (posting) return;
+        posting = true;
         try {
             const res = await fetch(`${COMMENTS_API_URL}/subscribe`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: value, turnstileToken: token }),
+                body: JSON.stringify({ email: email.value.trim(), turnstileToken: token }),
             });
             if (!res.ok) {
                 const { error } = (await res.json().catch(() => ({}))) as { error?: string };
                 throw new Error(error || 'Could not subscribe.');
             }
-            status.textContent = "You're on the list. Talk soon.";
-            email.value = '';
+            setStage('done');
         } catch (err) {
-            status.textContent = err instanceof Error ? err.message : 'Could not subscribe.';
-            submit.disabled = false;
-            if (turnstileId && window.turnstile) window.turnstile.reset(turnstileId);
+            backToEmail(err instanceof Error ? err.message : 'Could not subscribe.');
         }
+    };
+
+    // Native validation runs before this fires (required + type=email), so we only
+    // reach here with a non-empty, well-formed address.
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!email.value.trim()) return;
+        status.textContent = '';
+        submit.disabled = true;
+
+        // No Turnstile configured (e.g. local dev): skip the human check entirely.
+        if (!TURNSTILE_SITEKEY) {
+            void post(undefined);
+            return;
+        }
+
+        // Reveal the (empty) mount first - Turnstile must render into a visible
+        // element - then load + render the widget into it.
+        setStage('check');
+        await loadTurnstile();
+        if (!window.turnstile) {
+            void post(undefined); // script blocked: degrade to a plain submit
+            return;
+        }
+        checkMount.innerHTML = '';
+        turnstileId = window.turnstile.render(checkMount, {
+            sitekey: TURNSTILE_SITEKEY,
+            size: 'flexible',
+            callback: (token) => void post(token),
+            'error-callback': () => backToEmail('Verification failed - try again.'),
+            'expired-callback': () => backToEmail('Verification expired - try again.'),
+        });
     });
 }

@@ -1,19 +1,25 @@
 ---
-// Subscribe CTA (issue #7), compact for the site footer. A native email form
-// posting to the comments Worker (emails land in D1, sent manually - no
-// automation), plus the follow options. Deliberately subtle: this is footer
-// furniture, not blog-post content.
+// Subscribe CTA (issue #7). A native email form posting to the comments Worker
+// (emails land in D1, sent manually - no automation), plus the follow options.
+//
+// Progressive, fixed-height flow so the layout never jumps: the slot starts as
+// the email row, swaps to the Turnstile human-check after Subscribe is clicked
+// (the check is only loaded then - no widget sitting there upfront), then swaps
+// to the confirmation. All three stages share one reserved-height slot.
 import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
 ---
 
 <section class="subscribe" aria-label="Subscribe">
     <p class="subscribe-lede">Wanna get an email when I post some of my stuff?</p>
     <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
-        <div class="subscribe-row">
-            <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
-            <button type="submit">Subscribe</button>
+        <div class="subscribe-slot">
+            <div class="subscribe-row" data-subscribe-stage="email">
+                <input type="email" name="email" placeholder="you@example.com" required aria-label="Email address" />
+                <button type="submit">Subscribe</button>
+            </div>
+            <div data-subscribe-turnstile class="subscribe-turnstile" data-subscribe-stage="check" hidden></div>
+            <p class="subscribe-done" data-subscribe-stage="done" hidden>You&rsquo;re subscribed. Talk soon.</p>
         </div>
-        <div data-subscribe-turnstile class="subscribe-turnstile"></div>
         <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
     </form>
     <p class="subscribe-alt">
@@ -33,6 +39,22 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts
         margin: 0 0 0.7em;
         color: var(--muted);
     }
+
+    /* One reserved-height slot the three stages swap through, so nothing below
+       shifts when the Turnstile (tallest stage) appears or the confirmation
+       replaces it. Height is sized to the Turnstile widget (~65px). */
+    .subscribe-slot {
+        display: flex;
+        align-items: center;
+        min-height: 4.25rem;
+    }
+    .subscribe-slot > [data-subscribe-stage] {
+        width: 100%;
+    }
+    .subscribe-slot > [hidden] {
+        display: none !important;
+    }
+
     .subscribe-row {
         display: flex;
         flex-wrap: wrap;
@@ -76,17 +98,16 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts
         opacity: 0.5;
         cursor: default;
     }
-    .subscribe-turnstile:empty {
-        display: none;
+    .subscribe-done {
+        margin: 0;
+        color: var(--accent);
     }
-    .subscribe-turnstile {
-        margin-top: 0.5em;
-    }
-    .subscribe-status:empty {
-        display: none;
-    }
+
+    /* Reserve a line for status text (errors) so it doesn't shove the layout when
+       it appears. */
     .subscribe-status {
         margin: 0.5em 0 0;
+        min-height: 1.2em;
         color: var(--muted);
     }
     .subscribe-alt {

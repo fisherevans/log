@@ -64,10 +64,14 @@ import SubscribeForm from './SubscribeForm.astro';
     }
     .submodal :global(.subscribe-lede),
     .submodal :global(.subscribe-status),
+    .submodal :global(.subscribe-done),
     .submodal :global(.subscribe-alt) {
         text-align: center;
     }
-    .submodal :global(.subscribe-turnstile) {
+    .submodal :global(.subscribe-slot) {
+        justify-content: center;
+    }
+    .submodal :global(.subscribe-turnstile:not([hidden])) {
         display: flex;
         justify-content: center;
     }
