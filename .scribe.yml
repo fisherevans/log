@@ -1,0 +1,19 @@
+collections:
+    posts:
+        experience: blog-post
+        fields:
+            body: body
+            date: date
+            description: description
+            draft: draft
+            heroImage: heroImage
+            tags: tags
+            title: title
+            updatedDate: updatedDate
+        references:
+            tags: tags
+    tags:
+        experience: tag
+        fields:
+            description: description
+            name: name
