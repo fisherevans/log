@@ -11,7 +11,7 @@ const { postId } = Astro.props;
 
 {
     postId && (
-        <section class="comments" aria-label="Comments">
+        <section id="comments" class="comments" aria-label="Comments">
             <div data-comments data-post-id={postId} data-op-did={OP_DID} />
         </section>
     )
@@ -19,10 +19,14 @@ const { postId } = Astro.props;
 
 <style>
     .comments {
+        /* Reply connector lines: a touch lighter than --rule so the tree reads
+           as a continuous spine without the near-invisible #34302a guesswork. */
+        --comment-rail: #574e44;
         max-width: var(--max-width);
         margin: 3em auto 0;
         padding: 2em 1em 0;
         border-top: 1px solid var(--rule);
+        scroll-margin-top: 1.5rem;
     }
     .comments :global(.comments-heading) {
         font-family: 'DraftingMono', ui-monospace, monospace;
@@ -108,26 +112,47 @@ const { postId } = Astro.props;
         margin: 0;
         padding: 0;
     }
-    /* Connector-line nesting: a vertical rail per reply group + an elbow stub
-       from the rail to each reply's avatar, so parentage reads as a tree.
-       (li.comment::before is taken by the chevron-kill, so the stub is ::after.) */
+    /* Connector-line tree. Each reply group nests *inside* its parent <li> (see
+       renderSubtree), so a per-child vertical segment (::before, full height of
+       the li) stacks into one continuous spine from the parent down to the last
+       reply; the ::after elbow joins each reply's avatar row. The last child's
+       spine stops at its elbow so there's no dangling tail below the thread.
+       (Top-level li.comment::before is killed by the chevron-kill below; the
+       more-specific `.comments-replies > li.comment::before` here wins for
+       nested replies.) */
     .comments :global(.comments-replies) {
-        margin-top: 0.75em;
-        margin-left: 0.8em;
-        padding-left: 1.5em;
-        border-left: 1px solid var(--rule);
+        margin: 0.15em 0 0;
+        padding-left: 1.7em;
+        position: relative;
     }
     .comments :global(.comments-replies > li.comment) {
         position: relative;
+        padding-left: 0;
+        /* No full-width divider on replies - it would cut across the spine.
+           Top-level comments keep their divider (see .comment below). */
+        border-bottom: none;
+    }
+    .comments :global(.comments-replies > li.comment::before) {
+        content: '';
+        position: absolute;
+        left: -1.05em;
+        top: 0;
+        bottom: 0;
+        width: 1px;
+        background: var(--comment-rail);
+    }
+    .comments :global(.comments-replies > li.comment:last-child::before) {
+        bottom: auto;
+        height: 1.55em;
     }
     .comments :global(.comments-replies > li.comment::after) {
         content: '';
         position: absolute;
-        left: -1.5em;
+        left: -1.05em;
         top: 1.55em;
-        width: 1.2em;
+        width: 1.05em;
         height: 1px;
-        background: var(--rule);
+        background: var(--comment-rail);
     }
     .comments :global(.comment) {
         padding: 0.85em 0 0.6em;

@@ -44,10 +44,56 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
                 font-size: 0.85rem;
                 color: var(--muted);
                 letter-spacing: 0.03em;
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 0.55em;
             }
             .post-title .last-updated {
-                margin-left: 0.6em;
                 font-style: italic;
+            }
+            /* Comment-count link: count + jump-to-thread, populated client-side by
+               the comments script (hidden until then so the number never flickers).
+               Reads "Add a comment" when empty (scrolls to + focuses the box). */
+            .post-title .comment-count,
+            .post-title .comment-count:visited {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.3em;
+                color: var(--accent);
+                border-bottom: none;
+                padding-bottom: 0;
+                background: transparent;
+                box-shadow: none;
+                cursor: pointer;
+            }
+            .post-title .comment-count[hidden] { display: none; }
+            .post-title .comment-count::before {
+                content: '·';
+                color: var(--muted);
+                opacity: 0.6;
+                margin-right: 0.15em;
+            }
+            .post-title .comment-count .cc-label {
+                border-bottom: 1px dotted currentColor;
+                padding-bottom: 1px;
+            }
+            .post-title .comment-count.zero { color: var(--muted); }
+            .post-title .comment-count:hover,
+            .post-title .comment-count:focus-visible {
+                color: var(--hover-bg);
+                background: transparent;
+                box-shadow: none;
+                outline: none;
+            }
+            .post-title .comment-count:hover .cc-label,
+            .post-title .comment-count:focus-visible .cc-label {
+                border-bottom-color: var(--hover-bg);
+            }
+            .post-title .comment-count-icon {
+                width: 0.95em;
+                height: 0.95em;
+                flex: none;
             }
             .post-title .meta {
                 margin-top: 0.85em;
@@ -75,6 +121,14 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
                             <span class="last-updated">
                                 updated <FormattedDate date={updatedDate} />
                             </span>
+                        )}
+                        {id && (
+                            <a class="comment-count" href="#comments" data-comment-count hidden>
+                                <svg class="comment-count-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" />
+                                </svg>
+                                <span class="cc-label"></span>
+                            </a>
                         )}
                     </div>
                     {(tags && tags.length > 0) && (

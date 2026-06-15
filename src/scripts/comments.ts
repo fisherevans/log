@@ -97,6 +97,7 @@ class CommentsWidget {
     private enabled = true;
     private hashApplied = false;
     private hashBound = false;
+    private headerWired = false;
     private topShown = PAGE_SIZE; // how many top-level comments are revealed
     private focusStack: string[] = []; // drill-in path; empty = root thread
 
@@ -116,7 +117,20 @@ class CommentsWidget {
                 if (m) this.gotoComment(m[1]);
             });
         }
-        this.setStatus('Loading comments…');
+        await this.load(false);
+    }
+
+    // Silent refetch after a post/edit/delete/logout. Re-renders in place without
+    // blanking the whole section to "Loading…" first - that flash made a
+    // successful post look like it failed whenever the reload was even slightly
+    // slow, and a transient hiccup wiped the just-posted comment entirely. On a
+    // quiet failure we keep the current DOM and just toast.
+    private async reload() {
+        await this.load(true);
+    }
+
+    private async load(quiet: boolean) {
+        if (!quiet) this.setStatus('Loading comments…');
         try {
             const [me, data] = await Promise.all([
                 api('/oauth/me').then((r) => r.json() as Promise<Me>).catch(() => ({ loggedIn: false })),
@@ -127,7 +141,8 @@ class CommentsWidget {
             this.comments = data.comments ?? [];
             this.render();
         } catch {
-            this.setStatus('Comments are unavailable right now.');
+            if (quiet) this.toast('Could not refresh comments.');
+            else this.setStatus('Comments are unavailable right now.');
         }
     }
 
@@ -136,6 +151,7 @@ class CommentsWidget {
     }
 
     private render() {
+        this.updateHeaderLink();
         const frag = document.createDocumentFragment();
         const heading = el('h2', { class: 'comments-heading' }, this.headingText());
         const tools: HTMLElement[] = [];
@@ -178,6 +194,46 @@ class CommentsWidget {
         return live === 0 ? 'Comments' : live === 1 ? '1 comment' : `${live} comments`;
     }
 
+    // The post-header count link (BlogPost.astro) lives outside this widget's
+    // root. Populate it from the loaded thread: "N comments" jumps to the
+    // section; "Add a comment" (empty + open) jumps and focuses the composer.
+    // Hidden until populated so the number never flickers, and hidden entirely
+    // when comments are closed with none to show.
+    private updateHeaderLink() {
+        const link = document.querySelector<HTMLElement>('[data-comment-count]');
+        if (!link) return;
+        const live = this.comments.filter((c) => !c.deleted).length;
+        if (live === 0 && !this.enabled) {
+            link.hidden = true;
+            return;
+        }
+        const label = link.querySelector('.cc-label') ?? link;
+        label.textContent = live === 0 ? 'Add a comment' : live === 1 ? '1 comment' : `${live} comments`;
+        link.classList.toggle('zero', live === 0);
+        link.hidden = false;
+        if (!this.headerWired) {
+            this.headerWired = true;
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const empty = this.comments.filter((c) => !c.deleted).length === 0;
+                this.jumpToComments(empty && this.enabled);
+            });
+        }
+    }
+
+    private jumpToComments(focusCompose: boolean) {
+        const section = this.root.closest('section.comments');
+        if (section instanceof HTMLElement) {
+            const rect = section.getBoundingClientRect();
+            window.scrollTo({ top: Math.max(0, window.scrollY + rect.top - 24), behavior: 'smooth' });
+        }
+        if (focusCompose) {
+            requestAnimationFrame(() =>
+                this.root.querySelector<HTMLTextAreaElement>('textarea.comment-input')?.focus(),
+            );
+        }
+    }
+
     // Build the thread from the flat list (oldest-first, by parentId). The root
     // view paginates the top level; a drill-in renders one comment's subtree.
     private thread(): HTMLElement {
@@ -214,23 +270,28 @@ class CommentsWidget {
     }
 
     // Render a comment then its replies: inline until MAX_DEPTH, then a drill-in.
+    // The reply group nests *inside* the comment's <li> so the connector spine
+    // (Comments.astro) reads as one continuous tree per branch.
     private renderSubtree(byParent: Map<string | null, Comment[]>, c: Comment, depth: number, into: HTMLElement) {
-        into.append(this.commentNode(c, depth));
+        const node = this.commentNode(c, depth);
+        into.append(node);
         const kids = byParent.get(c.id);
         if (!kids || !kids.length) return;
         if (depth + 1 >= MAX_DEPTH) {
             const n = this.countDescendants(byParent, c.id);
-            into.append(
-                el('li', { class: 'comments-drillin-row' },
-                    el('button', { class: 'comment-link comment-drillin', type: 'button', click: () => this.drillInto(c.id) },
-                        `view ${n} ${n === 1 ? 'reply' : 'replies'} →`),
+            node.append(
+                el('ul', { class: 'comments-list comments-replies' },
+                    el('li', { class: 'comments-drillin-row' },
+                        el('button', { class: 'comment-link comment-drillin', type: 'button', click: () => this.drillInto(c.id) },
+                            `view ${n} ${n === 1 ? 'reply' : 'replies'} →`),
+                    ),
                 ),
             );
             return;
         }
         const sub = el('ul', { class: 'comments-list comments-replies' });
         for (const kid of kids) this.renderSubtree(byParent, kid, depth + 1, sub);
-        into.append(sub);
+        node.append(sub);
     }
 
     private countDescendants(byParent: Map<string | null, Comment[]>, id: string): number {
@@ -377,8 +438,8 @@ class CommentsWidget {
                     throw new Error(msg || 'Could not post your comment.');
                 }
                 const created = (await res.json().catch(() => null)) as Comment | null;
-                await this.init(); // reload the thread
-                if (created?.id) this.focusComment(created.id); // scroll to + flash your new comment
+                await this.reload(); // refresh the thread in place (no blank-out)
+                if (created?.id) this.focusComment(created.id); // center + flash your new comment
             } catch (e) {
                 fail(e instanceof Error ? e.message : 'Could not post your comment.');
             }
@@ -426,7 +487,8 @@ class CommentsWidget {
 
     private openReply(c: Comment) {
         const li = this.root.querySelector(`li.comment[data-id="${c.id}"]`);
-        if (!li || li.querySelector('.comment-composer-reply')) return;
+        // :scope > so an open composer on a *nested* reply doesn't block this one.
+        if (!li || li.querySelector(':scope > .comment-composer-reply')) return;
         li.append(this.composer(c));
     }
 
@@ -459,7 +521,7 @@ class CommentsWidget {
         }
         this.me = { loggedIn: false };
         this.focusStack = [];
-        await this.init();
+        await this.reload();
     }
 
     // Per-comment "..." menu (#13). Returns null when there's nothing to offer
@@ -605,13 +667,27 @@ class CommentsWidget {
         }
     }
 
-    private gotoComment(id: string) {
+    private gotoComment(id: string, center = false) {
         const li = this.root.querySelector<HTMLElement>(`li.comment[data-id="${id}"]`);
         if (!li) return;
-        this.scrollSoft(li);
+        if (center) this.scrollCenter(li);
+        else this.scrollSoft(li);
         li.classList.remove('comment-flash');
         void li.offsetWidth; // reflow so the animation restarts on repeat clicks
         li.classList.add('comment-flash');
+    }
+
+    // Posting your own comment: always bring it to the middle of the viewport so
+    // the splash is unmissable. If it's taller than (most of) the screen,
+    // top-align it instead so you land on its first line, not its middle.
+    private scrollCenter(target: HTMLElement) {
+        const rect = target.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const top =
+            rect.height >= vh * 0.9
+                ? window.scrollY + rect.top - vh * 0.12
+                : window.scrollY + rect.top - (vh - rect.height) / 2;
+        window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
     }
 
     // Scroll only when needed: if the target already sits in the top two-thirds of
@@ -630,7 +706,7 @@ class CommentsWidget {
     // the permalink hash handler and the post-a-comment flow.
     private focusComment(id: string) {
         if (this.revealPathTo(id)) this.render();
-        requestAnimationFrame(() => this.gotoComment(id));
+        requestAnimationFrame(() => this.gotoComment(id, true));
     }
 
     // After an OAuth round-trip that returned to #comment-compose, bring the
@@ -739,7 +815,7 @@ class CommentsWidget {
                     const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
                     throw new Error(msg || 'Could not save your edit.');
                 }
-                await this.init();
+                await this.reload();
             } catch (e) {
                 error.textContent = e instanceof Error ? e.message : 'Could not save your edit.';
                 error.hidden = false;
@@ -851,7 +927,7 @@ class CommentsWidget {
         if (!confirm(prompt)) return;
         const res = await api(`/comments/${c.id}${hard ? '?hard=1' : ''}`, { method: 'DELETE' });
         if (res.ok) {
-            await this.init();
+            await this.reload();
         } else {
             const { error: msg } = (await res.json().catch(() => ({}))) as { error?: string };
             this.toast(msg || 'Could not remove the comment.');
