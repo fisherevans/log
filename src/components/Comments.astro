@@ -199,14 +199,6 @@ const { postId } = Astro.props;
         line-height: 1.5;
         overflow-wrap: anywhere;
     }
-    /* Reply is the only bottom action now (the "..." menu moved up to the head),
-       so the row is just a right-floated icon with a tight top gap. */
-    .comments :global(.comment-actions) {
-        display: flex;
-        gap: 0.6em;
-        margin-top: 0.1em;
-        justify-content: flex-end;
-    }
     .comments :global(.comment-link) {
         background: none;
         border: none;
@@ -258,13 +250,8 @@ const { postId } = Astro.props;
         opacity: 0.85;
     }
 
-    /* Reply as an icon, pushed to the right of the actions row. */
-    .comments :global(.comment-actions) {
-        align-items: center;
-    }
-    .comments :global(.comment-action-reply) {
-        margin-left: auto;
-    }
+    /* Reply + menu icons cluster at the right of the head row; the timestamp's
+       margin-left:auto already pushes the cluster over, so no extra margin here. */
     .comments :global(.comment-icon) {
         display: inline-flex;
         vertical-align: -0.15em;

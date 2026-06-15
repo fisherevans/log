@@ -360,20 +360,19 @@ class CommentsWidget {
             wireLinks(body);
         }
 
-        // The "..." menu sits at the top-right of the head row (after the
-        // timestamp), so the body can run full-width and the bottom of the comment
-        // stays tight. Reply is the only bottom action, floated to the right.
-        const menu = this.actionsMenu(c);
-        if (menu) head.append(menu);
-
-        const parts: (Node | string)[] = [head, body];
+        // Reply + "..." menu both sit at the end of the head row, after the
+        // timestamp, so the action affordances read as belonging to THIS comment
+        // rather than floating down near the next one. Reply goes between the time
+        // and the menu; the body runs full-width and the comment bottom stays tight.
         if (!c.deleted && this.me.loggedIn) {
             const reply = el('button', { class: 'comment-link comment-action-reply', type: 'button', title: 'Reply', 'aria-label': 'Reply', click: () => this.openReply(c) });
             reply.append(icon(REPLY_SVG));
-            parts.push(el('div', { class: 'comment-actions' }, reply));
+            head.append(reply);
         }
+        const menu = this.actionsMenu(c);
+        if (menu) head.append(menu);
 
-        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id, id: `comment-${c.id}` }, ...parts);
+        return el('li', { class: isOp ? 'comment comment-op' : 'comment', 'data-id': c.id, id: `comment-${c.id}` }, head, body);
     }
 
     // Inline composer. parent=null for the top-level box; a comment for a reply.
