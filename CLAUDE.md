@@ -45,6 +45,37 @@ calsync diagrams live in `public/posts/calsync/` and are referenced as
 
 ## Running locally
 
+**Blog only** (no comments backend):
+
 - `npm run dev` - Astro dev server, usually http://localhost:4321.
 - `npm run build` - build + Pagefind search index into `dist/`.
 - `npm run preview` - serve the built `dist/`.
+
+**Blog + comments** (what you need to actually exercise the comment UI):
+
+```
+tools/dev.sh up --seed     # worker + blog, wired together, plus a demo thread
+tools/dev.sh stop          # kill both
+```
+
+This starts the comments Cloudflare Worker (`comments/`, `wrangler dev` + local
+D1) and the Astro dev server, and prints a login link + a demo post URL. Why
+`npm run dev` alone isn't enough, and the gotchas the script handles for you:
+
+- **One shared host.** The worker's dev CORS (`comments/.dev.vars`
+  `ALLOWED_ORIGIN`) must match the exact origin the blog is served from, and the
+  session cookie must be same-site between them. So both bind to a single host -
+  your Tailscale IP by default, so it also works from your phone. **Open the blog
+  via that host, not `localhost`**, or the browser silently blocks the comments
+  fetch ("Comments are unavailable").
+- **No-Bluesky login.** `comments/.dev.vars` `DEV_AUTH=1` unlocks a dev login:
+  hit the printed `/oauth/dev-login` link to get a `@fisher.sh` admin session,
+  then post/reply/edit/moderate. (OAuth to real Bluesky can't redirect to a
+  local host, so this is the only way to be "logged in" locally.)
+- **API URL.** The blog reads `PUBLIC_COMMENTS_API_URL` from a gitignored `.env`
+  pointing at the local worker; the script writes it.
+
+Deeper backend detail is in `comments/README.md`. Note: the blog is **not** an
+image-tag app - it's a Cloudflare Pages site that builds from source, so a
+`git push` to `main` IS the production deploy (no nottingham-cloud change, no
+tag bump). Don't push UI changes before Fisher has reviewed them locally.
