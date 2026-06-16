@@ -8,7 +8,7 @@ export interface Friend {
 
 export const FRIENDS: Friend[] = [
     {
-        name: 'Felttrip',
+        name: 'felttrip',
         url: 'https://blog.felttrip.com/',
         description:
             "Maybe one day he'll make a post explaining the name to us. I'd recommend following along to find out.",
