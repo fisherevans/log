@@ -20,56 +20,61 @@ import { FRIENDS, displayUrl } from '../data/friends';
             .intro em { color: var(--muted); }
 
             /* Blogroll: full-width rows, distinct from the tag-page card grid.
-               No avatars - just name, mono URL, and a one-liner. */
+               No avatars - just name, mono URL, and a one-liner. The whole row is
+               one link. */
             .roll {
                 list-style: none;
                 margin: 0;
                 padding: 0;
                 border-top: 1px solid var(--rule);
             }
-            .roll li {
-                margin: 0;
+            .roll li { margin: 0; padding: 0; }
+            .roll li::before { content: none; }
+            .friend {
+                display: block;
                 padding: 1.35em 1.1em;
+                /* font-weight reset: the row is an <a> (link weight 600); keep the
+                   body text normal, only the name is bold. */
+                font-weight: 400;
+                color: var(--fg);
+                text-decoration: none;
                 border-bottom: 1px solid var(--rule);
                 border-left: 2px solid transparent;
-                position: relative;
                 transition:
                     border-left-color 0.15s,
                     background 0.15s,
                     padding-left 0.15s;
             }
-            .roll li::before { content: none; }
-            .roll li:hover {
+            /* Override the global a:hover orange wash - on a row we just want the
+               accent bar + subtle surface. */
+            .friend:hover {
                 border-left-color: var(--accent);
+                border-bottom-color: var(--rule);
                 background: var(--code-bg);
                 padding-left: 1.4em;
+                box-shadow: none;
+                color: var(--fg);
             }
-            .roll .top {
+            .friend .top {
                 display: flex;
                 align-items: baseline;
                 gap: 0.7em;
                 flex-wrap: wrap;
             }
-            .roll .name {
+            .friend .name {
                 font-family: 'Marauder', serif;
                 font-weight: 700;
                 font-variation-settings: 'opsz' 20;
                 font-size: 1.45rem;
                 color: var(--fg);
-                border-bottom: none;
             }
-            .roll li:hover .name { color: var(--accent); }
-            .roll .name:hover {
-                color: var(--hover);
-                background-color: var(--hover-bg);
-                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
-            }
-            .roll .url {
+            .friend:hover .name { color: var(--accent); }
+            .friend .url {
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.72rem;
                 color: var(--muted);
             }
-            .roll .arrow {
+            .friend .arrow {
                 margin-left: auto;
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.78rem;
@@ -77,15 +82,16 @@ import { FRIENDS, displayUrl } from '../data/friends';
                 opacity: 0;
                 transition: opacity 0.15s;
             }
-            .roll li:hover .arrow { opacity: 1; }
-            .roll .desc {
+            .friend:hover .arrow { opacity: 1; }
+            .friend .desc {
+                display: block;
                 margin: 0.4em 0 0;
                 color: var(--muted);
                 font-size: 0.95em;
                 max-width: 42em;
             }
             @media (max-width: 600px) {
-                .roll .arrow { display: none; }
+                .friend .arrow { display: none; }
             }
         </style>
     </head>
@@ -101,12 +107,14 @@ import { FRIENDS, displayUrl } from '../data/friends';
                 {
                     FRIENDS.map((f) => (
                         <li>
-                            <div class="top">
-                                <a class="name" href={f.url}>{f.name}</a>
-                                <span class="url">{displayUrl(f.url)}</span>
-                                <span class="arrow">visit &rarr;</span>
-                            </div>
-                            {f.description && <p class="desc">{f.description}</p>}
+                            <a class="friend" href={f.url}>
+                                <span class="top">
+                                    <span class="name">{f.name}</span>
+                                    <span class="url">{displayUrl(f.url)}</span>
+                                    <span class="arrow">visit &rarr;</span>
+                                </span>
+                                {f.description && <span class="desc">{f.description}</span>}
+                            </a>
                         </li>
                     ))
                 }

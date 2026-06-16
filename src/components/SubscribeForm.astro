@@ -11,15 +11,22 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts
 interface Props {
     // Override the lede copy (the /follow page sets its own).
     lede?: string;
+    // Drop the built-in lede entirely (the /follow page renders the descriptive
+    // text as a normal page paragraph so the sizes match the rest of the page).
+    hideLede?: boolean;
     // Show the "Or follow on Bluesky / RSS" line. Off on /follow, which
     // surfaces those as their own cards.
     showAlt?: boolean;
 }
-const { lede = 'Wanna get an email when I post some of my stuff?', showAlt = true } = Astro.props;
+const {
+    lede = 'Wanna get an email when I post some of my stuff?',
+    hideLede = false,
+    showAlt = true,
+} = Astro.props;
 ---
 
 <section class="subscribe" aria-label="Subscribe">
-    <p class="subscribe-lede">{lede}</p>
+    {!hideLede && <p class="subscribe-lede">{lede}</p>}
     <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
         <div class="subscribe-slot">
             <div class="subscribe-row" data-subscribe-stage="email">
