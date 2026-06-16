@@ -101,16 +101,15 @@ import { SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
         <main>
             <h1>Follow</h1>
             <p class="intro">
-                However you like to keep up &mdash; pick whichever fits the way you already read
-                things.
+                However you like to keep up - pick whichever fits the way you already read things.
             </p>
 
             <section class="mail card">
                 <p class="eyebrow">Mailing list</p>
-                <h2>Get an email when I post</h2>
+                <h2>Receive a rare email when I feel like reaching out with a worthwhile update.</h2>
                 <p class="sub">
-                    No automation, no drip campaign, no &ldquo;10x your dev productivity.&rdquo; Just a
-                    note from me when there&rsquo;s something new. Unsubscribe anytime.
+                    No automated emails. No ads. Just a note from me when there&rsquo;s something big
+                    and new. Unsubscribe anytime.
                 </p>
                 <SubscribeForm hideLede showAlt={false} />
             </section>
@@ -118,12 +117,16 @@ import { SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
             <div class="two">
                 <a class="opt card" href={BLUESKY_PROFILE_URL} rel="me">
                     <h3>Bluesky</h3>
-                    <p>Follow me for posts plus the half-formed stuff that never makes it to the blog.</p>
+                    <p>
+                        Follow me for posts plus the half-formed stuff that never makes it to the
+                        blog. Maybe. I haven&rsquo;t really decided if I want to actively partake in
+                        yet another social media platform&hellip;
+                    </p>
                     <span class="handle">@{BLUESKY_HANDLE} &rarr;</span>
                 </a>
                 <a class="opt card" href="/rss.xml" data-link-preview data-link-preview-label="RSS feed">
                     <h3>RSS</h3>
-                    <p>The whole feed, no middleman. Drop it into your reader of choice.</p>
+                    <p>The whole feed, no middleman. Drop it into your reader of choice. Get updates for every blog post.</p>
                     <span class="handle">/rss.xml &rarr;</span>
                 </a>
             </div>

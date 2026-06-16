@@ -15,9 +15,15 @@ import { FRIENDS, displayUrl } from '../data/friends';
                 font-size: 1.05em;
                 color: var(--fg);
                 max-width: 36em;
+                margin: 0 0 0.8rem;
+            }
+            .intro-note {
+                font-size: 1.05em;
+                color: var(--muted);
+                font-style: italic;
+                max-width: 36em;
                 margin: 0 0 2.4rem;
             }
-            .intro em { color: var(--muted); }
 
             /* Blogroll: full-width rows, distinct from the tag-page card grid.
                No avatars - just name, mono URL, and a one-liner. The whole row is
@@ -101,8 +107,9 @@ import { FRIENDS, displayUrl } from '../data/friends';
             <h1>Friends</h1>
             <p class="intro">
                 These are my friends&rsquo; blogs! Consider following them if you&rsquo;ve enjoyed
-                mine. <em>I hope this page needs pagination at some point&hellip;</em>
+                mine.
             </p>
+            <p class="intro-note">I hope this page needs pagination at some point&hellip;</p>
             <ul class="roll">
                 {
                     FRIENDS.map((f) => (
