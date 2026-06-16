@@ -10,7 +10,8 @@ export const FRIENDS: Friend[] = [
     {
         name: 'Felt Trip',
         url: 'https://blog.felttrip.com/',
-        description: '',
+        description:
+            "Maybe one day he'll make a post explaining the name to us. Thankfully, it's still worth following along until then.",
     },
 ];
 
