@@ -4,9 +4,21 @@ import type { HTMLAttributes } from 'astro/types';
 type Props = HTMLAttributes<'a'>;
 
 const { href, class: className, ...props } = Astro.props;
-const pathname = Astro.url.pathname.replace(import.meta.env.BASE_URL, '');
-const subpath = pathname.match(/[^\/]+/g);
-const isActive = href === pathname || href === '/' + (subpath?.[0] || '');
+
+// Normalize a path to "/seg1/seg2" (no trailing slash, "/" for root) so the
+// comparison is robust to trailing slashes and a non-root BASE_URL. Note:
+// String.replace(BASE_URL, '') only strips the first match, so when BASE_URL
+// is "/" it ate the leading slash and broke every non-root match - hence the
+// segment-based normalize instead.
+const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
+let raw = Astro.url.pathname;
+if (base && raw.startsWith(base)) raw = raw.slice(base.length);
+const norm = (p: string) => '/' + (p.match(/[^\/]+/g)?.join('/') ?? '');
+const cur = norm(raw);
+const target = norm(String(href));
+// Exact match, or a section parent (e.g. /posts highlights on /posts/page/2
+// and individual post pages). Home (/) only matches itself.
+const isActive = cur === target || (target !== '/' && (cur + '/').startsWith(target + '/'));
 ---
 
 <a href={href} class:list={[className, { active: isActive }]} {...props}>
