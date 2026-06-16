@@ -111,6 +111,23 @@
     --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* Light mode. Dark is the default (above); this overrides the palette when the
+   theme toggle (Header.astro) sets data-theme="light" on <html>. A warm paper
+   look that keeps the orange accent - darkened so links clear contrast on a
+   light ground. The no-flash setter lives in BaseHead.astro. */
+:root[data-theme='light'] {
+    --bg: #f7f2e8;
+    --fg: #2b2722;
+    --muted: #6f665a;
+    --accent: #bd5f08;
+    --hover: #fbf7ee;
+    --hover-bg: #e57806;
+
+    --rule: #e3dac8;
+    --code-bg: rgba(43, 39, 34, 0.05);
+    --code-border: rgba(43, 39, 34, 0.12);
+}
+
 * { box-sizing: border-box; }
 
 html { -webkit-text-size-adjust: 100%; }
@@ -309,6 +326,18 @@ pre.astro-code code {
     font-size: 1em;
 }
 
+/* Shiki dual-theme token colors. defaultColor:false (astro.config.mjs) leaves
+ * the color to CSS: dark by default, light when [data-theme="light"]. The block
+ * background stays var(--code-bg) from the `pre` rule above. */
+.astro-code,
+.astro-code span {
+    color: var(--shiki-dark);
+}
+:root[data-theme='light'] .astro-code,
+:root[data-theme='light'] .astro-code span {
+    color: var(--shiki-light);
+}
+
 /* Tables */
 table {
     border-collapse: collapse;
@@ -399,6 +428,15 @@ a.chip:hover, a.chip:focus-visible {
     border: 1px solid var(--rule);
     border-radius: 12px;
 }
+
+/* Theme-toggle icons (button chrome is in Header.astro). Show the mode you'll
+ * switch TO: sun while dark, moon while light. Kept global - they key off the
+ * data-theme attribute on <html>, above any component scope. */
+.theme-toggle svg { width: 1.15rem; height: 1.15rem; }
+.theme-toggle .sun { display: block; }
+.theme-toggle .moon { display: none; }
+:root[data-theme='light'] .theme-toggle .sun { display: none; }
+:root[data-theme='light'] .theme-toggle .moon { display: block; }
 
 /* Pagefind UI overrides */
 :root {

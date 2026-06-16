@@ -22,19 +22,47 @@ const current = NAV.find((n) => n.href === pathname || n.href === firstSeg) ?? N
 <header>
     <nav>
         <a href="/" class="brand">log<span class="brand-suffix">.fisher.sh</span></a>
-        <div class="nav-links">
-            {NAV.map((n) => <HeaderLink href={n.href}>{n.label}</HeaderLink>)}
-        </div>
-        <details class="navmenu">
-            <summary>
-                <span class="cur">{current.label}</span>
-                <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
-            </summary>
-            <div class="menu">
+        <div class="nav-right">
+            <div class="nav-links">
                 {NAV.map((n) => <HeaderLink href={n.href}>{n.label}</HeaderLink>)}
             </div>
-        </details>
+            <button type="button" class="theme-toggle" aria-label="Switch to light mode" aria-pressed="false">
+                <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"></path></svg>
+                <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
+            <details class="navmenu">
+                <summary>
+                    <span class="cur">{current.label}</span>
+                    <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+                </summary>
+                <div class="menu">
+                    {NAV.map((n) => <HeaderLink href={n.href}>{n.label}</HeaderLink>)}
+                </div>
+            </details>
+        </div>
     </nav>
+    <script>
+        // Theme toggle: flip <html data-theme>, persist, keep aria in sync. The
+        // no-flash initial set happens earlier in BaseHead.astro.
+        const btn = document.querySelector<HTMLButtonElement>('.theme-toggle');
+        if (btn) {
+            const root = document.documentElement;
+            const sync = () => {
+                const light = root.dataset.theme === 'light';
+                btn.setAttribute('aria-label', light ? 'Switch to dark mode' : 'Switch to light mode');
+                btn.setAttribute('aria-pressed', String(light));
+            };
+            sync();
+            btn.addEventListener('click', () => {
+                const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+                root.dataset.theme = next;
+                try {
+                    localStorage.setItem('theme', next);
+                } catch (e) {}
+                sync();
+            });
+        }
+    </script>
 </header>
 <style>
     header {
@@ -45,10 +73,32 @@ const current = NAV.find((n) => n.href === pathname || n.href === firstSeg) ?? N
         margin: 0 auto;
         padding: 0.85em 1em;
         display: flex;
-        align-items: baseline;
+        align-items: center;
         justify-content: space-between;
         gap: 1.25em;
         flex-wrap: wrap;
+    }
+    .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+    }
+    .theme-toggle {
+        background: none;
+        border: none;
+        margin: 0;
+        padding: 0.2em;
+        color: var(--muted);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        line-height: 0;
+        transition: color 0.18s ease;
+    }
+    .theme-toggle:hover,
+    .theme-toggle:focus-visible {
+        color: var(--accent);
+        outline: none;
     }
     .brand {
         font-family: 'Marauder', serif;

@@ -29,10 +29,16 @@ export default defineConfig({
     site: 'https://log.fisher.sh',
     integrations: [mdx(), sitemap()],
     markdown: {
-        // Shiki theme tuned for the warm dark palette in src/styles/global.css.
-        // Background is overridden in CSS so only the token colors matter.
+        // Dual Shiki themes so code is readable in both color modes. defaultColor:
+        // false makes each token carry --shiki-light / --shiki-dark CSS vars;
+        // global.css picks which based on [data-theme]. Backgrounds are overridden
+        // in CSS (var(--code-bg)) so only the token colors come from Shiki.
         shikiConfig: {
-            theme: 'vitesse-dark',
+            themes: {
+                light: 'vitesse-light',
+                dark: 'vitesse-dark',
+            },
+            defaultColor: false,
             wrap: false,
         },
         // Slug ids on headings (so #anchor links resolve on load), plus an
