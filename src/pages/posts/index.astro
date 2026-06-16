@@ -1,0 +1,431 @@
+---
+import { getCollection, render } from 'astro:content';
+import { hasMoreThanExcerpt, postHref } from '../../lib/posts';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import PostList from '../../components/PostList.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const [featured, ...older] = posts;
+const { Content } = await render(featured);
+const featuredHasMore = hasMoreThanExcerpt(featured);
+const PAGE_SIZE = 25;
+const olderFirstPage = older.slice(0, PAGE_SIZE);
+const hasMoreOlder = older.length > PAGE_SIZE;
+
+const fmtDate = (d: Date) =>
+    d.toLocaleDateString('en-us', { year: 'numeric', month: 'short', day: 'numeric' });
+
+// Build-time map: post URL -> formatted date, so search results (rendered
+// client-side from the Pagefind index, which doesn't carry the date) can show
+// the same "Jun 4, 2026" the rest of the site does.
+const dateMap = Object.fromEntries(posts.map((p) => [postHref(p), fmtDate(p.data.date)]));
+
+// Lightweight metadata index for the dev fallback: Pagefind's full-text index
+// only exists in a production build (it runs after `astro build`), so under the
+// dev server search would otherwise be dead. This lets the box match
+// title/tags/description live in dev; the deployed site uses Pagefind (full
+// body text) instead. Same themed rendering either way.
+const searchIndex = posts.map((p) => ({
+    title: p.data.title,
+    href: postHref(p),
+    date: fmtDate(p.data.date),
+    tags: p.data.tags,
+    description: p.data.description ?? '',
+}));
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={`Posts · ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+        <style>
+            h1 { margin: 0 0 1.2rem; }
+
+            .searchbar {
+                position: relative;
+                margin: 0 0 2.4rem;
+            }
+            .searchbar input {
+                width: 100%;
+                background: var(--code-bg);
+                color: var(--fg);
+                border: 1px solid var(--rule);
+                border-radius: 8px;
+                padding: 0.7em 2.6em 0.7em 2.4em;
+                font: inherit;
+                font-size: 1rem;
+            }
+            .searchbar input::placeholder { color: var(--muted); }
+            .searchbar input:focus-visible { outline: none; border-color: var(--accent); }
+            .searchbar .icon {
+                position: absolute;
+                left: 0.85em;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 1.05em;
+                height: 1.05em;
+                color: var(--muted);
+                pointer-events: none;
+            }
+            .searchbar .clear {
+                position: absolute;
+                right: 0.6em;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                color: var(--muted);
+                cursor: pointer;
+                font-size: 1.2rem;
+                line-height: 1;
+                padding: 0.2em;
+                display: none;
+            }
+            .searchbar.has-query .clear { display: block; }
+            .searchbar .clear:hover { color: var(--fg); }
+
+            .eyebrow { margin-top: 0; }
+
+            /* --- latest card (matches the landing) --- */
+            .latest {
+                margin: 0 calc(-1 * var(--content-pad-x)) 2.5rem;
+                padding: 1.5rem var(--content-pad-x) 1.7rem;
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                border-radius: 12px;
+            }
+            @media (max-width: 700px) {
+                .latest { margin-left: 0; margin-right: 0; padding: 1.25rem 1rem 1.4rem; }
+            }
+            .feat-title { margin: 0; line-height: 1.15; }
+            .feat-title a {
+                color: var(--fg);
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 28;
+                font-size: 2rem;
+            }
+            .feat-title a:hover {
+                color: var(--hover);
+                background-color: var(--hover-bg);
+                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+            }
+            .feat-meta {
+                margin: 0.6em 0 1.4em;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5em 1em;
+                align-items: baseline;
+                font-size: 0.85em;
+            }
+            .feat-meta .date {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+            }
+            .feat-meta .chips { display: flex; flex-wrap: wrap; gap: 0.35em; }
+            .excerpt > :global(:nth-child(n + 4)) { display: none; }
+            .excerpt > :global(:nth-child(3):is(h1, h2, h3, h4, h5, h6)) { display: none; }
+            .excerpt > :global(:nth-child(2):is(h1, h2, h3, h4, h5, h6):has(+ :is(h1, h2, h3, h4, h5, h6))) { display: none; }
+            .excerpt > :global(:first-child) { margin-top: 0; }
+            .continue {
+                display: inline-block;
+                margin-top: 1.4em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+                color: var(--accent);
+            }
+            .continue:hover { color: var(--hover); }
+
+            .older { margin-top: 0.5rem; }
+            .pagination {
+                margin-top: 2em;
+                display: flex;
+                justify-content: flex-end;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+            }
+            .list-end {
+                margin-top: 2.2em;
+                padding-top: 1.5em;
+                border-top: 1px solid var(--rule);
+                text-align: center;
+                color: var(--muted);
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78rem;
+                letter-spacing: 0.06em;
+            }
+
+            /* Search results live in #results (template element); their rows are
+               injected via innerHTML, which DON'T get Astro's scope attribute -
+               so the result styling is global, below. */
+            #results { margin-top: 0.5rem; }
+        </style>
+        <style is:global>
+            #results .results-meta {
+                font-family: var(--sans);
+                font-weight: 600;
+                font-size: 0.74rem;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin: 0 0 1.2em;
+            }
+            #results .results { list-style: none; margin: 0; padding: 0; }
+            #results .results li {
+                padding: 1.1em 0;
+                border-bottom: 1px solid var(--rule);
+                position: relative;
+            }
+            #results .results li::before { content: none; }
+            #results .results li:first-child { padding-top: 0.2em; }
+            #results .results li:last-child { border-bottom: none; }
+            #results .r-title {
+                color: var(--fg);
+                border-bottom: none;
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 20;
+                font-size: 1.35rem;
+                line-height: 1.2;
+            }
+            #results .r-title:hover {
+                color: var(--hover);
+                background-color: var(--hover-bg);
+                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+            }
+            #results .r-snippet { margin: 0.35em 0 0; color: var(--muted); font-size: 0.95em; }
+            #results mark {
+                background: rgba(229, 120, 6, 0.22);
+                color: var(--fg);
+                padding: 0 0.1em;
+                border-radius: 2px;
+            }
+            #results .r-meta {
+                margin-top: 0.45em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.72em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+            }
+            #results .results-note {
+                color: var(--muted);
+                font-size: 0.95em;
+                line-height: 1.6;
+                max-width: 36em;
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <h1>Posts</h1>
+
+            <div class="searchbar" id="searchbar">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+                <input type="search" id="search-input" placeholder="Search posts…" aria-label="Search posts" autocomplete="off" />
+                <button type="button" class="clear" id="search-clear" aria-label="Clear search">&times;</button>
+            </div>
+
+            <div id="listing">
+                <section class="latest">
+                    <p class="eyebrow">Latest post</p>
+                    <h2 class="feat-title"><a href={postHref(featured)}>{featured.data.title}</a></h2>
+                    <div class="feat-meta">
+                        <span class="date"><FormattedDate date={featured.data.date} /></span>
+                        {
+                            featured.data.tags.length > 0 && (
+                                <span class="chips">
+                                    {featured.data.tags.map((tag) => (
+                                        <a class="chip" href={`/tags/${tag}/`}>
+                                            {tag}
+                                        </a>
+                                    ))}
+                                </span>
+                            )
+                        }
+                    </div>
+                    <div class="prose excerpt">
+                        <Content />
+                    </div>
+                    {
+                        featuredHasMore && (
+                            <a class="continue" href={`${postHref(featured)}#continue`}>
+                                Continue reading &rarr;
+                            </a>
+                        )
+                    }
+                </section>
+
+                <section class="older">
+                    <p class="eyebrow">Older posts</p>
+                    <PostList posts={olderFirstPage} />
+                    {
+                        hasMoreOlder ? (
+                            <div class="pagination">
+                                <a href="/posts/page/2">Older posts &rarr;</a>
+                            </div>
+                        ) : (
+                            <p class="list-end">That&rsquo;s everything &middot; no more posts.</p>
+                        )
+                    }
+                </section>
+            </div>
+
+            <div id="results" hidden></div>
+        </main>
+        <Footer />
+
+        <script type="application/json" id="post-dates" set:html={JSON.stringify(dateMap)} />
+        <script type="application/json" id="posts-index" set:html={JSON.stringify(searchIndex)} />
+        <script is:inline>
+            (() => {
+                const bar = document.getElementById('searchbar');
+                const input = document.getElementById('search-input');
+                const clearBtn = document.getElementById('search-clear');
+                const listing = document.getElementById('listing');
+                const results = document.getElementById('results');
+                const dates = JSON.parse(document.getElementById('post-dates').textContent || '{}');
+                const index = JSON.parse(document.getElementById('posts-index').textContent || '[]');
+
+                let pf = null;
+                let pfFailed = false;
+                async function getPagefind() {
+                    if (pf || pfFailed) return pf;
+                    try {
+                        pf = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
+                        await pf.init();
+                    } catch (e) {
+                        pfFailed = true;
+                        pf = null;
+                    }
+                    return pf;
+                }
+
+                const esc = (s) =>
+                    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                const norm = (u) => (u.endsWith('/') ? u : u + '/').split('#')[0].split('?')[0];
+                const mark = (text, q) => {
+                    const i = text.toLowerCase().indexOf(q.toLowerCase());
+                    if (i < 0) return esc(text);
+                    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+                };
+
+                function showListing() {
+                    listing.hidden = false;
+                    results.hidden = true;
+                    results.innerHTML = '';
+                }
+
+                function renderRows(rows, q, note) {
+                    results.innerHTML =
+                        '<p class="results-meta">' +
+                        rows.length +
+                        ' result' +
+                        (rows.length === 1 ? '' : 's') +
+                        ' for &ldquo;' +
+                        esc(q) +
+                        '&rdquo;</p>' +
+                        (note ? '<p class="results-note">' + note + '</p>' : '') +
+                        '<ul class="results">' +
+                        rows.join('') +
+                        '</ul>';
+                }
+
+                // Dev fallback: match the metadata index when Pagefind's full-text
+                // index isn't available (dev server). Highlights matches in the
+                // title/description; deployed search adds post-body matches.
+                function fallback(q) {
+                    const lc = q.toLowerCase();
+                    const hits = index.filter(
+                        (p) =>
+                            p.title.toLowerCase().includes(lc) ||
+                            p.description.toLowerCase().includes(lc) ||
+                            p.tags.some((t) => t.toLowerCase().includes(lc)),
+                    );
+                    if (hits.length === 0) {
+                        results.innerHTML =
+                            '<p class="results-meta">No results for &ldquo;' + esc(q) + '&rdquo;</p>';
+                        return;
+                    }
+                    const rows = hits.map(
+                        (p) =>
+                            '<li><a class="r-title" href="' +
+                            p.href +
+                            '">' +
+                            mark(p.title, q) +
+                            '</a>' +
+                            (p.description ? '<p class="r-snippet">' + mark(p.description, q) + '</p>' : '') +
+                            '<div class="r-meta">' + esc(p.date) + '</div></li>',
+                    );
+                    renderRows(rows, q, 'Matching titles &amp; tags. Full-text search runs on the deployed site.');
+                }
+
+                let token = 0;
+                async function run(q) {
+                    const mine = ++token;
+                    listing.hidden = true;
+                    results.hidden = false;
+                    const lib = await getPagefind();
+                    if (mine !== token) return;
+                    if (!lib) {
+                        fallback(q);
+                        return;
+                    }
+                    const search = await lib.search(q);
+                    if (mine !== token) return;
+                    const items = await Promise.all(search.results.slice(0, 30).map((r) => r.data()));
+                    if (mine !== token) return;
+                    if (items.length === 0) {
+                        results.innerHTML =
+                            '<p class="results-meta">No results for &ldquo;' + esc(q) + '&rdquo;</p>';
+                        return;
+                    }
+                    const rows = items.map((it) => {
+                        const title = it.meta && it.meta.title ? it.meta.title : it.url;
+                        const date = dates[norm(it.url)];
+                        return (
+                            '<li><a class="r-title" href="' +
+                            it.url +
+                            '">' +
+                            esc(title) +
+                            '</a><p class="r-snippet">' +
+                            (it.excerpt || '') +
+                            '</p>' +
+                            (date ? '<div class="r-meta">' + date + '</div>' : '') +
+                            '</li>'
+                        );
+                    });
+                    renderRows(rows, q, '');
+                }
+
+                let t;
+                input.addEventListener('input', () => {
+                    const q = input.value.trim();
+                    bar.classList.toggle('has-query', q.length > 0);
+                    clearTimeout(t);
+                    if (!q) {
+                        token++;
+                        showListing();
+                        return;
+                    }
+                    t = setTimeout(() => run(q), 160);
+                });
+                clearBtn.addEventListener('click', () => {
+                    input.value = '';
+                    bar.classList.remove('has-query');
+                    token++;
+                    showListing();
+                    input.focus();
+                });
+            })();
+        </script>
+    </body>
+</html>

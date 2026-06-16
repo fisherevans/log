@@ -5,17 +5,13 @@ import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
-import PostList from '../components/PostList.astro';
-import { SITE_DESCRIPTION, SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
     (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const [featured, ...older] = posts;
+const featured = posts[0];
 const { Content } = await render(featured);
-const PAGE_SIZE = 25;
-const olderFirstPage = older.slice(0, PAGE_SIZE);
-const hasMoreOlder = older.length > PAGE_SIZE;
 const featuredHasMore = hasMoreThanExcerpt(featured);
 ---
 
@@ -24,40 +20,26 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
     <head>
         <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
         <style>
-            .intro {
-                margin: 0 0 2.5rem;
-                color: var(--fg);
-                font-size: 1.05em;
+            .hero {
+                margin: 0 0 2.4rem;
+            }
+            .hero h1 {
+                margin: 0 0 0.35em;
+            }
+            .hero .lede {
+                font-size: 1.12em;
                 line-height: 1.6;
-                text-align: center;
+                color: var(--fg);
+                max-width: 34em;
             }
-            .intro .linklike {
-                background: none;
-                border: none;
-                padding: 0;
-                font: inherit;
-                color: var(--accent);
-                cursor: pointer;
-                border-bottom: 1px dotted var(--accent);
-            }
-            .intro .linklike:hover {
-                color: var(--hover);
-            }
-
-            .section-label {
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.72rem;
-                letter-spacing: 0.12em;
-                text-transform: uppercase;
+            .hero .followline {
+                font-size: 1.02em;
                 color: var(--muted);
-                margin: 0 0 1.1em;
+                max-width: 34em;
+                margin: 1.3rem 0 0;
             }
 
-            /* Featured post sits in a subtle card so it reads as one isolated unit,
-               distinct from the intro above and the older-posts list below. The
-               negative inline margins pull the card out to the content edges (and
-               its matching padding pulls the text back), so the card is wider than
-               the column but the content stays the same width as everything else. */
+            /* Latest-post card - one isolated unit. */
             .latest {
                 margin: 0 calc(-1 * var(--content-pad-x)) 2.5rem;
                 padding: 1.5rem var(--content-pad-x) 1.7rem;
@@ -65,9 +47,6 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 border: 1px solid var(--rule);
                 border-radius: 12px;
             }
-            /* On narrow screens the full edge-to-edge bleed runs right up against
-               (or a hair past) the viewport - pull the card in so it sits inside a
-               clear gutter instead. */
             @media (max-width: 700px) {
                 .latest {
                     margin-left: 0;
@@ -113,18 +92,12 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 gap: 0.35em;
             }
 
-            /* Show only the first EXCERPT_BLOCKS (3) top-level blocks; the rest of
-               the post lives behind "Continue reading". Keep n+4 in sync with
-               EXCERPT_BLOCKS in lib/posts.ts. The child selectors are :global
-               because <Content/>'s rendered blocks don't carry this component's
-               scope attribute. */
+            /* Excerpt: show only the first EXCERPT_BLOCKS (3) top-level blocks
+               up front; the trailing-heading trim runs in the script below. Keep
+               n+4 in sync with EXCERPT_BLOCKS in lib/posts.ts. */
             .excerpt > :global(:nth-child(n + 4)) {
                 display: none;
             }
-            /* Never paint a heading as the last visible excerpt block: the trim
-               script removes a trailing heading, which otherwise flashes on first
-               load. Drop a heading in the 3rd slot up front (and the 2nd too if the
-               3rd is also a heading), matching what the script computes. */
             .excerpt > :global(:nth-child(3):is(h1, h2, h3, h4, h5, h6)) {
                 display: none;
             }
@@ -145,40 +118,33 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 color: var(--hover);
             }
 
-            .older {
-                margin-top: 0.5rem;
-            }
-            .pagination {
-                margin-top: 2em;
-                display: flex;
-                justify-content: flex-end;
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.85rem;
-            }
-            /* End-of-archive cap so the list doesn't just stop dead. */
-            .list-end {
-                margin-top: 2.2em;
-                padding-top: 1.5em;
-                border-top: 1px solid var(--rule);
+            .browse-all {
+                margin-top: 1.6rem;
                 text-align: center;
-                color: var(--muted);
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
+            }
+            .browse-all a {
+                font-size: 1.02rem;
             }
         </style>
     </head>
     <body>
         <Header />
         <main>
-            <p class="intro">
-                Welcome to my blog. You can <button type="button" class="linklike" data-subscribe-open
-                    >subscribe</button
-                > if you'd like. Or follow me, <a href={BLUESKY_PROFILE_URL}>@{BLUESKY_HANDLE}</a> on Bluesky.
-            </p>
+            <section class="hero">
+                <h1>Welcome.</h1>
+                <p class="lede">
+                    A public diary of the things I build &mdash; software, hardware, dumb little
+                    projects, and the occasional opinion. No theme, no schedule, no pretense that any
+                    of it is finished. The rest of me &mdash; who I am, what I do, how to reach me
+                    &mdash; lives at <a href="https://fisher.sh">fisher.sh</a>.
+                </p>
+                <p class="followline">
+                    Want a note when I post something new? <a href="/follow/">Follow along &rarr;</a>
+                </p>
+            </section>
 
             <section class="latest">
-                <p class="section-label">Latest post</p>
+                <p class="eyebrow">Latest post</p>
                 <h2 class="feat-title"><a href={postHref(featured)}>{featured.data.title}</a></h2>
                 <div class="feat-meta">
                     <span class="date"><FormattedDate date={featured.data.date} /></span>
@@ -206,27 +172,13 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 }
             </section>
 
-            <section class="older">
-                <p class="section-label">Older posts</p>
-                <PostList posts={olderFirstPage} />
-                {
-                    hasMoreOlder ? (
-                        <div class="pagination">
-                            <a href="/page/2">Older posts &rarr;</a>
-                        </div>
-                    ) : (
-                        <p class="list-end">That&rsquo;s everything &middot; no more posts.</p>
-                    )
-                }
-            </section>
+            <p class="browse-all"><a href="/posts/">View all posts &rarr;</a></p>
         </main>
         <Footer />
         <script>
-            // Keep the excerpt from ending badly. The CSS already caps it at 3
-            // top-level blocks (so lists / code blocks - which are each a single
-            // top-level block - are never cut mid-way). Here we additionally trim
-            // a trailing heading so the teaser never ends on a dangling header,
-            // then point "Continue reading" at the first hidden block.
+            // Trim a trailing heading from the excerpt so the teaser never ends
+            // on a dangling header, then point "Continue reading" at the first
+            // hidden block. (CSS already caps it at 3 top-level blocks.)
             const ex = document.querySelector('.excerpt');
             const cont = document.querySelector('.continue');
             if (ex) {

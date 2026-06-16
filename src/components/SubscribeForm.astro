@@ -7,10 +7,19 @@
 // (the check is only loaded then - no widget sitting there upfront), then swaps
 // to the confirmation. All three stages share one reserved-height slot.
 import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
+
+interface Props {
+    // Override the lede copy (the /follow page sets its own).
+    lede?: string;
+    // Show the "Or follow on Bluesky / RSS" line. Off on /follow, which
+    // surfaces those as their own cards.
+    showAlt?: boolean;
+}
+const { lede = 'Wanna get an email when I post some of my stuff?', showAlt = true } = Astro.props;
 ---
 
 <section class="subscribe" aria-label="Subscribe">
-    <p class="subscribe-lede">Wanna get an email when I post some of my stuff?</p>
+    <p class="subscribe-lede">{lede}</p>
     <form data-subscribe class="subscribe-form" data-api={COMMENTS_API_URL}>
         <div class="subscribe-slot">
             <div class="subscribe-row" data-subscribe-stage="email">
@@ -22,13 +31,21 @@ import { COMMENTS_API_URL, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts
         </div>
         <p data-subscribe-status class="subscribe-status" role="status" aria-live="polite"></p>
     </form>
-    <p class="subscribe-alt">
-        Or follow <a href={BLUESKY_PROFILE_URL} rel="me">@{BLUESKY_HANDLE} on Bluesky</a>, or grab the <a
-            href="/rss.xml"
-            data-link-preview
-            data-link-preview-label="RSS feed">RSS feed</a
-        >.
-    </p>
+    {
+        showAlt && (
+            <p class="subscribe-alt">
+                Or follow{' '}
+                <a href={BLUESKY_PROFILE_URL} rel="me">
+                    @{BLUESKY_HANDLE} on Bluesky
+                </a>
+                , or grab the{' '}
+                <a href="/rss.xml" data-link-preview data-link-preview-label="RSS feed">
+                    RSS feed
+                </a>
+                .
+            </p>
+        )
+    }
 </section>
 
 <style>

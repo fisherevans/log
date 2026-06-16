@@ -9,7 +9,7 @@ import Header from '../components/Header.astro';
 
 type Props = CollectionEntry<'posts'>['data'];
 
-const { id, title, description, date, updatedDate, heroImage, tags } = Astro.props;
+const { id, title, description, date, updatedDate, heroImage, tags, draft } = Astro.props;
 ---
 
 <html lang="en">
@@ -112,9 +112,13 @@ const { id, title, description, date, updatedDate, heroImage, tags } = Astro.pro
             </div>
         )}
         <main>
-            <article>
+            <!-- data-pagefind-body scopes the search index to post bodies only
+                 (so tag pages, /posts, the landing, etc. never appear in results).
+                 Drafts omit the marker entirely, which - because some page has it -
+                 excludes them from the index (unlisted, so not in search either). -->
+            <article data-pagefind-body={draft ? undefined : ''}>
                 <header class="post-title">
-                    <h1>{title}</h1>
+                    <h1 data-pagefind-meta="title">{title}</h1>
                     <div class="date">
                         <FormattedDate date={date} />
                         {updatedDate && (

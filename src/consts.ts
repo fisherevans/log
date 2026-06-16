@@ -30,10 +30,11 @@ export const TURNSTILE_SITEKEY = import.meta.env.PUBLIC_TURNSTILE_SITEKEY ?? "0x
 // the OP is visually distinct from other commenters.
 export const OP_DID = "did:plc:auevmn4wzowwhiuq6jo3ysl6";
 
-// External links surfaced in the footer (single source of truth - add/remove here).
+// External links surfaced in the footer (single source of truth - add/remove
+// here). GitHub lives on fisher.sh, not here, by design.
 export const SOCIAL_LINKS = [
     { label: "fisher.sh", href: "https://fisher.sh" },
     { label: "bluesky", href: BLUESKY_PROFILE_URL },
-    { label: "github", href: "https://github.com/fisherevans" },
     { label: "rss", href: "/rss.xml" },
+    { label: "follow", href: "/follow/" },
 ];

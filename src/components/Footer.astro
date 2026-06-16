@@ -1,6 +1,5 @@
 ---
 import { SOCIAL_LINKS } from '../consts';
-import SubscribeModal from './SubscribeModal.astro';
 import LinkModal from './LinkModal.astro';
 const today = new Date();
 const isFeed = (href: string) => href.endsWith('.xml');
@@ -21,11 +20,9 @@ const isFeed = (href: string) => href.endsWith('.xml');
                     </a>
                 ))
             }
-            <a href="#" class="sublink" data-subscribe-open role="button">subscribe</a>
         </span>
     </div>
 </footer>
-<SubscribeModal />
 <LinkModal />
 <style>
     footer {

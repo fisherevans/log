@@ -104,6 +104,11 @@
     --bullet-size: 1em;
     --bullet-offset-x: 0em;
     --bullet-offset-y: 0em;
+
+    /* The one sans-serif in the stack: used only for the small uppercase
+       eyebrow labels (e.g. "Latest post"), where the slab-serif DraftingMono
+       read as a serif. System font - no download. */
+    --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -373,6 +378,26 @@ a.chip:hover, a.chip:focus-visible {
     border-color: var(--accent);
     background: transparent;
     box-shadow: none;
+}
+
+/* Small uppercase eyebrow label (e.g. "Latest post", "Older posts", section
+ * kickers on /follow). Sans, not the code font - reads as a header. */
+.eyebrow {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0 0 1.1em;
+}
+
+/* Reusable surface card (friends rows, follow blocks). The accent-on-hover
+ * variant lives with each component; this is the base chrome. */
+.card {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
 }
 
 /* Pagefind UI overrides */

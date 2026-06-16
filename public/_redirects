@@ -5,3 +5,8 @@
 /atom.xml   /rss.xml   301
 /feed       /rss.xml   301
 /rss        /rss.xml   301
+
+# Layout rework (2026-06): the post archive moved from / to /posts, pagination
+# from /page/N to /posts/page/N, and the old /search route folded into /posts.
+/search     /posts/             301
+/page/*     /posts/page/:splat  301

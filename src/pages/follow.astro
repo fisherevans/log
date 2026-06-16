@@ -1,0 +1,118 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import SubscribeForm from '../components/SubscribeForm.astro';
+import { SITE_TITLE, BLUESKY_PROFILE_URL, BLUESKY_HANDLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={`Follow · ${SITE_TITLE}`} description="Follow the log by email, RSS, or Bluesky." />
+        <style>
+            .intro {
+                font-size: 1.05em;
+                color: var(--fg);
+                max-width: 34em;
+                margin: 0 0 2.4rem;
+            }
+
+            /* Email-first: the mailing-list signup leads at full width. */
+            .mail {
+                padding: 1.6rem 1.6rem 1.7rem;
+                margin: 0 0 1rem;
+            }
+            .mail .eyebrow { margin-bottom: 0.5em; }
+            .mail h2 {
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 18;
+                font-size: 1.5rem;
+                margin: 0 0 0.9rem;
+                line-height: 1.15;
+            }
+
+            /* Bluesky + RSS as two secondary cards beneath. */
+            .two {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+            .opt {
+                display: flex;
+                flex-direction: column;
+                padding: 1.3rem 1.4rem;
+                color: var(--fg);
+                text-decoration: none;
+                border-bottom: 1px solid var(--rule);
+                transition: border-color 0.15s;
+            }
+            a.opt:hover {
+                border-color: var(--accent);
+                background: var(--code-bg);
+                box-shadow: none;
+                color: var(--fg);
+            }
+            .opt h3 {
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 18;
+                font-size: 1.25rem;
+                margin: 0 0 0.25em;
+                color: var(--fg);
+            }
+            a.opt:hover h3 { color: var(--fg); }
+            .opt p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.95em;
+                /* The card is an <a> (link weight 600); keep body text normal. */
+                font-weight: 400;
+                flex: 1;
+            }
+            .opt .handle {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.8rem;
+                color: var(--accent);
+                margin-top: 0.8em;
+            }
+            @media (max-width: 600px) {
+                .two { grid-template-columns: 1fr; }
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <h1>Follow</h1>
+            <p class="intro">
+                However you like to keep up &mdash; pick whichever fits the way you already read
+                things.
+            </p>
+
+            <section class="mail card">
+                <p class="eyebrow">Mailing list</p>
+                <h2>Get an email when I post</h2>
+                <SubscribeForm
+                    lede="No automation, no drip campaign, no &ldquo;10x your dev productivity.&rdquo; Just a note from me when there&rsquo;s something new. Unsubscribe anytime."
+                    showAlt={false}
+                />
+            </section>
+
+            <div class="two">
+                <a class="opt card" href={BLUESKY_PROFILE_URL} rel="me">
+                    <h3>Bluesky</h3>
+                    <p>Follow me for posts plus the half-formed stuff that never makes it to the blog.</p>
+                    <span class="handle">@{BLUESKY_HANDLE} &rarr;</span>
+                </a>
+                <a class="opt card" href="/rss.xml" data-link-preview data-link-preview-label="RSS feed">
+                    <h3>RSS</h3>
+                    <p>The whole feed, no middleman. Drop it into your reader of choice.</p>
+                    <span class="handle">/rss.xml &rarr;</span>
+                </a>
+            </div>
+        </main>
+        <Footer />
+    </body>
+</html>
