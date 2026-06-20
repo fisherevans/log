@@ -252,6 +252,30 @@ export async function isGrant(db: D1Database, did: string, group: string): Promi
     return row != null;
 }
 
+// mintSubject derives a stable, filesystem-safe OIDC subject slug for a DID that
+// has no explicit principals mapping ("open mint"). It MUST stay byte-identical
+// to ramble's bluesky.SubjectSlug (internal/bluesky/bluesky.go) and the login
+// app's transform, because all three key the same account on this slug:
+//
+//   - did:plc:<id>  ->  "bsky-" + <id>   (PLC ids are lowercase base32, so
+//     they're filesystem-safe and used verbatim).
+//   - any other DID (did:web:..., etc.) -> "bsky-" + the first 24 hex chars of
+//     sha256(did), keeping non-PLC DIDs (dots, colons, uppercase) inside the
+//     slug charset and bounded in length.
+//
+// The result always satisfies the slug charset ^[a-z0-9][a-z0-9-]*$.
+export async function mintSubject(did: string): Promise<string> {
+    const trimmed = did.trim();
+    const PLC = 'did:plc:';
+    if (trimmed.startsWith(PLC) && trimmed.length > PLC.length) {
+        return 'bsky-' + trimmed.slice(PLC.length);
+    }
+    const data = new TextEncoder().encode(trimmed);
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+    return 'bsky-' + hex.slice(0, 24);
+}
+
 export async function resolveSubjectAndGroups(db: D1Database, did: string): Promise<ResolvedGrant> {
     const principal = await db
         .prepare(`SELECT subject FROM principals WHERE did = ?`)
@@ -261,8 +285,13 @@ export async function resolveSubjectAndGroups(db: D1Database, did: string): Prom
         .prepare(`SELECT group_name FROM grants WHERE did = ? ORDER BY group_name`)
         .bind(did)
         .all<{ group_name: string }>();
+    // Open mint: an unmapped DID gets a stable derived slug instead of a null
+    // subject, so brand-new Bluesky users clear the login app's "provisioned?"
+    // gate and reach each app's own allowlist. Explicit principals mappings
+    // (e.g. Fisher's did:plc:... -> "fisher") are unchanged. Groups stay EMPTY
+    // for minted users, so the per-app group gates still exclude them.
     return {
-        subject: principal?.subject ?? null,
+        subject: principal?.subject ?? (await mintSubject(did)),
         groups: (groups.results ?? []).map((r) => r.group_name),
     };
 }

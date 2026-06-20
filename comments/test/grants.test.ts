@@ -53,10 +53,20 @@ describe('grants store + admin gate', () => {
         expect(await res.json()).toEqual({ subject: 'friend', groups: ['close-friends'] });
     });
 
-    it('resolve returns null subject + empty groups for an unprovisioned DID', async () => {
+    it('resolve open-mints a slug subject + empty groups for an unprovisioned DID', async () => {
+        // Open mint: an unmapped did:plc:<id> resolves to "bsky-<id>" with no
+        // groups, so a brand-new Bluesky user clears the login gate but stays
+        // out of every group-gated app until explicitly granted.
         const res = await resolve('did:plc:nobody', GRANTS_TOKEN);
         expect(res.status).toBe(200);
-        expect(await res.json()).toEqual({ subject: null, groups: [] });
+        expect(await res.json()).toEqual({ subject: 'bsky-nobody', groups: [] });
+    });
+
+    it('resolve mints a hashed slug for a non-plc DID', async () => {
+        const res = await resolve('did:web:example.com', GRANTS_TOKEN);
+        const body = (await res.json()) as { subject: string; groups: string[] };
+        expect(body.subject).toMatch(/^bsky-[a-f0-9]{24}$/);
+        expect(body.groups).toEqual([]);
     });
 
     it('admin management endpoints reject non-admins', async () => {
