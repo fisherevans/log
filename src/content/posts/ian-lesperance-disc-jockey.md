@@ -1,6 +1,6 @@
 ---
 title: Ian Lesperance, Disc Jockey
-date: 2026-07-07
+date: 2026-07-06
 description: A personal website, a departing coworker, and an eclectic collection of deep house DJ sets.
 hasVideo: false
 draft: true
