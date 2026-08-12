@@ -1,0 +1,171 @@
+---
+// Inline project card for blog posts. Drop into the log repo's src/components/,
+// put projects.ts (this folder's sibling) in src/lib/, and use in an .mdx post:
+//
+//     import ProjectCard from '../../components/ProjectCard.astro';
+//     <ProjectCard slug="otium" />
+//
+// It reads the live catalog from projects.fisher.sh at build time, so the card
+// stays in sync with the project page without duplicating copy in the post. If
+// the catalog is unreachable, it renders a plain link (or nothing, if there's no
+// fallback name) rather than breaking the build.
+import { getProject } from '../lib/projects';
+
+interface Props {
+    slug: string;
+    // Optional override text if you want a different blurb than the catalog's.
+    blurb?: string;
+}
+
+const { slug, blurb } = Astro.props;
+const project = await getProject(slug);
+---
+
+{
+    project ? (
+        <a class="project-card" href={project.url}>
+            {project.thumbnail && (
+                <span class="thumb">
+                    <img src={project.thumbnail} alt="" loading="lazy" />
+                </span>
+            )}
+            <span class="body">
+                <span class="top">
+                    <span class="name">{project.name}</span>
+                    {project.status !== 'active' && (
+                        <span class="status">{project.status}</span>
+                    )}
+                </span>
+                <span class="blurb">{blurb ?? project.tagline}</span>
+                {project.tech.length > 0 && (
+                    <span class="tech">
+                        {project.tech.slice(0, 4).map((t) => (
+                            <span class="chip">{t}</span>
+                        ))}
+                    </span>
+                )}
+                <span class="cta">view project &rarr;</span>
+            </span>
+        </a>
+    ) : (
+        <a class="project-fallback" href={`https://projects.fisher.sh/${slug}/`}>
+            {blurb ?? `${slug} on projects.fisher.sh`}
+        </a>
+    )
+}
+
+<style>
+    /* Uses the blog's shared tokens (--rule, --code-bg, --accent, --muted, etc.),
+       so it inherits light/dark automatically. */
+    .project-card,
+    .project-card:visited {
+        display: flex;
+        gap: 1rem;
+        align-items: stretch;
+        margin: 1.75em 0;
+        padding: 0;
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        overflow: hidden;
+        background: var(--code-bg);
+        color: var(--fg);
+        text-decoration: none;
+        border-bottom: 1px solid var(--rule);
+        box-shadow: none;
+        transition:
+            border-color 200ms ease-out,
+            transform 200ms ease-out;
+    }
+    .project-card:hover,
+    .project-card:focus-visible {
+        border-color: var(--accent);
+        background: var(--code-bg);
+        box-shadow: none;
+        transform: translateY(-2px);
+        outline: none;
+    }
+    .thumb {
+        flex: 0 0 34%;
+        max-width: 200px;
+        display: block;
+        border-right: 1px solid var(--rule);
+        background: var(--bg);
+    }
+    .thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        border-radius: 0;
+    }
+    .body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.9rem 1.1rem;
+        min-width: 0;
+    }
+    .top {
+        display: flex;
+        align-items: baseline;
+        gap: 0.6rem;
+    }
+    .name {
+        font-family: 'Marauder', serif;
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: var(--fg);
+    }
+    .project-card:hover .name,
+    .project-card:focus-visible .name {
+        color: var(--accent);
+    }
+    .status {
+        font-family: var(--sans);
+        font-size: 0.6rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 0.1em 0.5em;
+    }
+    .blurb {
+        color: var(--muted);
+        font-size: 0.98rem;
+        line-height: 1.5;
+    }
+    .tech {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin-top: 0.15rem;
+    }
+    .tech .chip {
+        display: inline-block;
+        padding: 0.1em 0.55em;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.72em;
+        text-transform: lowercase;
+    }
+    .cta {
+        margin-top: 0.3rem;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.78rem;
+        color: var(--accent);
+    }
+    @media (max-width: 560px) {
+        .project-card {
+            flex-direction: column;
+        }
+        .thumb {
+            flex-basis: auto;
+            max-width: none;
+            aspect-ratio: 16 / 9;
+            border-right: none;
+            border-bottom: 1px solid var(--rule);
+        }
+    }
+</style>
