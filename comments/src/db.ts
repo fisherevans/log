@@ -296,6 +296,71 @@ export async function resolveSubjectAndGroups(db: D1Database, did: string): Prom
     };
 }
 
+// Claims for an OIDC subject: what the login app puts into an ID token.
+//
+// Keyed by SUBJECT rather than DID because the login app resolves this at consent
+// time, where it holds the subject and not the originating DID. Returns null when
+// the subject has no principal row at all, which is the signal to fall back to the
+// login app's local users.json (the break-glass account lives only there).
+//
+// Groups are read fresh on every call. Hydra invokes the consent endpoint on every
+// authorization request - even a remembered one, which it merely auto-accepts - so
+// a revoked group stops appearing in tokens on the user's next login rather than
+// lingering until some cache expires.
+export interface SubjectClaims {
+    subject: string;
+    email: string | null;
+    name: string | null;
+    groups: string[];
+}
+
+export async function resolveClaimsBySubject(db: D1Database, subject: string): Promise<SubjectClaims | null> {
+    const principals = await db
+        .prepare(`SELECT did, email, name FROM principals WHERE subject = ?`)
+        .bind(subject)
+        .all<{ did: string; email: string | null; name: string | null }>();
+    const rows = principals.results ?? [];
+    if (rows.length === 0) return null;
+
+    // A subject may map to several identities (account linking). Union their
+    // groups, and take the first non-empty profile field - a person who linked a
+    // second identity should not lose their name because the newer row is bare.
+    const groups = new Set<string>();
+    for (const r of rows) {
+        const g = await db
+            .prepare(`SELECT group_name FROM grants WHERE did = ?`)
+            .bind(r.did)
+            .all<{ group_name: string }>();
+        for (const row of g.results ?? []) groups.add(row.group_name);
+    }
+    return {
+        subject,
+        email: rows.find((r) => r.email)?.email ?? null,
+        name: rows.find((r) => r.name)?.name ?? null,
+        groups: [...groups].sort(),
+    };
+}
+
+// Set the profile fields the login app turns into email/name claims.
+export async function setPrincipalProfile(
+    db: D1Database,
+    did: string,
+    email: string | null,
+    name: string | null,
+    when: number,
+): Promise<void> {
+    await db
+        .prepare(
+            `INSERT INTO principals (did, subject, email, name, created_at)
+             VALUES (?1, ?1, ?2, ?3, ?4)
+             ON CONFLICT(did) DO UPDATE SET
+               email = COALESCE(?2, principals.email),
+               name  = COALESCE(?3, principals.name)`,
+        )
+        .bind(did, email, name, when)
+        .run();
+}
+
 export async function setPrincipalSubject(db: D1Database, did: string, subject: string, when: number): Promise<void> {
     await db
         .prepare(

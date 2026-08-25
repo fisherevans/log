@@ -20,7 +20,13 @@ import {
     handleToggleGlobal,
     handleUnban,
 } from './moderation';
-import { handleAddGrant, handleListGrants, handleRemoveGrant, handleResolveGrant } from './grants';
+import {
+    handleAddGrant,
+    handleListGrants,
+    handleRemoveGrant,
+    handleResolveClaims,
+    handleResolveGrant,
+} from './grants';
 import { handleSubscribe } from './subscribe';
 import { Telemetry } from './datadog';
 import {
@@ -86,6 +92,9 @@ export default {
             // admin-gated DevOps management surface.
             if (path === '/admin/grants/resolve' && request.method === 'GET') {
                 return json(await handleResolveGrant(request, env), {}, cors);
+            }
+            if (path === '/admin/grants/claims' && request.method === 'GET') {
+                return json(await handleResolveClaims(request, env), {}, cors);
             }
             if (path === '/admin/grants') {
                 if (request.method === 'GET') return json(await handleListGrants(request, env), {}, cors);

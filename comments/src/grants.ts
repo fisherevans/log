@@ -10,7 +10,15 @@
 import type { Env } from './env';
 import { HttpError } from './http';
 import { requireAdmin } from './moderation';
-import { addGrant, listGrants, removeGrant, resolveSubjectAndGroups, setPrincipalSubject } from './db';
+import {
+    addGrant,
+    listGrants,
+    removeGrant,
+    resolveClaimsBySubject,
+    resolveSubjectAndGroups,
+    setPrincipalProfile,
+    setPrincipalSubject,
+} from './db';
 
 // Constant-time bearer check for the login app's resolve call.
 function bearerOk(request: Request, expected: string | undefined): boolean {
@@ -31,6 +39,24 @@ export async function handleResolveGrant(request: Request, env: Env): Promise<un
     return await resolveSubjectAndGroups(env.DB, did);
 }
 
+// GET /admin/grants/claims?subject=...  ->  {subject, email, name, groups}
+//
+// The login app calls this at consent time to build an ID token. It is keyed by
+// subject rather than DID because that is all the consent request carries.
+//
+// A 404 here is meaningful, not an error: it means "no principal for this
+// subject", which tells the login app to fall back to its local users.json. That
+// fallback is what keeps the password break-glass account working when this
+// Worker is unreachable, so do not turn this into a 200-with-empty-body.
+export async function handleResolveClaims(request: Request, env: Env): Promise<unknown> {
+    if (!bearerOk(request, env.LOGIN_GRANTS_TOKEN)) throw new HttpError(401, 'invalid grants token');
+    const subject = new URL(request.url).searchParams.get('subject')?.trim();
+    if (!subject) throw new HttpError(400, 'subject required');
+    const claims = await resolveClaimsBySubject(env.DB, subject);
+    if (!claims) throw new HttpError(404, 'no principal for that subject');
+    return claims;
+}
+
 // GET /admin/grants[?did=...]   (admin) - list provisioned principals + groups
 export async function handleListGrants(request: Request, env: Env): Promise<unknown> {
     await requireAdmin(request, env);
@@ -42,6 +68,8 @@ interface GrantBody {
     did?: string;
     subject?: string;
     groups?: string[];
+    email?: string;
+    name?: string;
 }
 
 // POST /admin/grants   body {did, subject?, groups?}   (admin)
@@ -56,6 +84,9 @@ export async function handleAddGrant(request: Request, env: Env, body: GrantBody
         if (!subject) throw new HttpError(400, 'subject must be non-empty');
         await setPrincipalSubject(env.DB, did, subject, now);
     }
+    if (body.email != null || body.name != null) {
+        await setPrincipalProfile(env.DB, did, body.email?.trim() || null, body.name?.trim() || null, now);
+    }
     for (const g of body.groups ?? []) {
         const group = g.trim();
         if (group) await addGrant(env.DB, did, group, now);
@@ -68,6 +99,9 @@ export async function handleRemoveGrant(request: Request, env: Env, body: GrantB
     await requireAdmin(request, env);
     const did = (body.did ?? '').trim();
     if (!did) throw new HttpError(400, 'did required');
+    // Deliberately no profile write here. DELETE revokes group grants; wiping
+    // someone's name and email as a side effect of a revoke would be surprising,
+    // and it would lose data that is not recoverable from anywhere else.
     for (const g of body.groups ?? []) {
         const group = g.trim();
         if (group) await removeGrant(env.DB, did, group);
