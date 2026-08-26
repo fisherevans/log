@@ -1,0 +1,94 @@
+---
+import { getCollection, render } from 'astro:content';
+import { noteSlug, noteTitle } from '../../lib/notes';
+import BaseHead from '../../components/BaseHead.astro';
+import Comments from '../../components/Comments.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_TITLE } from '../../consts';
+
+export async function getStaticPaths() {
+    const notes = await getCollection('notes', ({ data }) => !data.draft);
+    return notes.map((note) => ({ params: { slug: noteSlug(note) }, props: { note } }));
+}
+
+const { note } = Astro.props;
+const { Content } = await render(note);
+// No title in frontmatter, so the tab/meta text is derived from the body.
+const derived = noteTitle(note, 90);
+const images = note.data.images;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={`${derived} · ${SITE_TITLE}`} description={noteTitle(note, 160)} />
+        <style>
+            .back { font-size: 0.9em; margin-bottom: 1.5em; }
+            .note-head {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5em 1em;
+                align-items: baseline;
+                margin-bottom: 1.2em;
+                font-size: 0.9em;
+            }
+            .note-head .date {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.8em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+            }
+            .chips { display: flex; flex-wrap: wrap; gap: 0.35em; }
+            .images { display: grid; gap: 0.5rem; margin: 0 0 1.6rem; }
+            .images img {
+                width: 100%;
+                border-radius: 8px;
+                display: block;
+                background: var(--code-bg);
+            }
+            .images.multi { grid-template-columns: repeat(2, 1fr); }
+            @media (max-width: 34rem) { .images.multi { grid-template-columns: 1fr; } }
+            .body > :global(:first-child) { margin-top: 0; }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <p class="back"><a href="/notes/">&larr; all notes</a></p>
+
+            <div class="note-head">
+                <span class="date"><FormattedDate date={note.data.date} /></span>
+                {
+                    note.data.tags.length > 0 && (
+                        <span class="chips">
+                            {note.data.tags.map((tag) => (
+                                <a class="chip" href={`/tags/${tag}/`}>
+                                    {tag}
+                                </a>
+                            ))}
+                        </span>
+                    )
+                }
+            </div>
+
+            {
+                images.length > 0 && (
+                    <div class:list={['images', { multi: images.length > 1 }]}>
+                        {images.map((img) => (
+                            <img src={img.src} alt={img.alt ?? ''} loading="lazy" decoding="async" />
+                        ))}
+                    </div>
+                )
+            }
+
+            <div class="prose body">
+                <Content />
+            </div>
+
+            <Comments postId={note.data.id} />
+        </main>
+        <Footer />
+    </body>
+</html>

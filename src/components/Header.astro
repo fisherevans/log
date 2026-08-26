@@ -3,11 +3,12 @@ import HeaderLink from './HeaderLink.astro';
 
 // Top-level nav. Desktop shows the full inline link row; below 560px it
 // collapses to a "current-page chevron" dropdown (native <details>) so the
-// five items never crowd a phone. fisher.sh is intentionally not in the bar -
+// items never crowd a phone. fisher.sh is intentionally not in the bar -
 // it's referenced inline on the landing and in the footer.
 const NAV = [
     { href: '/', label: 'home' },
     { href: '/posts/', label: 'posts' },
+    { href: '/notes/', label: 'notes' },
     { href: '/tags/', label: 'tags' },
     { href: '/friends/', label: 'friends' },
     { href: '/follow/', label: 'follow' },

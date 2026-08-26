@@ -1,56 +1,125 @@
 ---
 import { getCollection } from 'astro:content';
 import { postHref } from '../../lib/posts';
+import { buildTimeline, noteCover, noteHref, noteTitle } from '../../lib/notes';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import NoteCard from '../../components/NoteCard.astro';
 import { SITE_TITLE } from '../../consts';
 
 export async function getStaticPaths() {
     const allPosts = await getCollection('posts');
+    const allNotes = await getCollection('notes');
     const allTagMeta = await getCollection('tags');
-    const tagMetaMap = Object.fromEntries(allTagMeta.map(t => [t.id, t.data]));
+    const tagMetaMap = Object.fromEntries(allTagMeta.map((t) => [t.id, t.data]));
 
-    const tagMap = new Map<string, typeof allPosts>();
-    for (const post of allPosts) {
-        if (post.data.draft) continue;
-        for (const tag of post.data.tags) {
-            if (!tagMap.has(tag)) tagMap.set(tag, []);
-            tagMap.get(tag)!.push(post);
-        }
-    }
-    return [...tagMap.entries()].map(([tag, posts]) => ({
+    // A tag page is the union of everything carrying that tag - posts AND
+    // notes. This is what makes `project:<slug>` work as a join key: one tag
+    // page becomes a project's whole timeline, long-form and small updates
+    // interleaved.
+    const tags = new Set<string>();
+    for (const p of allPosts) if (!p.data.draft) p.data.tags.forEach((t) => tags.add(t));
+    for (const n of allNotes) if (!n.data.draft) n.data.tags.forEach((t) => tags.add(t));
+
+    return [...tags].map((tag) => ({
         params: { tag },
         props: {
-            posts: posts.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+            posts: allPosts.filter((p) => !p.data.draft && p.data.tags.includes(tag)),
+            notes: allNotes.filter((n) => !n.data.draft && n.data.tags.includes(tag)),
             meta: tagMetaMap[tag] ?? null,
         },
     }));
 }
 
 const { tag } = Astro.params;
-const { posts, meta } = Astro.props;
+const { posts, notes, meta } = Astro.props;
+const timeline = buildTimeline(posts, notes);
+const isGrid = meta?.layout === 'grid';
+// The filter only earns its place when there's actually a mix to filter.
+const showFilter = posts.length > 0 && notes.length > 0;
 ---
+
 <!doctype html>
 <html lang="en">
-    <head><BaseHead title={`tag: ${tag} · ${SITE_TITLE}`} description={`posts tagged ${tag}`} /></head>
+    <head>
+        <BaseHead title={`tag: ${tag} · ${SITE_TITLE}`} description={`posts and notes tagged ${tag}`} />
+    </head>
     <body>
         <Header />
         <main>
             <p class="back"><a href="/tags/">← all tags</a></p>
-            <h1><span class="hash">#</span>{tag}</h1>
+            <h1><span class="hash">#</span>{meta?.name ?? tag}</h1>
             {meta?.description && <p class="tag-description">{meta.description}</p>}
-            <ul class="post-list">
-                {posts.map((post) => (
-                    <li>
-                        <a class="title-link" href={postHref(post)}>{post.data.title}</a>
-                        <span class="date"><FormattedDate date={post.data.date} /></span>
-                    </li>
-                ))}
-            </ul>
+
+            {
+                showFilter && (
+                    <div class="filter" role="group" aria-label="Filter entries">
+                        <button type="button" data-filter="all" class="active">
+                            All <span class="count">{timeline.length}</span>
+                        </button>
+                        <button type="button" data-filter="post">
+                            Posts <span class="count">{posts.length}</span>
+                        </button>
+                        <button type="button" data-filter="note">
+                            Notes <span class="count">{notes.length}</span>
+                        </button>
+                    </div>
+                )
+            }
+
+            <div id="timeline" data-showing="all" class:list={{ grid: isGrid }}>
+                {
+                    timeline.map((item) =>
+                        item.kind === 'post' ? (
+                            <div class="row" data-kind="post">
+                                <a class="title-link" href={postHref(item.entry)}>
+                                    {item.entry.data.title}
+                                </a>
+                                <span class="date">
+                                    <FormattedDate date={item.entry.data.date} />
+                                </span>
+                            </div>
+                        ) : isGrid ? (
+                            <a class="tile" data-kind="note" href={noteHref(item.entry)}>
+                                {noteCover(item.entry) ? (
+                                    <img
+                                        src={noteCover(item.entry)!.src}
+                                        alt={noteCover(item.entry)!.alt ?? ''}
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                ) : (
+                                    <span class="tile-text">{noteTitle(item.entry, 90)}</span>
+                                )}
+                            </a>
+                        ) : (
+                            <div class="note-wrap" data-kind="note">
+                                <NoteCard note={item.entry} />
+                            </div>
+                        ),
+                    )
+                }
+            </div>
         </main>
         <Footer />
+
+        <script is:inline>
+            (() => {
+                const tl = document.getElementById('timeline');
+                if (!tl) return;
+                const buttons = document.querySelectorAll('.filter button');
+                buttons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const want = btn.getAttribute('data-filter');
+                        tl.setAttribute('data-showing', want);
+                        buttons.forEach((b) => b.classList.toggle('active', b === btn));
+                    });
+                });
+            })();
+        </script>
+
         <style>
             .back { font-size: 0.9em; margin-bottom: 1.5em; }
             .hash { color: var(--accent); font-weight: 800; }
@@ -59,8 +128,39 @@ const { posts, meta } = Astro.props;
                 font-style: italic;
                 margin: -0.5em 0 1.5em;
             }
-            .post-list { list-style: none; padding: 0; margin: 0; }
-            .post-list li {
+
+            .filter {
+                display: flex;
+                gap: 0.4em;
+                margin: 0 0 1.8em;
+                flex-wrap: wrap;
+            }
+            .filter button {
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                color: var(--muted);
+                border-radius: 999px;
+                padding: 0.35em 0.9em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.75rem;
+                letter-spacing: 0.04em;
+                cursor: pointer;
+            }
+            .filter button:hover { color: var(--fg); }
+            .filter button.active {
+                color: var(--fg);
+                border-color: var(--accent);
+            }
+            .filter .count { opacity: 0.6; margin-left: 0.35em; }
+
+            /* The filter is pure CSS off a data attribute - no re-render, no
+               URL change, back button stays clean. */
+            #timeline[data-showing='post'] [data-kind='note'],
+            #timeline[data-showing='note'] [data-kind='post'] {
+                display: none;
+            }
+
+            .row {
                 padding: 0.85em 0;
                 border-bottom: 1px solid var(--rule);
                 display: flex;
@@ -69,7 +169,6 @@ const { posts, meta } = Astro.props;
                 gap: 1em;
                 flex-wrap: wrap;
             }
-            .post-list li::before { content: none; }
             .title-link { color: var(--fg); }
             .date {
                 font-family: 'DraftingMono', ui-monospace, monospace;
@@ -77,6 +176,44 @@ const { posts, meta } = Astro.props;
                 color: var(--muted);
                 letter-spacing: 0.03em;
                 white-space: nowrap;
+            }
+
+            /* Grid (gallery) layout, opt-in per tag via `layout: grid` in the
+               tag's YAML. Notes become image tiles; posts keep their rows and
+               sit above the grid, which is why the container is a plain block
+               and only the tiles are gridded. */
+            #timeline.grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+                gap: 0.5rem;
+            }
+            #timeline.grid .row {
+                grid-column: 1 / -1;
+            }
+            .tile {
+                display: block;
+                aspect-ratio: 1 / 1;
+                border-radius: 8px;
+                overflow: hidden;
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                border-bottom: 1px solid var(--rule);
+            }
+            .tile img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                transition: transform 0.18s ease;
+            }
+            .tile:hover img { transform: scale(1.04); }
+            .tile-text {
+                display: flex;
+                align-items: center;
+                height: 100%;
+                padding: 0.9em;
+                color: var(--muted);
+                font-size: 0.85em;
             }
         </style>
     </body>

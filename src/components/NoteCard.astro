@@ -1,0 +1,128 @@
+---
+// One note, rendered as a card in a stream (/notes, /tags/<tag>/).
+//
+// Notes have no title, so there's no headline link to click - the whole card is
+// the content, and the date acts as the permalink. That's deliberate: a note
+// should read as a thing you glance at, not a thing you're invited to "open".
+//
+// `compact` drops the rendered body to a derived one-liner, for dense mixed
+// timelines where notes sit alongside post rows.
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import { noteHref, noteTitle } from '../lib/notes';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+    note: CollectionEntry<'notes'>;
+    compact?: boolean;
+}
+const { note, compact = false } = Astro.props;
+const { Content } = await render(note);
+const images = note.data.images;
+// 1 image -> full bleed. 2-4 -> even grid. 5+ -> grid, first one spans.
+const gridClass = images.length === 1 ? 'one' : images.length === 2 ? 'two' : 'many';
+---
+
+<article class:list={['note-card', { compact }]}>
+    <div class="note-meta">
+        <a class="date" href={noteHref(note)}>
+            <FormattedDate date={note.data.date} />
+        </a>
+        {
+            note.data.tags.length > 0 && (
+                <span class="chips">
+                    {note.data.tags.map((tag) => (
+                        <a class="chip" href={`/tags/${tag}/`}>
+                            {tag}
+                        </a>
+                    ))}
+                </span>
+            )
+        }
+    </div>
+
+    {
+        images.length > 0 && (
+            <div class:list={['note-images', gridClass]}>
+                {images.map((img) => (
+                    <img src={img.src} alt={img.alt ?? ''} loading="lazy" decoding="async" />
+                ))}
+            </div>
+        )
+    }
+
+    {
+        compact ? (
+            <p class="note-excerpt">
+                <a href={noteHref(note)}>{noteTitle(note, 140)}</a>
+            </p>
+        ) : (
+            <div class="prose note-body">
+                <Content />
+            </div>
+        )
+    }
+</article>
+
+<style>
+    .note-card {
+        padding: 1.4rem 0 1.6rem;
+        border-bottom: 1px solid var(--rule);
+    }
+    .note-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em 1em;
+        align-items: baseline;
+        margin-bottom: 0.7em;
+        font-size: 0.85em;
+    }
+    .note-meta .date {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.78em;
+        color: var(--muted);
+        letter-spacing: 0.03em;
+        border-bottom: none;
+    }
+    .note-meta .date:hover { color: var(--accent); }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.35em; }
+
+    .note-images {
+        display: grid;
+        gap: 0.4rem;
+        margin: 0 0 1rem;
+    }
+    .note-images img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 8px;
+        display: block;
+        background: var(--code-bg);
+    }
+    /* A stream is for scanning, so a single image is capped well under a
+       viewport - you should always see the next note's edge. `contain` keeps
+       square dye shots and wide screenshots both un-cropped, and the
+       transparent background stops the letterbox gutters reading as a box. */
+    .note-images.one { grid-template-columns: 1fr; }
+    .note-images.one img {
+        max-height: 22rem;
+        object-fit: contain;
+        object-position: left;
+        background: none;
+    }
+    .note-images.two { grid-template-columns: 1fr 1fr; }
+    .note-images.many { grid-template-columns: repeat(3, 1fr); }
+    .note-images.many img { aspect-ratio: 1 / 1; }
+    @media (max-width: 34rem) {
+        .note-images.many { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* A note body is short - kill the leading/trailing margin so cards sit
+       tight against each other in the stream. */
+    .note-body > :global(:first-child) { margin-top: 0; }
+    .note-body > :global(:last-child) { margin-bottom: 0; }
+
+    .note-excerpt { margin: 0; }
+    .note-excerpt a { color: var(--fg); }
+</style>
