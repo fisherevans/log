@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import { SITE_TITLE } from '../../consts';
+
+const notes = (await getCollection('notes', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead
+            title={`Notes · ${SITE_TITLE}`}
+            description="Short updates: things made, things tried, work in progress."
+        />
+        <style>
+            h1 { margin: 0 0 0.4rem; }
+            .blurb {
+                color: var(--muted);
+                max-width: 34em;
+                margin: 0 0 2.2rem;
+            }
+            .stream { margin: 0; }
+            .stream :global(.note-card:first-child) { padding-top: 0; }
+            .stream :global(.note-card:last-child) { border-bottom: none; }
+            .empty {
+                color: var(--muted);
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.85rem;
+            }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <h1>Notes</h1>
+            <p class="blurb">
+                Smaller than a post. Things I made, tried, or am partway through &mdash; often
+                just a photo and a sentence. For the longer write-ups, see <a href="/posts/">posts</a>.
+            </p>
+
+            {
+                notes.length > 0 ? (
+                    <div class="stream">
+                        {notes.map((note) => (
+                            <NoteCard note={note} />
+                        ))}
+                    </div>
+                ) : (
+                    <p class="empty">No notes yet.</p>
+                )
+            }
+        </main>
+        <Footer />
+    </body>
+</html>

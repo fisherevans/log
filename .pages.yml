@@ -83,6 +83,54 @@ content:
         options:
           language: markdown
 
+  - name: notes
+    label: Notes
+    path: src/content/notes
+    type: collection
+    format: yaml-frontmatter
+    filename: '{year}-{month}-{day}-{primary}.md'
+    view:
+      fields: [date, tags, draft]
+      sort: [{ field: date, direction: desc }]
+    fields:
+      - name: id
+        label: Stable ID (comments key on this - do not change once published)
+        type: string
+      - name: date
+        label: Date
+        type: date
+        required: true
+        options:
+          format: 'yyyy-MM-dd'
+      - name: tags
+        label: Tags (use project:<slug> to attach this to a project)
+        type: string
+        list: true
+      - name: draft
+        label: Draft (hide from listings)
+        type: boolean
+        default: false
+      - name: body
+        label: Body
+        # Same `code` rationale as posts above - faithful markdown source, no
+        # rich-text round-trip that eats raw HTML.
+        type: code
+        options:
+          language: markdown
+
+    ## DELIBERATELY ABSENT: `images`.
+    ##
+    ## The notes schema (src/content.config.ts) declares `images` as a list of
+    ## {src, alt} OBJECTS. Scribe's frontmatter writer renders a declared list
+    ## by stringifying each item (internal/content/content.go renderField), so a
+    ## declared list-of-objects round-trips to literal `- map[alt:... src:...]`
+    ## and the media is destroyed on first save. Undeclared fields are passed
+    ## through untouched by renderUnknown, so leaving `images` out of BOTH CMS
+    ## configs is what keeps it safe to hand-edit.
+    ##
+    ## Do not add an `images` field here until that writer handles non-scalar
+    ## list items. Same applies to .scribe.yml.
+
   - name: about
     label: About page
     path: src/pages/about.astro

@@ -41,6 +41,50 @@ const posts = defineCollection({
             }),
 });
 
+// Notes collection. Short, dated entries in src/content/notes/.
+//
+// A note is deliberately SMALLER than a post: no title, no description, no
+// hero. The whole point is a unit of writing with a low enough bar that it
+// actually gets written - a dyed disc, a devlog beat, a build photo. Requiring
+// a title is what turns "here's a thing I made" into "I must write an essay",
+// so `title` is absent from this schema on purpose. Don't add it back.
+//
+// Display text (list previews, <title>, RSS) is DERIVED from the body - see
+// src/lib/notes.ts noteTitle(). The URL comes from the filename + date, same
+// shape as posts: /notes/YYYY/MM/DD/<slug>.
+//
+// `tags` is shared with posts, which is what makes /tags/<tag>/ able to show
+// both interleaved. Namespaced `project:<slug>` tags are the join key across
+// posts, notes, and projects.fisher.sh entries.
+//
+// `images` are media.fisher.sh URLs (the bot's `!upload` / scribe's External
+// CDN path), NOT Astro image() assets - notes are photo-first and their media
+// lives in R2, not the repo.
+const notes = defineCollection({
+    loader: glob({ base: './src/content/notes', pattern: '**/*.{md,mdx}' }),
+    schema: z
+        .object({
+            id: z.string().optional(),
+            date: z.coerce.date(),
+            tags: z.array(z.string()).default([]),
+            images: z
+                .array(
+                    z.object({
+                        src: z.string(),
+                        alt: z.string().optional(),
+                    }),
+                )
+                .default([]),
+            draft: z.boolean().default(false),
+        })
+        // Same contract as posts: a published entry needs a stable `id` because
+        // comments key on it. Scribe mints one on save.
+        .refine((data) => data.draft || (typeof data.id === 'string' && data.id.trim().length > 0), {
+            message: 'Published note is missing a stable `id` (comments key on it). Add an `id` or set draft: true.',
+            path: ['id'],
+        }),
+});
+
 // Tags collection. YAML files in src/content/tags/.
 // Each file provides optional name + description metadata for a tag slug.
 // Content Layer: the glob loader determines the collection kind - do NOT also
@@ -50,7 +94,12 @@ const tags = defineCollection({
     schema: z.object({
         name: z.string(),
         description: z.string().optional(),
+        // How /tags/<tag>/ renders its entries. 'list' is the default text
+        // listing; 'grid' is an image-first gallery, for visual tags where the
+        // pictures are the point (disc dyes, prints, builds). This is what lets
+        // a tag page double as a portfolio without a bespoke collection.
+        layout: z.enum(['list', 'grid']).default('list'),
     }),
 });
 
-export const collections = { posts, tags };
+export const collections = { posts, notes, tags };
