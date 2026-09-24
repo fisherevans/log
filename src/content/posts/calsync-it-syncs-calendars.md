@@ -21,29 +21,25 @@ But now that I work remotely and have kids, organizing my time has become much t
 
 The hard part is that they cross work/life boundaries. A kid's dentist appointment on Household calendar doesn't automatically block my time in my work calendar. And my wife can't see when my meetings are when making plans that include me.
 
-A few years ago, I wrote a [little Google Apps Script](/posts/2024/03/18/personal-calendar-sync/) to copy my personal appointments onto my work calendar as "busy" blocks. It worked, but it only solved half of the problem I actually have. So I wrote a second, similar script to go the other way with slightly different features.
+The whole thing comes down to the wall between my work life and my personal life. Work lives in one Google account, my personal and shared calendars live in another, and getting them to cooperate across that wall - without handing either side access it shouldn't have - is the entire problem.
 
-Well, someone asked about it and I was embarrassed by the state of it. So I merged the two into a single script with a unified config block. I made: [calsync](https://github.com/fisherevans/calsync).
+A few years ago, I wrote a [little Google Apps Script](/posts/2024/03/18/personal-calendar-sync/) to copy my personal appointments onto my work calendar as "busy" blocks. It worked, but it only solved half of the problem I actually have. So I wrote a second, more complex script to go the other way with slightly different features.
 
-The whole thing comes down to the wall between my work life and my personal life. Work lives in one Google account, my personal and shared calendars live in another, and getting them to cooperate across that wall - without handing either side access it shouldn't have - is the entire problem. There are really two halves to it.
+I made: [calsync](https://github.com/fisherevans/calsync).
 
-**I want to see my work calendar without giving work my personal devices.** I want my meetings on my phone, and I want Lisa to see when I'm busy so she can plan around it. The options for that all stink: live in the Slack calendar app, or log my work account into my personal phone and laptop and let work plant a foot on my devices. I don't want either. I just want to know what time my 2pm is.
+**I want to see my work calendar without giving work my personal devices.** I want my meetings on my phone, and I want Lisa to see when I'm busy so she can plan around it. There are only 2 real options, and both stink: opening up the Slack calendar app; or log into my work account on my personal phone, allowing work to enforce device policies I don't want. I just want to know what time my next meeting is.
 
-**I want my personal life to block off my work day.** Dentist, haircut, God forbid an interview - these happen between 9 and 5, and if they only exist on my personal calendar, a coworker will book a meeting right over them. And the calendar slot undersells the real cost. "Dentist, 2:00-2:30" ignores the drive there and back, the context switch, and the few minutes it takes to land and catch up on whatever happened in Slack while I was gone.
-
-calsync handles both with a handful of small, boring moves. Here are the ones that matter.
+**I want my personal life to block off my work day.** Dentist appoints, haircuts, (maybe interview...) - these happen between 9 and 5, and if they only exist on my personal calendar, a coworker will book a meeting right over them if I double double-enter my events. And the calendar slot undersells the real cost. "Dentist, 2:00-2:30" ignores the drive there and back, the context switch, and the few minutes it takes catch up on whatever happened in Slack while I was gone.
 
 ## Mask: show that you're busy, without the details
 
-The first move is the one the old script did. Take an event from a personal calendar and drop a copy onto my work calendar as an opaque block. Same time slot, but the title and notes are gone - coworkers see "Busy," not "Dentist - Dr. Alvarez."
+The first move is the one the old script did. Take an event from a personal calendar and drop a copy onto my work calendar as an opaque block. Same time slot, but the title and notes are gone - coworkers see "Busy," not "Dentist - Dr. Toothy."
 
 ![Mask: a personal event becomes an opaque "Busy" block on the work calendar](/posts/calsync/demo-mask.svg)
 
-Nobody books over it, and nobody learns anything about my afternoon.
-
 ## Buffer: pad the block
 
-A 2:30 appointment isn't really over at 2:30. I have to get there, get back, and get my head back into work. So the busy block gets padded on both ends by a buffer. The half-hour haircut becomes a wider hold on my work calendar, and the meeting that would have landed at 3:01 lands somewhere I can actually make it to.
+A 2-2:30 appointment isn't really over at 2:30. I have to drive back home and get my head back into work. So the busy block gets padded on both ends by a buffer. The half-hour haircut becomes a wider hold on my work calendar.
 
 ![Buffer: the busy block is padded past the appointment on both ends](/posts/calsync/demo-buffer.svg)
 
@@ -61,17 +57,9 @@ The title is usually enough, but two details are worth carrying over, and each i
 
 The **join link**, for when I'm running late and need to drop into a Zoom from my phone while walking to the car - no laptop, no digging through email.
 
-The **room**, for when I'm on-site and have no idea where "Project Review" actually is. I want to glance at my phone and see "Banana, 4th floor," not pull out my laptop to find it.
+The **room**, for when I'm on-site and have no idea where a meeting actually is. I want to glance at my phone and see "Skyscraper, 4th floor, Room 2" not pull out my laptop to find it.
 
 ![Extras: the room and join link carried onto the personal calendar](/posts/calsync/demo-extras.svg)
-
-## Where this came from
-
-The first script came out of the second problem - I was tired of meetings landing on top of personal appointments. Then the first problem crept up on me, so I wrote a *second* script going the other way for the join links and the visibility. Two scripts, two configs, two things to babysit.
-
-calsync is just those two merged. It turns out "block off my work day" and "show me my work day" are the same operation pointed in opposite directions - copy events from one calendar into another and keep them in sync. So it's one engine, and the difference between mask and mirror is a few lines of config. You say which calendars feed which, which mode, and what to carry; it does the rest on a schedule.
-
-I'll be upfront: there's nothing clever under the hood here. It's a small tool doing a boring job, and most of the work was deciding what it *shouldn't* copy. But it's the kind of boring that quietly saves me a dozen tiny annoyances a week. That was true right up until it started quietly making duplicates of everything, which is further down.
 
 ## Quick setup
 
@@ -125,25 +113,5 @@ function getSyncRules() {
 ```
 
 The mask rule is the one I lean on most. `bufferMinutes` is the travel-and-context-switch pad, `maskTitle` and `visibility` are what keep the details off my work calendar, and `excludeTitles` lets me opt a personal event out by tagging it `[free]`. Everything not set falls back to sensible defaults, so a rule only has to say what's interesting about it.
-
-## Self-healing: what it does about duplicates
-
-One thing to know if you're going to run this, because it took me three months to notice. For most of the summer calsync quietly made duplicate events. Most slots were fine, plenty had two or three copies, and the worst had 87 of the same event stacked on top of each other - 338 copies across 47 distinct event shapes by the time I counted them.
-
-Two causes, both mine. The create path wrapped `createEvent` and every setter after it in a single retry block, so a transient Calendar error in one of those setters re-ran the whole sequence and left the first event behind. And the reconciler indexed the events it manages with `map.set(tagValue, event)`, which keeps one event per key and silently drops the rest - so the extra copies were invisible to both the update pass and the orphan sweep, and nothing ever cleaned them up.
-
-Both are fixed, and the fix is really two capabilities worth naming.
-
-**It converges on its own.** Each call in the create path gets its own retry now, and the tag that identifies an event is written before anything else, so a half-configured event is still findable and the next run repairs it. The reconciler buckets events by tag instead of overwriting, and deletes every copy past the first. Duplicates inside the sync window disappear on the next pass without you doing anything.
-
-**There's a sweep for the ones it can't reach.** The sync window only looks forward from now, so copies that have drifted into the past are out of range however the reconciler behaves. `dryRunCleanupStrays()` reports what it would remove and `cleanupStrays()` removes it, in two passes with different confidence: *exact*, where two events carry the same tag and are therefore the same source instance by construction, and *inferred*, where an untagged event matches a tagged one's title, start and end. The inferred pass requires that tagged sibling - it's the evidence the copy came from calsync and not from you. `diagnoseDuplicates()` is the read-only version: it writes nothing and prints what the tags actually say.
-
-Status, honestly: deployed, not verified. It has been running about ten days and I have not re-run the sweep's dry run to confirm the count reached zero.
-
-The one transferable bit, if you want it: never put a non-idempotent operation inside a retry that re-runs a whole sequence. Retry the smallest unit that can fail.
-
-## Worth it?
-
-\[TODO: short honest wrap - has it actually held up day to day, does Lisa use it, anything still rough.\] Okay.
 
 If you want to run your own, setup and the full list of knobs are in the [README](https://github.com/fisherevans/calsync).
