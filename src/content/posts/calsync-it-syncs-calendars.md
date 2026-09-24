@@ -1,12 +1,12 @@
 ---
 title: 'calsync: It syncs calendars'
-date: 2026-06-12
+date: 2026-09-24
 description: A small tool that keeps my work and personal calendars in sync in both directions - personal life blocks off my work day, and my work day shows up on my phone.
 tags:
   - tools
   - work
 hasVideo: false
-draft: true
+draft: false
 id: InTq4USBbA
 ---
 Before the COVID shut down, I really didn't worry about accessing my work calendar while at home. I was just at work, from 9 to 5, Monday through Friday. I even left my laptop at work back then...
