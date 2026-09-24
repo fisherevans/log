@@ -71,7 +71,7 @@ The first script came out of the second problem - I was tired of meetings landin
 
 calsync is just those two merged. It turns out "block off my work day" and "show me my work day" are the same operation pointed in opposite directions - copy events from one calendar into another and keep them in sync. So it's one engine, and the difference between mask and mirror is a few lines of config. You say which calendars feed which, which mode, and what to carry; it does the rest on a schedule.
 
-I'll be upfront: there's nothing clever under the hood here. It's a small tool doing a boring job, and most of the work was deciding what it *shouldn't* copy. But it's the kind of boring that quietly saves me a dozen tiny annoyances a week. That was true right up until it started making duplicates of everything, which is further down.
+I'll be upfront: there's nothing clever under the hood here. It's a small tool doing a boring job, and most of the work was deciding what it *shouldn't* copy. But it's the kind of boring that quietly saves me a dozen tiny annoyances a week. That was true right up until it started quietly making duplicates of everything, which is further down.
 
 ## Quick setup
 
@@ -126,53 +126,21 @@ function getSyncRules() {
 
 The mask rule is the one I lean on most. `bufferMinutes` is the travel-and-context-switch pad, `maskTitle` and `visibility` are what keep the details off my work calendar, and `excludeTitles` lets me opt a personal event out by tagging it `[free]`. Everything not set falls back to sensible defaults, so a rule only has to say what's interesting about it.
 
-## Since June: it was making duplicates
+## Self-healing: what it does about duplicates
 
-A few months of running on its own and my calendars filled up with copies. Not evenly. Most events were fine, plenty had two or three, and one slot had 87 copies of the same event stacked on top of each other. A cleanup script I wrote later counted 338 duplicates across 47 distinct event shapes.
+One thing to know if you're going to run this, because it took me three months to notice. For most of the summer calsync quietly made duplicate events. Most slots were fine, plenty had two or three copies, and the worst had 87 of the same event stacked on top of each other - 338 copies across 47 distinct event shapes by the time I counted them.
 
-The first real clue was a screenshot, not the code. Mask events get created yellow. In one of the piles, the copies alternated yellow and blue, and blue is Google's default. Some of those copies had never had `setColor` applied to them, which means they were made by a run that didn't finish.
+Two causes, both mine. The create path wrapped `createEvent` and every setter after it in a single retry block, so a transient Calendar error in one of those setters re-ran the whole sequence and left the first event behind. And the reconciler indexed the events it manages with `map.set(tagValue, event)`, which keeps one event per key and silently drops the rest - so the extra copies were invisible to both the update pass and the orphan sweep, and nothing ever cleaned them up.
 
-That pointed at the create path, which wrapped the whole creation sequence in one retry:
+Both are fixed, and the fix is really two capabilities worth naming.
 
-```javascript
-return withRetry_(() => {
-  const ev = target.createEvent(d.title, d.start, d.end); // not idempotent
-  ev.setTag(tagKey, tagValue);
-  if (d.color) ev.setColor(d.color);
-  if (d.visibility) ev.setVisibility(d.visibility);
-  return ev;
-});
-```
+**It converges on its own.** Each call in the create path gets its own retry now, and the tag that identifies an event is written before anything else, so a half-configured event is still findable and the next run repairs it. The reconciler buckets events by tag instead of overwriting, and deletes every copy past the first. Duplicates inside the sync window disappear on the next pass without you doing anything.
 
-`withRetry_` re-runs the whole closure, up to four attempts. It's there because the Calendar service throws transient errors under load. But `createEvent` isn't idempotent. If the event got created and then a setter threw, the retry started over from the top and created a second event. The first one was already on the calendar and nothing ever deleted it. One call could leave up to three orphans behind.
+**There's a sweep for the ones it can't reach.** The sync window only looks forward from now, so copies that have drifted into the past are out of range however the reconciler behaves. `dryRunCleanupStrays()` reports what it would remove and `cleanupStrays()` removes it, in two passes with different confidence: *exact*, where two events carry the same tag and are therefore the same source instance by construction, and *inferred*, where an untagged event matches a tagged one's title, start and end. The inferred pass requires that tagged sibling - it's the evidence the copy came from calsync and not from you. `diagnoseDuplicates()` is the read-only version: it writes nothing and prints what the tags actually say.
 
-I thought that was the whole story, and I was wrong for a day. The cleanup sweep reported groups of 8, 13, 18 events that all carried the script's tag, and a tagged event means the create sequence got at least as far as the tag call. So I decided the tag values must be drifting between runs, probably on recurring events, where the API hands back one ID for a whole series. That was a deduction from an assumption. I hadn't measured anything.
+Status, honestly: deployed, not verified. It has been running about ten days and I have not re-run the sweep's dry run to confirm the count reached zero.
 
-Measuring took one read-only pass: print every stored tag in the worst groups, and print the keys the engine computes for the live source events right now. Distinct tag values per group: 1. Eighteen events, one key, every one of them matching a live source exactly. The keys had never drifted. The retry bug was the whole story, and it produced two flavors of duplicate depending on where the failure landed - before the tag, leaving an untagged orphan, or after it, leaving a duplicate with an identical tag.
-
-Which raises the better question: why was a bad retry from June still sitting there in September? Because of the second bug. The reconciler indexes the events it manages by that tag:
-
-```javascript
-if (v) managed.set(v, ev); // 18 events, one key: 17 vanish
-```
-
-`Map.set` overwrites. Eighteen copies go in, one comes out, and the other seventeen stop existing as far as the reconciler is concerned. It diffed the survivor, called it unchanged, and the pass that deletes orphans walked the same map, so it never saw them either. The reconciler had no way to represent "more than one match," so it could never converge. It couldn't heal this no matter how many times it ran.
-
-Three fixes went in.
-
-**Give each call its own retry, and write the identity first.** Create, then tag, then everything else, each wrapped separately. The ordering is the point: a tagged event that's half-shaped is findable, so the next run's diff repairs it, while an untagged one is garbage forever. There's still a window - if `createEvent` itself times out after Google created the event, the retry duplicates it anyway. Closing that needs a lookup before the create.
-
-**Bucket, then collapse.** Index into arrays instead of overwriting, keep the first event under each key, delete the rest. Now a duplicate is something the reconciler recognizes and removes on its own.
-
-**A one-off sweep for the backlog**, because the sync window only looks forward from now, and the old copies had drifted into the past where the reconciler will never reach them again. It runs two passes with deliberately different confidence. Exact: same tag value, same source instance by construction, keep one and delete the rest. Inferred: an untagged event with the same title, start and end as a tagged sibling. Requiring that tagged sibling is the evidence the copy came from this script and not from me.
-
-All of that is deployed, not verified. The fixed code has been running for about ten days and I haven't run the dry run that would prove the counts actually reach zero.
-
-Three things I'd carry somewhere else:
-
-- Never put a non-idempotent operation inside a retry that re-runs a whole sequence. Retry the smallest unit that can fail.
-- Write the identity before the decoration. Ordering inside a create is a durability decision, not a style preference.
-- `map.set(key, value)` in an index is an assertion that keys are unique. If a collision is possible, that's a silent data-loss bug with a friendly face.
+The one transferable bit, if you want it: never put a non-idempotent operation inside a retry that re-runs a whole sequence. Retry the smallest unit that can fail.
 
 ## Worth it?
 
