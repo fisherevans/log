@@ -461,6 +461,9 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 margin-left: 0.2rem;
             }
 
+            #stream[data-split='split'] .item.was-multi { display: none; }
+            #stream[data-split='keep'] .item.split-part { display: none; }
+
             /* ---------- filter behaviour ---------- */
             #stream[data-showing='post'] .item.note { display: none; }
             #stream[data-showing='note'] .item.post { display: none; }
@@ -582,6 +585,11 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         <button data-set="note" data-val="rail" aria-pressed="false">inset rail</button>
                     </span>
                     <span class="knob"
+                        ><span>multi-video</span>
+                        <button data-set="split" data-val="split" aria-pressed="true">one note each</button>
+                        <button data-set="split" data-val="keep" aria-pressed="false">keep together</button>
+                    </span>
+                    <span class="knob"
                         ><span>note start</span>
                         <button data-set="bound" data-val="node" aria-pressed="true">timeline node</button>
                         <button data-set="bound" data-val="plain" aria-pressed="false">plain</button>
@@ -617,7 +625,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
             </div>
 
-            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-showing="all">
+            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-split="split" data-showing="all">
                 {
                     items.map((item) => (
                         <article
@@ -760,7 +768,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             // ?post=row&note=rail&media=full - so a link can open a given combo.
             const qs = new URLSearchParams(location.search);
-            for (const key of ['post', 'note', 'media', 'bound']) {
+            for (const key of ['post', 'note', 'media', 'bound', 'split']) {
                 const v = qs.get(key);
                 if (!v) continue;
                 stream.dataset[key] = v;
@@ -777,6 +785,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     document
                         .querySelectorAll<HTMLButtonElement>(`[data-set="${key}"]`)
                         .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                    recount();
                     measure();
                 });
             });
@@ -788,6 +797,25 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
                 });
             });
+
+            function recount() {
+                const live = (sel: string) =>
+                    Array.from(document.querySelectorAll<HTMLElement>(sel)).filter(
+                        (el) => getComputedStyle(el).display !== 'none',
+                    ).length;
+                const showing = stream.dataset.showing;
+                stream.dataset.showing = 'all';
+                const notes = live('.item.note');
+                const posts = live('.item.post');
+                stream.dataset.showing = showing!;
+                const set = (f: string, n: number) => {
+                    const el = document.querySelector(`[data-filter="${f}"] .count`);
+                    if (el) el.textContent = String(n);
+                };
+                set('note', notes);
+                set('post', posts);
+                set('all', notes + posts);
+            }
 
             // ---- reader filter ----
             document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
@@ -867,6 +895,49 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     if (!opening) note.scrollIntoView({ block: 'nearest' });
                 });
             });
+
+            // ---- multi-video notes: one note per video ----
+            // Eight migrated notes are a batch of videos under headings, and in
+            // the LRK ones those headings are sequential devlog beats
+            // ("Adventure - Update #1..#5") that were only ever batched because
+            // a post was the smallest unit available. Split, each beat is its
+            // own note. Both versions live in the DOM; the knob picks one.
+            const isMedia = (el: Element) => !!el.querySelector('img, iframe, video') || /^(IMG|IFRAME|VIDEO)$/.test(el.tagName);
+            document.querySelectorAll<HTMLElement>('.item.note').forEach((note) => {
+                const body = note.querySelector<HTMLElement>('.body');
+                if (!body) return;
+                const kids = Array.from(body.children) as HTMLElement[];
+                const mediaIdx = kids.map((el, i) => (isMedia(el) ? i : -1)).filter((i) => i >= 0);
+                if (mediaIdx.length < 2) return;
+
+                // A segment is the video plus the heading that introduces it.
+                const starts = mediaIdx.map((i) =>
+                    i > 0 && /^H[1-6]$/.test(kids[i - 1].tagName) ? i - 1 : i,
+                );
+                const preamble = kids.slice(0, starts[0]);
+
+                note.classList.add('was-multi');
+                let anchor: HTMLElement = note;
+                starts.forEach((start, n) => {
+                    const end = n + 1 < starts.length ? starts[n + 1] : kids.length;
+                    const part = note.cloneNode(true) as HTMLElement;
+                    part.classList.remove('was-multi');
+                    part.classList.add('split-part');
+                    part.id = `${note.id}-${n + 1}`;
+                    part.dataset.slug = `${note.dataset.slug}-${n + 1}`;
+                    part.dataset.href = note.dataset.href!.replace(/\/$/, `-${n + 1}/`);
+                    const pb = part.querySelector<HTMLElement>('.body')!;
+                    const pk = Array.from(pb.children) as HTMLElement[];
+                    pb.replaceChildren(
+                        ...(n === 0 ? preamble.map((_, i) => pk[i]) : []),
+                        ...pk.slice(start, end),
+                    );
+                    anchor.after(part);
+                    anchor = part;
+                });
+            });
+
+            recount();
 
             // ---- notes: drop a heading the embed under it already says ----
             // These migrated notes were structured like posts: "### Update #1"
