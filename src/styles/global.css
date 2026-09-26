@@ -108,6 +108,12 @@
     /* The one sans-serif in the stack: used only for the small uppercase
        eyebrow labels (e.g. "Latest post"), where the slab-serif DraftingMono
        read as a serif. System font - no download. */
+    /* Photo mat - the board a note's media sits on, so an image that does not
+       fill the column letterboxes onto something rather than bleeding into the
+       page. Deliberately darker than --bg in both themes: it reads as a frame. */
+    --mat: #050505;
+    --mat-edge: rgba(232, 222, 200, 0.16);
+
     --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -126,6 +132,9 @@
     --rule: #e3dac8;
     --code-bg: rgba(43, 39, 34, 0.05);
     --code-border: rgba(43, 39, 34, 0.12);
+
+    --mat: #17140f;
+    --mat-edge: rgba(43, 39, 34, 0.3);
 }
 
 * { box-sizing: border-box; }

@@ -308,7 +308,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 background: var(--code-bg);
                 border: 1px solid var(--rule);
                 border-radius: 12px;
-                padding: 1.4rem 1.5rem 1.5rem;
+                padding: 1.05rem 1.5rem 1.3rem;
             }
             /* P2 - heavy row. Weight from typography + air, no container. */
             #stream[data-post='row'] .post { margin: 2.6rem 0; }
@@ -322,7 +322,10 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             .note { margin: 1.5rem 0; }
             .note .frame { position: relative; }
             .note .meta { margin: 0 0 0.7em; }
-            .note .body { font-size: 0.97em; }
+            .note .body { font-size: 0.97em; line-height: 1.55; }
+            .note .body > :global(p) { margin: 0.75em 0; }
+            .note .meta { margin-bottom: 0.5em; }
+            .note .actions { margin-top: 0.8em; }
             .note .body > :global(:first-child) { margin-top: 0; }
             .note .body > :global(:last-child) { margin-bottom: 0; }
             /* A note is complete in the stream, but a pasted wall of text or a
@@ -428,6 +431,20 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                then centre, then crop only when shrinking would leave the photo
                too small to see. */
             .note-images .shot img { display: block; }
+
+            /* An embed is media too. Same board, same edge, same radius - a note
+               should not present a photo one way and a video another. */
+            .note .body :global(.media-mat) {
+                background: var(--mat);
+                border: 1px solid var(--mat-edge);
+                border-radius: 10px;
+                overflow: hidden;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 1rem 0;
+            }
+            .note .body :global(.media-mat iframe) { display: block; border: 0; }
             .note-images .shot.is-cropped img { object-fit: cover; object-position: top; }
             .note-images.two { grid-template-columns: 1fr 1fr; }
             .note-images.many { grid-template-columns: repeat(3, 1fr); }
@@ -474,11 +491,13 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             /* A post is a bigger stop on the same timeline: an open ring rather
                than a filled dot, so the thread runs unbroken through both. */
+            #stream[data-post='card'] .post { --node-top: 1.95rem; }
+            #stream[data-post='row'] .post { --node-top: 2.5rem; }
             #stream[data-bound='node'] .post::before {
                 content: '';
                 position: absolute;
                 left: -1.9rem;
-                top: 1.75rem;
+                top: calc(var(--node-top) - 0.39rem);
                 width: 0.78rem;
                 height: 0.78rem;
                 border-radius: 50%;
@@ -492,27 +511,17 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             /* Attach the card to its node. Unattached, the ring reads as a
                bullet sitting beside a box; attached, the card hangs off the
                timeline. */
-            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::before,
             #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::after {
                 content: '';
                 position: absolute;
-                width: 0;
-                height: 0;
-                border-top: 9px solid transparent;
-                border-bottom: 9px solid transparent;
-            }
-            /* outline, then the fill one pixel inside it */
-            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::before {
-                left: -14px;
-                top: 1.62rem;
-                border-right: 14px solid var(--rule);
-            }
-            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::after {
-                left: -12px;
-                top: calc(1.62rem + 1px);
-                border-top-width: 8px;
-                border-bottom-width: 8px;
-                border-right: 13px solid var(--code-bg);
+                left: -1.38rem;
+                top: calc(var(--node-top) - 1.15rem);
+                width: 1.38rem;
+                height: 1.15rem;
+                border-left: 1px solid var(--branch);
+                border-bottom: 1px solid var(--branch);
+                border-bottom-left-radius: 1.15rem;
+                pointer-events: none;
             }
             /* A stub instead: a rule from the node to a squared-off corner, so
                the card looks docked rather than spoken from. */
@@ -520,16 +529,16 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 content: '';
                 position: absolute;
                 left: -1.35rem;
-                top: 2.14rem;
+                top: var(--node-top);
                 width: 1.35rem;
                 height: 1px;
-                background: var(--rule);
+                background: var(--branch);
             }
             #stream[data-bound='node'][data-attach='stub'][data-post='card'] .post .frame {
                 border-top-left-radius: 0;
             }
             /* The spine itself, drawn once behind everything. */
-            #stream[data-bound='node'] { position: relative; }
+            #stream[data-bound='node'] { position: relative; --branch: color-mix(in srgb, var(--accent) 55%, transparent); }
             #stream[data-bound='node']::before {
                 content: '';
                 position: absolute;
@@ -943,6 +952,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     } catch {}
                     recount();
                     sizeImages();
+                    sizeEmbeds();
                     measure();
                 });
             });
@@ -1176,6 +1186,33 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 img.style.width = `${Math.round(w)}px`;
                 img.style.height = `${Math.round(h)}px`;
             }
+            // Give every embed in a note the photo's frame.
+            document.querySelectorAll<HTMLElement>('.note .body').forEach((body) => {
+                body.querySelectorAll('iframe').forEach((f) => {
+                    if (f.parentElement?.classList.contains('media-mat')) return;
+                    const mat = document.createElement('div');
+                    mat.className = 'media-mat';
+                    f.replaceWith(mat);
+                    mat.appendChild(f);
+                });
+            });
+            function sizeEmbeds() {
+                const cap = window.innerHeight * VH_CAP;
+                document.querySelectorAll<HTMLElement>('.note .media-mat').forEach((mat) => {
+                    const f = mat.querySelector('iframe') as HTMLIFrameElement | null;
+                    if (!f) return;
+                    const w = mat.clientWidth;
+                    if (!w) return;
+                    // A video needs width to be watchable, so it fills the board
+                    // rather than obeying the photo width cap - but it still
+                    // answers to the same height ceiling.
+                    const h = Math.min((w * 9) / 16, cap);
+                    f.style.width = `${Math.round((h * 16) / 9)}px`;
+                    f.style.height = `${Math.round(h)}px`;
+                    f.style.maxWidth = '100%';
+                });
+            }
+
             function sizeImages() {
                 document
                     .querySelectorAll<HTMLImageElement>('.note-images img')
@@ -1185,10 +1222,11 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     });
             }
             sizeImages();
+            sizeEmbeds();
             let rz: number;
             window.addEventListener('resize', () => {
                 clearTimeout(rz);
-                rz = window.setTimeout(() => { sizeImages(); measure(); }, 150);
+                rz = window.setTimeout(() => { sizeImages(); sizeEmbeds(); measure(); }, 150);
             });
 
             const lb = document.getElementById('lightbox')!;
