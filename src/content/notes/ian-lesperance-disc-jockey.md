@@ -1,10 +1,7 @@
 ---
-title: Ian Lesperance, Disc Jockey
+id: Ob8kF6WVPb
 date: 2026-07-06
-description: A personal website, a departing coworker, and an eclectic collection of deep house DJ sets.
-hasVideo: false
 draft: false
-id: WI0hmQr0ud
 ---
 Ian and I had a brief overlap at Datadog; we weren't even on the same team. It wasn't until after his last day that I discovered we were both house heads.
 

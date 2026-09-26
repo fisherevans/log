@@ -1,8 +1,6 @@
 ---
-id: NLDnNWX5dq
-title: Listr
+id: OsXWA1avja
 date: 2014-04-09
-description: A collaborative list app, and my first crack at a JavaScript front end talking to a REST API.
 tags:
   - tools
 draft: false

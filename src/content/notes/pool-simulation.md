@@ -1,11 +1,8 @@
 ---
-id: NmcS8Lu6Cw
-title: "Pool Simulation"
+id: WMMMqXzh9a
 date: 2013-04-30
-description: "Demos from my final project for college physics simulations class."
 tags:
   - college
-hasVideo: true
 draft: false
 ---
 Demos from my final project for my college physics simulations class - a billiards/pool simulator.

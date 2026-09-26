@@ -32,6 +32,7 @@ export function noteHref(note: CollectionEntry<'notes'>): string {
 // short note bodies, not full posts, so it doesn't try to be a real parser.
 function stripMarkdown(md: string): string {
     return md
+        .replace(/<[^>]+>/g, ' ') // raw HTML (embeds) contributes no prose
         .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images -> nothing
         .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // links -> their text
         .replace(/^>\s*/gm, '') // blockquote markers
@@ -46,8 +47,14 @@ function stripMarkdown(md: string): string {
 // all need SOME text. Derive it from the first sentence-ish of the body and cap
 // it, falling back to the date when a note is pure media.
 export function noteTitle(note: CollectionEntry<'notes'>, max = 72): string {
-    const text = stripMarkdown(note.body ?? '');
+    const body = note.body ?? '';
+    const text = stripMarkdown(body);
     if (!text) {
+        // A note can legitimately be one embed and nothing else - the split of
+        // the old video-batch posts produced several. The embed's own title is
+        // the only text it has, and it is a good one.
+        const embed = body.match(/<iframe[^>]*\btitle=["']([^"']+)["']/i);
+        if (embed) return embed[1].trim();
         return `Note · ${note.data.date.toISOString().slice(0, 10)}`;
     }
     // Prefer cutting at a sentence end, else at the last whole word.
