@@ -1,0 +1,229 @@
+---
+// SPECIMEN - twenty action-row treatments, shown at rest and at hover.
+// The live page is hoverable; the `hover` column forces the same state so both
+// can be judged in one glance (and so a screenshot carries both).
+import BaseHead from '../../../components/BaseHead.astro';
+import { OPTIONS } from '../../../lib/specimen-actions';
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title="Specimen · action rows" description="Twenty treatments for the action row under a stream entry." />
+        <style>
+            main { padding-bottom: 6rem; }
+            h1 { font-size: 1.9rem; margin: 0 0 0.3em; }
+            .lede { color: var(--muted); max-width: 40em; margin: 0 0 2.4rem; line-height: 1.6; }
+            .legend {
+                display: flex; gap: 1.4rem; flex-wrap: wrap;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.72rem; color: var(--muted);
+                border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+                padding: 0.7rem 0; margin-bottom: 2.4rem;
+            }
+            .theme-toggle {
+                font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.7rem;
+                background: none; border: 1px solid var(--rule); color: var(--muted);
+                border-radius: 999px; padding: 0.2em 0.7em; cursor: pointer;
+            }
+
+            .opt { padding: 1.5rem 0 1.7rem; border-top: 1px solid var(--rule); }
+            .opt:first-of-type { border-top: none; }
+            .opt h2 {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.82rem; font-weight: 700; letter-spacing: 0.04em;
+                margin: 0 0 0.3em; color: var(--fg);
+            }
+            .opt h2 .num { color: var(--accent); margin-right: 0.6em; }
+            .opt .why { margin: 0 0 1.1rem; color: var(--muted); font-size: 0.93em; max-width: 44em; }
+
+            .demos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+            @media (max-width: 46rem) { .demos { grid-template-columns: 1fr; } }
+            .demo {
+                background: var(--code-bg); border: 1px solid var(--rule);
+                border-radius: 10px; padding: 0.9rem 1rem 1rem;
+                position: relative;
+            }
+            .demo > .state {
+                position: absolute; top: 0.5rem; right: 0.7rem;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+                color: var(--muted); opacity: 0.55;
+            }
+            .ctx {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase;
+                color: var(--muted); opacity: 0.5; margin: 0 0 0.35rem;
+            }
+            .ctx + .row { margin-bottom: 1rem; }
+            .row { display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap; min-height: 2.1rem; }
+
+            /* Baseline: the row as it is today, minus the site-wide link
+               highlight, which is what made the hover state read as two orange
+               bars bracketing the label. */
+            .act {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78rem; letter-spacing: 0.02em;
+                background: none; border: none; padding: 0; cursor: pointer;
+                color: var(--muted); text-decoration: none;
+                display: inline-flex; align-items: center; gap: 0.35em;
+                position: relative; transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+            }
+            .act:hover, .act:focus-visible, .force .act {
+                background: none; border-bottom-color: transparent; box-shadow: none; outline: none;
+            }
+            .act svg { width: 0.95em; height: 0.95em; }
+            .arrow { transition: transform 140ms ease; }
+
+            /* 01 bare */
+            .o1 .act:hover, .o1.force .act { color: var(--accent); }
+            /* 02 underline on hover */
+            .o2 .act:hover, .o2.force .act { color: var(--accent); text-decoration: underline; text-underline-offset: 0.35em; }
+            /* 03 arrow nudge */
+            .o3 .act:hover, .o3.force .act { color: var(--accent); }
+            .o3 .act:hover .arrow, .o3.force .act .arrow { transform: translateX(0.28em); }
+            /* 04 outlined pill */
+            .o4 .act { border: 1px solid var(--rule); border-radius: 999px; padding: 0.34em 0.85em; }
+            .o4 .act:hover, .o4.force .act { color: var(--accent); border-color: var(--accent); }
+            /* 05 filled pill */
+            .o5 .act { border-radius: 999px; padding: 0.34em 0.85em; background: var(--code-border); color: var(--fg); }
+            .o5 .act.primary { background: var(--accent); color: var(--bg); }
+            .o5 .act:hover, .o5.force .act { background: var(--hover-bg); color: var(--bg); }
+            /* 06 ghost tint */
+            .o6 .act { border-radius: 6px; padding: 0.3em 0.55em; margin: 0 -0.55em; }
+            .o6 .act:hover, .o6.force .act { color: var(--accent); background: var(--code-bg); }
+            /* 07 bracketed */
+            .o7 .act::before { content: '['; margin-right: 0.35em; opacity: 0.5; }
+            .o7 .act::after { content: ']'; margin-left: 0.35em; opacity: 0.5; }
+            .o7 .act:hover, .o7.force .act { color: var(--accent); }
+            .o7 .act:hover::before, .o7 .act:hover::after,
+            .o7.force .act::before, .o7.force .act::after { opacity: 1; color: var(--accent); }
+            /* 08 leading chevron */
+            .o8 .act .arrow { order: -1; }
+            .o8 .act:hover, .o8.force .act { color: var(--accent); }
+            .o8 .act:hover .arrow, .o8.force .act .arrow { transform: translateX(-0.2em); }
+            /* 09 dotted underline (site idiom) */
+            .o9 .act { border-bottom: 1px dotted var(--muted); }
+            .o9 .act:hover, .o9.force .act { color: var(--accent); border-bottom: 1px solid var(--accent); }
+            /* 10 micro caps */
+            .o10 .act { font-family: var(--sans); font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+            .o10 .act:hover, .o10.force .act { color: var(--accent); }
+            /* 11 serif italic */
+            .o11 .act { font-family: 'Newsreader', serif; font-style: italic; font-size: 1rem; letter-spacing: 0; }
+            .o11 .act:hover, .o11.force .act { color: var(--accent); }
+            /* 12 icon in a circle */
+            .o12 .act svg { width: 1.6em; height: 1.6em; padding: 0.4em; border: 1px solid var(--rule); border-radius: 50%; box-sizing: content-box; }
+            .o12 .act:hover, .o12.force .act { color: var(--accent); }
+            .o12 .act:hover svg, .o12.force .act svg { border-color: var(--accent); }
+            /* 13 icon only */
+            .o13 .act .label { display: none; }
+            .o13 .act svg { width: 1.15em; height: 1.15em; }
+            .o13 .act:hover, .o13.force .act { color: var(--accent); }
+            /* 14 rule to the edge */
+            .o14 .row { gap: 0.85rem; }
+            .o14 .row::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+            .o14 .act:hover, .o14.force .act { color: var(--accent); }
+            /* 15 underline slides in */
+            .o15 .act::after {
+                content: ''; position: absolute; left: 0; right: 100%; bottom: -0.35em;
+                height: 1px; background: var(--accent); transition: right 160ms ease;
+            }
+            .o15 .act:hover, .o15.force .act { color: var(--accent); }
+            .o15 .act:hover::after, .o15.force .act::after { right: 0; }
+            /* 16 thick accent underline */
+            .o16 .act::after {
+                content: ''; position: absolute; left: -0.1em; right: -0.1em; bottom: -0.3em;
+                height: 0.32em; border-radius: 2px; background: var(--hover-bg);
+                opacity: 0; transform: scaleY(0.4); transform-origin: bottom;
+                transition: opacity 130ms ease, transform 130ms ease;
+            }
+            .o16 .act:hover::after, .o16.force .act::after { opacity: 0.45; transform: scaleY(1); }
+            .o16 .act:hover, .o16.force .act { color: var(--fg); }
+            /* 17 two-tier weight */
+            .o17 .act.primary { color: var(--accent); font-weight: 700; }
+            .o17 .act { opacity: 0.85; }
+            .o17 .act:hover, .o17.force .act { color: var(--accent); opacity: 1; }
+            /* 18 corner tab */
+            .o18 .row { justify-content: flex-end; border-top: 1px solid var(--rule); padding-top: 0.6rem; margin-top: 0.4rem; }
+            .o18 .act:hover, .o18.force .act { color: var(--accent); }
+            /* 19 arrow only */
+            .o19 .act.primary .label { display: none; }
+            .o19 .act.primary .arrow { font-size: 1.3em; }
+            .o19 .act:hover, .o19.force .act { color: var(--accent); }
+            .o19 .act:hover .arrow, .o19.force .act .arrow { transform: translateX(0.28em); }
+            /* 20 arrow slides in */
+            .o20 .act .arrow { order: -1; opacity: 0; transform: translateX(-0.4em); }
+            .o20 .act:hover, .o20.force .act { color: var(--accent); }
+            .o20 .act:hover .arrow, .o20.force .act .arrow { opacity: 1; transform: translateX(0); }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Action rows</h1>
+            <p class="lede">
+                Twenty treatments for the row under a stream entry. Left column is rest, right is
+                hover (forced, so both read in one glance &mdash; the page is hoverable too).
+                Every option has the site&rsquo;s global link highlight switched off, which is what
+                was putting orange bars either side of <em>Open note</em>.
+                <button class="theme-toggle" id="theme">light / dark</button>
+            </p>
+
+            <div class="legend">
+                <span>post row &rarr; Read post &middot; Share</span>
+                <span>note row &rarr; Show more &middot; Open note &middot; Share</span>
+            </div>
+
+            {
+                OPTIONS.map((o) => (
+                    <section class="opt">
+                        <h2><span class="num">{pad(o.n)}</span>{o.name}</h2>
+                        <p class="why">{o.why}</p>
+                        <div class="demos">
+                            {['rest', 'hover'].map((state) => (
+                                <div class:list={['demo', `o${o.n}`, { force: state === 'hover' }]}>
+                                    <span class="state">{state}</span>
+                                    <p class="ctx">post</p>
+                                    <div class="row">
+                                        <a class="act primary" href="#">
+                                            <span class="label">Read post</span>
+                                            <span class="arrow">&rarr;</span>
+                                        </a>
+                                        <button class="act" type="button">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
+                                            <span class="label">Share</span>
+                                        </button>
+                                    </div>
+                                    <p class="ctx">note</p>
+                                    <div class="row">
+                                        <button class="act" type="button"><span class="label">Show more</span></button>
+                                        <a class="act" href="#">
+                                            <span class="label">Open note</span>
+                                            <span class="arrow">&rsaquo;</span>
+                                        </a>
+                                        <button class="act" type="button">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
+                                            <span class="label">Share</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                ))
+            }
+        </main>
+        <script>
+            const btn = document.getElementById('theme')!;
+            btn.addEventListener('click', () => {
+                const cur = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+                document.documentElement.dataset.theme = cur;
+                try { localStorage.setItem('specimen-theme', cur); } catch {}
+            });
+            try {
+                const th = localStorage.getItem('specimen-theme');
+                if (th) document.documentElement.dataset.theme = th;
+            } catch {}
+        </script>
+    </body>
+</html>

@@ -272,7 +272,13 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 gap: 0.35em;
                 text-decoration: none;
             }
-            .act:hover { color: var(--accent); }
+            .act:hover,
+            .act:focus-visible {
+                color: var(--accent);
+                background: none;
+                border-bottom-color: transparent;
+                box-shadow: none;
+            }
             .act svg { width: 0.95em; height: 0.95em; }
             .act.primary {
                 color: var(--accent);
@@ -280,7 +286,13 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 border-radius: 6px;
                 padding: 0.35em 0.8em;
             }
-            .act.primary:hover { background: var(--hover-bg); border-color: var(--hover-bg); color: var(--hover); }
+            .act.primary:hover,
+            .act.primary:focus-visible {
+                background: none;
+                border-color: var(--accent);
+                color: var(--accent);
+                box-shadow: none;
+            }
             .act.copied { color: var(--accent); }
 
             /* ================= POST treatments ================= */
@@ -321,10 +333,11 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             /* ================= NOTE treatments ================= */
             .note { margin: 1.5rem 0; }
             .note .frame { position: relative; }
-            .note .meta { margin: 0 0 0.7em; }
+            .note .meta { margin: 0 0 0.3em; }
             .note .body { font-size: 0.97em; line-height: 1.55; }
             .note .body > :global(p) { margin: 0.75em 0; }
-            .note .meta { margin-bottom: 0.5em; }
+            .note .meta { margin-bottom: 0.15em; }
+            .note .clip.caption-leads .body > :global(:first-child) { margin-top: 0.2em; }
             .note .actions { margin-top: 0.8em; }
             .note .body > :global(:first-child) { margin-top: 0; }
             .note .body > :global(:last-child) { margin-bottom: 0; }
