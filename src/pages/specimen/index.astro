@@ -281,7 +281,29 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 box-shadow: none;
             }
             .act svg { width: 0.95em; height: 0.95em; }
-            /* No pill, no border: the leading chevron is the affordance. */
+            /* The post's one call to action, and the only contained control in
+               the stream: an accent pill that fills on hover. Everything else
+               stays a plain mark, so this reads as the thing to do. */
+            .act.cta {
+                font-family: var(--sans);
+                font-size: 0.76rem;
+                font-weight: 700;
+                letter-spacing: 0.04em;
+                color: var(--accent);
+                border: 1px solid var(--accent);
+                border-radius: 999px;
+                padding: 0.5em 1.1em;
+                gap: 0.5em;
+            }
+            .act.cta:hover,
+            .act.cta:focus-visible {
+                background: var(--accent);
+                color: var(--bg);
+                border-color: var(--accent);
+            }
+            .act.cta .arrow { transition: transform 140ms ease; }
+            .act.cta:hover .arrow, .act.cta:focus-visible .arrow { transform: translateX(0.25em); }
+
             .act .lead { transition: transform 140ms ease; }
             .act:hover .lead, .act:focus-visible .lead { transform: translateX(-0.2em); }
 
@@ -337,7 +359,19 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             /* ================= NOTE treatments ================= */
             .note { margin: 1.5rem 0; }
             .note .frame { position: relative; }
-            .note .meta { margin: 0 0 0.3em; }
+            /* The permalink and share belong to the entry, so they sit on the
+               entry's own line - the date's - rather than trailing the content. */
+            .note .head {
+                display: flex;
+                justify-content: space-between;
+                align-items: baseline;
+                gap: 1rem;
+                margin: 0 0 0.3em;
+            }
+            .note .head .right { display: flex; align-items: baseline; gap: 0.9rem; flex: 0 0 auto; }
+            .note .meta { margin: 0; }
+            .note .actions { margin-top: 0.7em; }
+            .note:not(.is-clamped):not(.is-media-clamped):not(.is-open) .actions { display: none; }
             .note .body { font-size: 0.97em; line-height: 1.55; }
             .note .body > :global(p) { margin: 0.75em 0; }
             .note .meta { margin-bottom: 0.15em; }
@@ -509,32 +543,48 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             /* A post is a bigger stop on the same timeline: an open ring rather
                than a filled dot, so the thread runs unbroken through both. */
-            /* The node's geometry in one place, so a connector starts at its
-               outer edge rather than crossing into the circle. NOTE: global
-               `* { box-sizing: border-box }` does NOT match pseudo-elements, so
-               the ring is content-box and its 2px border is extra width - hence
-               the (2 * --ring-b). The -1px gap tucks the stub's first pixel
-               under the ring's stroke so they always meet. */
+            /* The node is drawn in three layers rather than as a bordered
+               circle, because a connector that merely abuts a border can always
+               show a sub-pixel seam at some zoom level - the arithmetic is
+               unwinnable. Instead: a filled accent disc, the connector on top of
+               it, then a background disc on top of that to punch the hollow. The
+               connector starts at the disc's centre, so there is nothing to
+               align: the hollow simply hides whatever it crosses.
+               NOTE: `* { box-sizing: border-box }` does not match pseudo-
+               elements, so --ring-outer is the true outer diameter here. */
             #stream[data-bound='node'] .post {
-                --ring-left: -1.9rem;
-                --ring-d: 0.78rem;
+                --ring-outer: 1.05rem;
                 --ring-b: 2px;
-                --ring-gap: -1px;
-                --stub-left: calc(var(--ring-left) + var(--ring-d) + (2 * var(--ring-b)) + var(--ring-gap));
+                /* centred on the spine by construction, not by a tuned offset */
+                --ring-left: calc(var(--spine-c) - var(--item-indent) - (var(--ring-outer) / 2));
+                --ring-mid: calc(var(--ring-left) + (var(--ring-outer) / 2));
             }
             #stream[data-post='card'] .post { --node-top: 1.95rem; }
             #stream[data-post='row'] .post { --node-top: 2.5rem; }
             #stream[data-bound='node'] .post::before {
                 content: '';
                 position: absolute;
+                z-index: 1;
                 left: var(--ring-left);
-                top: calc(var(--node-top) - 0.39rem);
-                width: var(--ring-d);
-                height: var(--ring-d);
+                top: calc(var(--node-top) - (var(--ring-outer) / 2));
+                width: var(--ring-outer);
+                height: var(--ring-outer);
                 border-radius: 50%;
-                border: var(--ring-b) solid var(--accent);
-                background: var(--bg);
+                background: var(--accent);
                 box-shadow: 0 0 0 0.25rem var(--bg);
+            }
+            /* layer 3: the hollow, painted over the connector */
+            #stream[data-bound='node'] .post::after {
+                content: '';
+                position: absolute;
+                z-index: 3;
+                left: calc(var(--ring-left) + var(--ring-b));
+                top: calc(var(--node-top) - (var(--ring-outer) / 2) + var(--ring-b));
+                width: calc(var(--ring-outer) - (2 * var(--ring-b)));
+                height: calc(var(--ring-outer) - (2 * var(--ring-b)));
+                border-radius: 50%;
+                background: var(--bg);
+                pointer-events: none;
             }
             #stream[data-bound='node'] .post { padding-left: 0; position: relative; }
             #stream[data-bound='node'] .post .frame { position: relative; }
@@ -559,11 +609,19 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             #stream[data-bound='node'][data-attach='fade'][data-post='card'] .post .frame::after {
                 content: '';
                 position: absolute;
-                left: var(--stub-left);
+                z-index: 2;
+                left: var(--ring-mid);
                 top: calc(var(--node-top) - 1px);
-                width: calc(0px - var(--stub-left));
+                width: calc(0px - var(--ring-mid));
                 height: 2px;
-                background: linear-gradient(to right, var(--accent), transparent);
+                /* Solid until it clears the ring, then fades. The stop is the
+                   disc's radius, so the gradient reads from the ring's edge. */
+                background: linear-gradient(
+                    to right,
+                    var(--accent) 0,
+                    var(--accent) calc(var(--ring-outer) / 2),
+                    transparent 100%
+                );
                 pointer-events: none;
             }
 
@@ -572,9 +630,10 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             #stream[data-bound='node'][data-attach='stub'][data-post='card'] .post .frame::after {
                 content: '';
                 position: absolute;
-                left: var(--stub-left);
-                top: var(--node-top);
-                width: calc(0px - var(--stub-left));
+                z-index: 2;
+                left: var(--ring-mid);
+                top: calc(var(--node-top) - 0.5px);
+                width: calc(0px - var(--ring-mid));
                 height: 1px;
                 background: var(--branch);
             }
@@ -582,19 +641,27 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 border-top-left-radius: 0;
             }
             /* The spine itself, drawn once behind everything. */
-            #stream[data-bound='node'] { position: relative; --branch: color-mix(in srgb, var(--accent) 55%, transparent); }
+            #stream[data-bound='node'] {
+                position: relative;
+                --branch: color-mix(in srgb, var(--accent) 55%, transparent);
+                --spine-x: 0.2rem;       /* spine's left edge inside the stream */
+                --spine-c: calc(var(--spine-x) + 0.5px); /* its centre (1px wide) */
+                --item-indent: 1.6rem;   /* how far each entry sits from it */
+            }
             #stream[data-bound='node']::before {
                 content: '';
                 position: absolute;
-                left: 0.2rem;
+                left: var(--spine-x);
                 top: 0.5rem;
                 bottom: 0.5rem;
                 width: 1px;
                 background: var(--rule);
             }
-            #stream[data-bound='node'] .item { margin-left: 1.6rem; }
+            #stream[data-bound='node'] .item { margin-left: var(--item-indent); }
             #stream[data-bound='node'][data-note='rail'] .note .frame { border-left: none; padding-left: 0; margin-left: 0; }
-            #stream[data-bound='node'] .note .meta::before { left: -1.62rem; }
+            #stream[data-bound='node'] .note .meta::before {
+                left: calc(var(--spine-c) - var(--item-indent) - 0.25rem);
+            }
 
             /* Meta in a left gutter: the date and tags stop interrupting the
                reading column, and a note ends up narrower than a post without
@@ -606,6 +673,12 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     grid-template-columns: 9rem 1fr;
                     column-gap: 1.6rem;
                 }
+                #stream[data-meta='gutter'] .note .head { display: contents; }
+                #stream[data-meta='gutter'] .note .head .right {
+                    grid-column: 2;
+                    grid-row: 1;
+                    justify-self: end;
+                }
                 #stream[data-meta='gutter'] .note .meta {
                     grid-column: 1;
                     grid-row: 1;
@@ -616,8 +689,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     padding-top: 0.1em;
                 }
                 #stream[data-meta='gutter'] .note .meta .chips { flex-direction: column; align-items: flex-start; }
-                #stream[data-meta='gutter'] .note .clip { grid-column: 2; grid-row: 1; }
-                #stream[data-meta='gutter'] .note .actions { grid-column: 2; grid-row: 2; }
+                #stream[data-meta='gutter'] .note .clip { grid-column: 2; grid-row: 2; }
+                #stream[data-meta='gutter'] .note .actions { grid-column: 2; grid-row: 3; }
             }
             /* Consecutive notes need more air than a note next to a post does -
                that is where the blending happens. */
@@ -863,8 +936,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                             <item.Content />
                                         </div>
                                         <div class="actions">
-                                            <a class="act primary" href={item.href} data-open>
-                                                <span class="lead">&rsaquo;</span> Read post
+                                            <a class="act cta" href={item.href} data-open>
+                                                Read post <span class="arrow">&rarr;</span>
                                             </a>
                                             <span class="right">
                                             <button class="act share" type="button">
@@ -876,25 +949,35 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                     </>
                                 ) : (
                                     <>
-                                        <div class="meta">
-                                            <time
-                                                class="date rel"
-                                                datetime={item.date.toISOString()}
-                                                title={absolute(item.date)}
-                                                data-abs={absolute(item.date)}
-                                                tabindex="0"
-                                            >
-                                                <FormattedDate date={item.date} />
-                                            </time>
-                                            {item.judgment && <span class="flag">judgment</span>}
-                                            {item.demo && <span class="flag">demo image</span>}
-                                            {item.tags.length > 0 && (
-                                                <span class="chips">
-                                                    {item.tags.map((t) => (
-                                                        <span class="chip">{t}</span>
-                                                    ))}
-                                                </span>
-                                            )}
+                                        <div class="head">
+                                            <div class="meta">
+                                                <time
+                                                    class="date rel"
+                                                    datetime={item.date.toISOString()}
+                                                    title={absolute(item.date)}
+                                                    data-abs={absolute(item.date)}
+                                                    tabindex="0"
+                                                >
+                                                    <FormattedDate date={item.date} />
+                                                </time>
+                                                {item.demo && <span class="flag">demo image</span>}
+                                                {item.tags.length > 0 && (
+                                                    <span class="chips">
+                                                        {item.tags.map((t) => (
+                                                            <span class="chip">{t}</span>
+                                                        ))}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <span class="right">
+                                                <a class="act" href={item.href} data-open>
+                                                    <span class="lead">&rsaquo;</span> Open note
+                                                </a>
+                                                <button class="act share" type="button">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
+                                                    Share
+                                                </button>
+                                            </span>
                                         </div>
                                         <div class:list={['clip', { 'caption-leads': item.captionLeads }]}>
                                             <div class="prose body">
@@ -929,15 +1012,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                         </div>
                                         <div class="actions">
                                             <button class="act more" type="button">Show more</button>
-                                            <span class="right">
-                                            <a class="act" href={item.href} data-open>
-                                                <span class="lead">&rsaquo;</span> Open note
-                                            </a>
-                                            <button class="act share" type="button">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
-                                                Share
-                                            </button>
-                                            </span>
                                         </div>
                                     </>
                                 )}
