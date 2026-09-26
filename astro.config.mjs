@@ -7,6 +7,7 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import rehypeYoutubeFacade from './plugins/rehype-youtube-facade.mjs';
 import rehypeLazyMedia from './plugins/rehype-lazy-media.mjs';
+import rehypeMediaSrcset from './plugins/rehype-media-srcset.mjs';
 
 // Octicon "link" icon, as a hast node appended inside each heading. Styled and
 // wired up to copy-the-link in src/styles/global.css + src/layouts/BlogPost.astro.
@@ -51,6 +52,7 @@ export default defineConfig({
             // the measurements that motivated it.
             rehypeYoutubeFacade,
             rehypeLazyMedia,
+            rehypeMediaSrcset,
             [
                 rehypeAutolinkHeadings,
                 {

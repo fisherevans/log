@@ -10,6 +10,7 @@ import { getCollection, render } from 'astro:content';
 import { postHref } from '../../lib/posts';
 import { noteHref } from '../../lib/notes';
 import { JUDGMENT_CALLS, RECLASS_TO_NOTE } from '../../lib/specimen';
+import { mediaSrcSet } from '../../../plugins/media-urls.mjs';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import BaseHead from '../../components/BaseHead.astro';
@@ -110,6 +111,8 @@ items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 // same way). Serving a 1080px photo into a 384px slot was most of the 27MB the
 // page still weighed once the embeds were gone.
 const srcSet = (src: string) => {
+    const remote = mediaSrcSet(src);
+    if (remote) return remote;
     const m = src.match(/^(.*)\.(jpg|jpeg|png|webp)$/i);
     if (!m) return undefined;
     // Only advertise candidates that exist - a srcset entry that 404s is not
