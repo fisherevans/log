@@ -1,0 +1,688 @@
+---
+// SPECIMEN - a design sandbox for the notes rollout. Not linked from the site.
+// Delete this directory (and src/lib/specimen.ts) once a direction is picked.
+//
+// Renders the REAL corpus as the proposed mixed stream: 11 long entries stay
+// posts, 16 short ones render as notes with their titles dropped, plus the 5
+// existing notes. Every treatment is a data-attribute on #stream so variants
+// can be compared without a rebuild.
+import { getCollection, render } from 'astro:content';
+import { postHref } from '../../lib/posts';
+import { noteHref } from '../../lib/notes';
+import { JUDGMENT_CALLS, RECLASS_TO_NOTE } from '../../lib/specimen';
+import BaseHead from '../../components/BaseHead.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+const notes = await getCollection('notes', ({ data }) => !data.draft);
+
+type Item = {
+    kind: 'post' | 'note';
+    slug: string;
+    date: Date;
+    title?: string;
+    tags: string[];
+    href: string;
+    images: { src: string; alt?: string }[];
+    migrated: boolean;
+    judgment: boolean;
+    Content: any;
+};
+
+const items: Item[] = [];
+for (const p of posts) {
+    const { Content } = await render(p);
+    const asNote = RECLASS_TO_NOTE.has(p.id);
+    items.push({
+        kind: asNote ? 'note' : 'post',
+        slug: p.id,
+        date: p.data.date,
+        title: asNote ? undefined : p.data.title,
+        tags: p.data.tags,
+        href: asNote ? `/notes/${p.id}/` : postHref(p),
+        images: [],
+        migrated: asNote,
+        judgment: JUDGMENT_CALLS.has(p.id),
+        Content,
+    });
+}
+for (const n of notes) {
+    const { Content } = await render(n);
+    items.push({
+        kind: 'note',
+        slug: n.id,
+        date: n.data.date,
+        tags: n.data.tags,
+        href: noteHref(n),
+        images: n.data.images,
+        migrated: false,
+        judgment: false,
+        Content,
+    });
+}
+items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+
+const postCount = items.filter((i) => i.kind === 'post').length;
+const noteCount = items.filter((i) => i.kind === 'note').length;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title="Specimen · notes rollout" description="Design sandbox for the notes rollout." />
+        <style>
+            /* ---------- specimen chrome (not part of the proposal) ---------- */
+            .lab {
+                position: sticky;
+                top: 0;
+                z-index: 40;
+                background: var(--bg);
+                border-bottom: 1px solid var(--rule);
+                padding: 0.7rem var(--content-pad-x) 0.8rem;
+                margin: 0 calc(-1 * var(--content-pad-x));
+            }
+            .lab h1 {
+                font-size: 0.72rem;
+                font-family: var(--sans);
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin: 0 0 0.55rem;
+            }
+            .knobs { display: flex; flex-wrap: wrap; gap: 0.5rem 1.1rem; align-items: center; }
+            .knob { display: flex; align-items: center; gap: 0.35rem; }
+            .knob > span {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.64rem;
+                color: var(--muted);
+                letter-spacing: 0.04em;
+            }
+            .knob button {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.7rem;
+                background: none;
+                border: 1px solid var(--rule);
+                color: var(--muted);
+                border-radius: 999px;
+                padding: 0.22em 0.7em;
+                cursor: pointer;
+            }
+            .knob button[aria-pressed='true'] {
+                border-color: var(--accent);
+                color: var(--bg);
+                background: var(--accent);
+            }
+            @media (max-width: 40rem) {
+                .lab { padding: 0.5rem var(--content-pad-x) 0.55rem; }
+                .lab h1 { font-size: 0.58rem; margin-bottom: 0.4rem; }
+                .knobs {
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    gap: 0.75rem;
+                    scrollbar-width: none;
+                    -webkit-overflow-scrolling: touch;
+                }
+                .knobs::-webkit-scrollbar { display: none; }
+                .knob { flex: 0 0 auto; }
+                .knob > span { font-size: 0.56rem; }
+                .knob button { font-size: 0.6rem; padding: 0.18em 0.55em; }
+            }
+
+            details.brief {
+                margin: 1.4rem 0 1.8rem;
+            }
+            details.brief > summary {
+                cursor: pointer;
+                font-family: var(--sans);
+                font-size: 0.74rem;
+                font-weight: 700;
+                letter-spacing: 0.08em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .note-to-self {
+                font-size: 0.9rem;
+                color: var(--muted);
+                max-width: 40em;
+                margin: 0.9rem 0 0;
+                line-height: 1.6;
+            }
+
+            /* ---------- the reader-facing filter (part of the proposal) ---------- */
+            .filter {
+                display: flex;
+                gap: 0.4rem;
+                margin: 0 0 2rem;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid var(--rule);
+            }
+            .filter button {
+                font-family: var(--sans);
+                font-size: 0.8rem;
+                font-weight: 600;
+                background: none;
+                border: 1px solid var(--rule);
+                border-radius: 999px;
+                color: var(--muted);
+                padding: 0.4em 0.95em;
+                cursor: pointer;
+                display: inline-flex;
+                gap: 0.45em;
+                align-items: baseline;
+            }
+            .filter button:hover { color: var(--fg); border-color: var(--muted); }
+            .filter button[aria-pressed='true'] { color: var(--fg); border-color: var(--accent); }
+            .filter .count {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.72em;
+                opacity: 0.7;
+            }
+
+            /* ---------- shared stream bits ---------- */
+            #stream { display: flex; flex-direction: column; }
+            .item { scroll-margin-top: 6rem; }
+            .meta {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.45em 0.9em;
+                align-items: baseline;
+                font-size: 0.85em;
+            }
+            .meta .date {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.76em;
+                color: var(--muted);
+                letter-spacing: 0.03em;
+                border-bottom: none;
+            }
+            .meta .date:hover { color: var(--accent); }
+            .chips { display: flex; flex-wrap: wrap; gap: 0.3em; }
+            .actions {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                margin-top: 1.1em;
+            }
+            .act {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.76rem;
+                letter-spacing: 0.02em;
+                background: none;
+                border: none;
+                padding: 0;
+                cursor: pointer;
+                color: var(--muted);
+                display: inline-flex;
+                align-items: center;
+                gap: 0.35em;
+                text-decoration: none;
+            }
+            .act:hover { color: var(--accent); }
+            .act svg { width: 0.95em; height: 0.95em; }
+            .act.primary {
+                color: var(--accent);
+                border: 1px solid var(--rule);
+                border-radius: 6px;
+                padding: 0.35em 0.8em;
+            }
+            .act.primary:hover { background: var(--hover-bg); border-color: var(--hover-bg); color: var(--hover); }
+            .spacer { flex: 1; }
+            .act.copied { color: var(--accent); }
+
+            /* ================= POST treatments ================= */
+            .post .frame { padding: 0; }
+            .p-title { margin: 0; line-height: 1.15; }
+            .p-title a {
+                color: var(--fg);
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 24;
+                font-size: 1.75rem;
+            }
+            .p-title a:hover {
+                color: var(--hover);
+                background-color: var(--hover-bg);
+                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+            }
+            .post .meta { margin: 0.55em 0 1.2em; }
+            .post .excerpt > :global(:first-child) { margin-top: 0; }
+            .post .excerpt > :global(:last-child) { margin-bottom: 0; }
+
+            /* P1 - framed card. Weight from presence: it occupies a box. */
+            #stream[data-post='card'] .post { margin: 1.6rem 0; }
+            #stream[data-post='card'] .post .frame {
+                background: var(--code-bg);
+                border: 1px solid var(--rule);
+                border-radius: 12px;
+                padding: 1.4rem 1.5rem 1.5rem;
+            }
+            /* P2 - heavy row. Weight from typography + air, no container. */
+            #stream[data-post='row'] .post { margin: 2.6rem 0; }
+            #stream[data-post='row'] .post .frame {
+                border-top: 2px solid var(--fg);
+                padding-top: 1.3rem;
+            }
+            #stream[data-post='row'] .p-title a { font-size: 2rem; font-variation-settings: 'opsz' 28; }
+
+            /* ================= NOTE treatments ================= */
+            .note { margin: 1.5rem 0; }
+            .note .frame { position: relative; }
+            .note .meta { margin: 0 0 0.7em; }
+            .note .body { font-size: 0.97em; }
+            .note .body > :global(:first-child) { margin-top: 0; }
+            .note .body > :global(:last-child) { margin-bottom: 0; }
+            /* A note is complete in the stream, but a pasted wall of text or a
+               stack of embeds isn't - so clamp and expand inline. */
+            .note .clip { position: relative; overflow: hidden; }
+            .note.is-clamped .clip { max-height: 24rem; }
+            .note.is-clamped .clip::after {
+                content: '';
+                position: absolute;
+                inset: auto 0 0 0;
+                height: 5rem;
+                background: linear-gradient(to bottom, transparent, var(--bg));
+                pointer-events: none;
+            }
+            .note.is-open .clip { max-height: none; }
+            .note .more { display: none; }
+            .note.is-clamped .more, .note.is-open .more { display: inline-flex; }
+
+            .note-images { display: grid; gap: 0.4rem; margin: 0 0 1rem; }
+            .note-images img {
+                width: 100%; height: 100%; object-fit: cover;
+                border-radius: 8px; display: block; background: var(--code-bg);
+            }
+            .note-images.one { grid-template-columns: 1fr; }
+            .note-images.one img { max-height: 20rem; object-fit: contain; object-position: left; background: none; }
+            .note-images.two { grid-template-columns: 1fr 1fr; }
+            .note-images.many { grid-template-columns: repeat(3, 1fr); }
+            .note-images.many img { aspect-ratio: 1 / 1; }
+            @media (max-width: 34rem) { .note-images.many { grid-template-columns: repeat(2, 1fr); } }
+
+            /* Media inside a note. Uncapped, a YouTube embed makes a note the
+               loudest thing on the page - louder than any post - which inverts
+               the whole hierarchy. Capped, the note stays a glance. */
+            #stream[data-media='cap'] .note .body :global(iframe),
+            #stream[data-media='cap'] .note .body :global(img),
+            #stream[data-media='cap'] .note .body :global(video) {
+                max-width: 30rem;
+                border-radius: 6px;
+            }
+            #stream[data-media='cap'] .note .note-images.one img { max-height: 15rem; }
+
+            /* N1 - flush. Unframed, full width, hairline above. */
+            #stream[data-note='flush'] .note .frame { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
+            #stream .item:first-child .frame { border-top: none; padding-top: 0; }
+            /* N2 - inset rail. Reads as a margin annotation next to the posts. */
+            #stream[data-note='rail'] .note .frame {
+                border-left: 1px solid var(--rule);
+                padding-left: 1.4rem;
+                margin-left: 0.2rem;
+            }
+            #stream[data-note='rail'] .note .body { max-width: 34em; }
+
+            /* ---------- filter behaviour ---------- */
+            #stream[data-showing='post'] .item.note { display: none; }
+            #stream[data-showing='note'] .item.post { display: none; }
+
+            /* ---------- the "single entry" view + back-to-stream ---------- */
+            #single {
+                position: fixed;
+                inset: 0;
+                background: var(--bg);
+                z-index: 60;
+                overflow-y: auto;
+                padding: 0 var(--content-pad-x) 6rem;
+            }
+            #single[hidden] { display: none; }
+            .single-inner { max-width: var(--max-width); margin: 0 auto; }
+            .backbar {
+                position: sticky;
+                top: 0;
+                background: var(--bg);
+                padding: 1rem 0;
+                border-bottom: 1px solid var(--rule);
+                margin-bottom: 2rem;
+            }
+            .single-title {
+                font-family: 'Marauder', serif;
+                font-weight: 800;
+                font-variation-settings: 'opsz' 48;
+                font-size: 2.6rem;
+                line-height: 1.1;
+                margin: 0 0 0.4em;
+            }
+            .single-kind {
+                font-family: var(--sans);
+                font-size: 0.68rem;
+                font-weight: 700;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin: 0 0 0.8rem;
+            }
+            /* The flash that tells you WHERE you came back to. */
+            @keyframes land {
+                0%, 40% { background-color: rgba(229, 120, 6, 0.16); }
+                100% { background-color: transparent; }
+            }
+            .item.landed .frame { animation: land 1.6s ease-out; border-radius: 12px; }
+
+            .flag {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.66rem;
+                color: var(--accent);
+                border: 1px dashed var(--accent);
+                border-radius: 4px;
+                padding: 0.1em 0.45em;
+                opacity: 0.75;
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <section class="lab">
+                <h1>Specimen · notes rollout · real content, nothing shipped</h1>
+                <div class="knobs">
+                    <span class="knob"
+                        ><span>post</span>
+                        <button data-set="post" data-val="card" aria-pressed="true">card</button>
+                        <button data-set="post" data-val="row" aria-pressed="false">heavy row</button>
+                    </span>
+                    <span class="knob"
+                        ><span>note</span>
+                        <button data-set="note" data-val="flush" aria-pressed="true">flush</button>
+                        <button data-set="note" data-val="rail" aria-pressed="false">inset rail</button>
+                    </span>
+                    <span class="knob"
+                        ><span>note media</span>
+                        <button data-set="media" data-val="cap" aria-pressed="true">capped</button>
+                        <button data-set="media" data-val="full" aria-pressed="false">full width</button>
+                    </span>
+                    <span class="knob"
+                        ><span>theme</span>
+                        <button data-theme-set="dark" aria-pressed="true">dark</button>
+                        <button data-theme-set="light" aria-pressed="false">light</button>
+                    </span>
+                </div>
+            </section>
+
+            <details class="brief">
+                <summary>What you&rsquo;re looking at</summary>
+                <p class="note-to-self">
+                The stream below is your actual corpus under the proposed split: {postCount} posts,
+                {noteCount} notes. Migrated notes have had their titles dropped, as decided. Posts show
+                a 2&ndash;3 block excerpt and always offer <em>Read post</em>; notes render in full,
+                clamped at 24rem with <em>Show more</em>. Both carry a share action. Opening either one
+                and coming back demonstrates the return-to-place behaviour. Entries marked
+                <span class="flag">judgment</span> are the two where word count and character disagree.
+                </p>
+            </details>
+
+            <div class="filter" role="group" aria-label="Filter entries">
+                <button data-filter="all" aria-pressed="true">Everything <span class="count">{items.length}</span></button>
+                <button data-filter="post" aria-pressed="false">Posts <span class="count">{postCount}</span></button>
+                <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
+            </div>
+
+            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-showing="all">
+                {
+                    items.map((item) => (
+                        <article
+                            class:list={['item', item.kind]}
+                            id={`e-${item.slug}`}
+                            data-kind={item.kind}
+                            data-slug={item.slug}
+                            data-href={item.href}
+                        >
+                            <div class="frame">
+                                {item.kind === 'post' ? (
+                                    <>
+                                        <h2 class="p-title">
+                                            <a href={item.href} data-open>
+                                                {item.title}
+                                            </a>
+                                        </h2>
+                                        <div class="meta">
+                                            <span class="date">
+                                                <FormattedDate date={item.date} />
+                                            </span>
+                                            {item.tags.length > 0 && (
+                                                <span class="chips">
+                                                    {item.tags.map((t) => (
+                                                        <span class="chip">{t}</span>
+                                                    ))}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div class="prose excerpt">
+                                            <item.Content />
+                                        </div>
+                                        <div class="actions">
+                                            <a class="act primary" href={item.href} data-open>
+                                                Read post &rarr;
+                                            </a>
+                                            <span class="spacer" />
+                                            <button class="act share" type="button">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
+                                                Share
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div class="meta">
+                                            <a class="date" href={item.href} data-open>
+                                                <FormattedDate date={item.date} />
+                                            </a>
+                                            {item.judgment && <span class="flag">judgment</span>}
+                                            {item.tags.length > 0 && (
+                                                <span class="chips">
+                                                    {item.tags.map((t) => (
+                                                        <span class="chip">{t}</span>
+                                                    ))}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div class="clip">
+                                            {item.images.length > 0 && (
+                                                <div
+                                                    class:list={[
+                                                        'note-images',
+                                                        item.images.length === 1
+                                                            ? 'one'
+                                                            : item.images.length === 2
+                                                              ? 'two'
+                                                              : 'many',
+                                                    ]}
+                                                >
+                                                    {item.images.map((img) => (
+                                                        <img src={img.src} alt={img.alt ?? ''} loading="lazy" />
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div class="prose body">
+                                                <item.Content />
+                                            </div>
+                                        </div>
+                                        <div class="actions">
+                                            <button class="act more" type="button">Show more</button>
+                                            <span class="spacer" />
+                                            <button class="act share" type="button">
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
+                                                Share
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </article>
+                    ))
+                }
+            </div>
+        </main>
+
+        <div id="single" hidden>
+            <div class="single-inner">
+                <div class="backbar">
+                    <button class="act" id="back" type="button">&larr; Back to everything</button>
+                </div>
+                <p class="single-kind" id="single-kind"></p>
+                <h1 class="single-title" id="single-title"></h1>
+                <div class="prose" id="single-body"></div>
+            </div>
+        </div>
+
+        <script>
+            const stream = document.getElementById('stream')!;
+
+            // ?post=row&note=rail&media=full - so a link can open a given combo.
+            const qs = new URLSearchParams(location.search);
+            for (const key of ['post', 'note', 'media']) {
+                const v = qs.get(key);
+                if (!v) continue;
+                stream.dataset[key] = v;
+                document
+                    .querySelectorAll<HTMLButtonElement>(`[data-set="${key}"]`)
+                    .forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.val === v)));
+            }
+
+            // ---- specimen knobs ----
+            document.querySelectorAll<HTMLButtonElement>('[data-set]').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const key = b.dataset.set!;
+                    stream.dataset[key] = b.dataset.val!;
+                    document
+                        .querySelectorAll<HTMLButtonElement>(`[data-set="${key}"]`)
+                        .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                    measure();
+                });
+            });
+            document.querySelectorAll<HTMLButtonElement>('[data-theme-set]').forEach((b) => {
+                b.addEventListener('click', () => {
+                    document.documentElement.dataset.theme = b.dataset.themeSet!;
+                    document
+                        .querySelectorAll<HTMLButtonElement>('[data-theme-set]')
+                        .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                });
+            });
+
+            // ---- reader filter ----
+            document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
+                b.addEventListener('click', () => {
+                    stream.dataset.showing = b.dataset.filter!;
+                    document
+                        .querySelectorAll<HTMLButtonElement>('[data-filter]')
+                        .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                });
+            });
+
+            // ---- post excerpts: 2-3 blocks, by length, never ending on a heading ----
+            const WORD_TARGET = 110;
+            document.querySelectorAll<HTMLElement>('.post .excerpt').forEach((ex) => {
+                const blocks = Array.from(ex.children) as HTMLElement[];
+                const isHeading = (el: Element) => /^H[1-6]$/.test(el.tagName);
+                let words = 0;
+                let keep = 0;
+                for (const b of blocks) {
+                    keep++;
+                    words += (b.textContent || '').trim().split(/\s+/).filter(Boolean).length;
+                    if (keep >= 2 && words >= WORD_TARGET) break;
+                    if (keep >= 3) break;
+                }
+                while (keep > 1 && isHeading(blocks[keep - 1])) keep--;
+                blocks.forEach((b, i) => {
+                    if (i >= keep) b.style.display = 'none';
+                });
+            });
+
+            // ---- note clamping ----
+            const MAX = 24 * 16;
+            function measure() {
+                document.querySelectorAll<HTMLElement>('.note').forEach((n) => {
+                    if (n.classList.contains('is-open')) return;
+                    const clip = n.querySelector<HTMLElement>('.clip')!;
+                    const prev = n.classList.contains('is-clamped');
+                    n.classList.remove('is-clamped');
+                    const tall = clip.scrollHeight > MAX + 32;
+                    n.classList.toggle('is-clamped', tall);
+                    if (prev !== tall) void 0;
+                });
+            }
+            measure();
+            window.addEventListener('load', measure);
+            document.querySelectorAll<HTMLButtonElement>('.note .more').forEach((b) => {
+                b.addEventListener('click', () => {
+                    const note = b.closest('.note')!;
+                    const opening = !note.classList.contains('is-open');
+                    note.classList.toggle('is-open', opening);
+                    note.classList.toggle('is-clamped', !opening);
+                    b.textContent = opening ? 'Show less' : 'Show more';
+                    if (!opening) note.scrollIntoView({ block: 'nearest' });
+                });
+            });
+
+            // ---- share ----
+            document.querySelectorAll<HTMLButtonElement>('.share').forEach((b) => {
+                b.addEventListener('click', async () => {
+                    const item = b.closest<HTMLElement>('.item')!;
+                    const url = new URL(item.dataset.href!, location.origin).href;
+                    try {
+                        await navigator.clipboard.writeText(url);
+                    } catch {}
+                    const label = b.lastChild!;
+                    label.textContent = ' Link copied';
+                    b.classList.add('copied');
+                    setTimeout(() => {
+                        label.textContent = ' Share';
+                        b.classList.remove('copied');
+                    }, 1600);
+                });
+            });
+
+            // ---- open a single entry / come back to where you were ----
+            const single = document.getElementById('single')!;
+            const sBody = document.getElementById('single-body')!;
+            const sTitle = document.getElementById('single-title')!;
+            const sKind = document.getElementById('single-kind')!;
+            let fromSlug: string | null = null;
+            let fromScroll = 0;
+
+            document.querySelectorAll<HTMLElement>('[data-open]').forEach((a) => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const item = a.closest<HTMLElement>('.item')!;
+                    fromSlug = item.dataset.slug!;
+                    fromScroll = window.scrollY;
+                    const isPost = item.dataset.kind === 'post';
+                    sKind.textContent = isPost ? 'Post' : 'Note';
+                    sTitle.textContent = isPost
+                        ? item.querySelector('.p-title')!.textContent!.trim()
+                        : '';
+                    sTitle.style.display = isPost ? '' : 'none';
+                    const src = item.querySelector('.excerpt, .body')!;
+                    sBody.innerHTML = src.innerHTML;
+                    sBody.querySelectorAll<HTMLElement>('*').forEach((el) => (el.style.display = ''));
+                    single.hidden = false;
+                    document.body.style.overflow = 'hidden';
+                    single.scrollTop = 0;
+                });
+            });
+
+            document.getElementById('back')!.addEventListener('click', () => {
+                single.hidden = true;
+                document.body.style.overflow = '';
+                window.scrollTo({ top: fromScroll });
+                if (fromSlug) {
+                    const el = document.getElementById(`e-${fromSlug}`);
+                    if (el) {
+                        el.classList.remove('landed');
+                        void el.offsetWidth;
+                        el.classList.add('landed');
+                    }
+                }
+            });
+        </script>
+    </body>
+</html>
