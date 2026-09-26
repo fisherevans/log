@@ -268,9 +268,13 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 padding: 0;
                 cursor: pointer;
                 color: var(--muted);
-                display: inline-flex;
-                align-items: center;
-                gap: 0.35em;
+                /* Laid out inline, not as a flex box: an inline-flex takes its
+                   baseline from its first flex item, and for the share control
+                   that item is the <svg> - a replaced element whose baseline is
+                   its bottom edge, which floated the whole label above its
+                   neighbours. Inline, every baseline comes from text. */
+                display: inline-block;
+                white-space: nowrap;
                 text-decoration: none;
             }
             .act:hover,
@@ -280,7 +284,12 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 border-bottom-color: transparent;
                 box-shadow: none;
             }
-            .act svg { width: 0.95em; height: 0.95em; }
+            .act svg {
+                width: 0.95em;
+                height: 0.95em;
+                vertical-align: -0.13em;
+                margin-left: 0.4em;
+            }
             /* The post's one call to action, and the only contained control in
                the stream: an accent pill that fills on hover. Everything else
                stays a plain mark, so this reads as the thing to do. */
@@ -293,7 +302,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 border: 1px solid var(--accent);
                 border-radius: 999px;
                 padding: 0.5em 1.1em;
-                gap: 0.5em;
             }
             .act.cta:hover,
             .act.cta:focus-visible {
@@ -301,10 +309,10 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 color: var(--bg);
                 border-color: var(--accent);
             }
-            .act.cta .arrow { transition: transform 140ms ease; }
+            .act.cta .arrow { display: inline-block; margin-left: 0.45em; transition: transform 140ms ease; }
             .act.cta:hover .arrow, .act.cta:focus-visible .arrow { transform: translateX(0.25em); }
 
-            .act .lead { transition: transform 140ms ease; }
+            .act .lead { display: inline-block; margin-right: 0.3em; line-height: 1; transition: transform 140ms ease; }
             .act:hover .lead, .act:focus-visible .lead { transform: translateX(-0.2em); }
 
             /* Left group and right group, rather than one run of controls.
@@ -555,12 +563,17 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             #stream[data-bound='node'] .post {
                 --ring-outer: 1.05rem;
                 --ring-b: 2px;
+                --line-h: 2px;
                 /* centred on the spine by construction, not by a tuned offset */
                 --ring-left: calc(var(--spine-c) - var(--item-indent) - (var(--ring-outer) / 2));
                 --ring-mid: calc(var(--ring-left) + (var(--ring-outer) / 2));
             }
-            #stream[data-post='card'] .post { --node-top: 1.95rem; }
-            #stream[data-post='row'] .post { --node-top: 2.5rem; }
+            /* The card's own border widths, because the connector lives on
+               .frame::after and is therefore positioned from the frame's
+               PADDING box - one border-width down and in from where the ring
+               is measured. This is what put the line half its height low. */
+            #stream[data-post='card'] .post { --node-top: 1.95rem; --card-bt: 1px; --card-bl: 1px; }
+            #stream[data-post='row'] .post { --node-top: 2.5rem; --card-bt: 2px; --card-bl: 0px; }
             #stream[data-bound='node'] .post::before {
                 content: '';
                 position: absolute;
@@ -610,10 +623,10 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 content: '';
                 position: absolute;
                 z-index: 2;
-                left: var(--ring-mid);
-                top: calc(var(--node-top) - 1px);
-                width: calc(0px - var(--ring-mid));
-                height: 2px;
+                left: calc(var(--ring-mid) - var(--card-bl));
+                top: calc(var(--node-top) - (var(--line-h) / 2) - var(--card-bt));
+                width: calc(0px - var(--ring-mid) + var(--card-bl));
+                height: var(--line-h);
                 /* Solid until it clears the ring, then fades. The stop is the
                    disc's radius, so the gradient reads from the ring's edge. */
                 background: linear-gradient(
@@ -631,9 +644,9 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 content: '';
                 position: absolute;
                 z-index: 2;
-                left: var(--ring-mid);
-                top: calc(var(--node-top) - 0.5px);
-                width: calc(0px - var(--ring-mid));
+                left: calc(var(--ring-mid) - var(--card-bl));
+                top: calc(var(--node-top) - 0.5px - var(--card-bt));
+                width: calc(0px - var(--ring-mid) + var(--card-bl));
                 height: 1px;
                 background: var(--branch);
             }
@@ -941,8 +954,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                             </a>
                                             <span class="right">
                                             <button class="act share" type="button">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 Share
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                             </button>
                                             </span>
                                         </div>
@@ -974,8 +987,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                                     <span class="lead">&rsaquo;</span> Open note
                                                 </a>
                                                 <button class="act share" type="button">
-                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                     Share
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 </button>
                                             </span>
                                         </div>
