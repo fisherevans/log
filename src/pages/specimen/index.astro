@@ -383,7 +383,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             .note .body { font-size: 0.97em; line-height: 1.55; }
             .note .body > :global(p) { margin: 0.75em 0; }
             .note .meta { margin-bottom: 0.15em; }
-            .note .clip.caption-leads .body > :global(:first-child) { margin-top: 0.2em; }
             .note .actions { margin-top: 0.8em; }
             .note .body > :global(:first-child) { margin-top: 0; }
             .note .body > :global(:last-child) { margin-bottom: 0; }
@@ -413,11 +412,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             /* Caption order. A short note's text leads its picture; the images
                grid is source-ordered after the body, so this is one line. */
+            /* The gap between a photo and its caption belongs to the PHOTO, not
+               to the body: put it on .body and a note with no images (every
+               migrated one - 33 of 38) carries a phantom 16px under its date. */
             .clip { display: flex; flex-direction: column; }
-            .clip .body { order: 2; margin-top: 1rem; }
-            .clip .note-images { order: 1; }
-            .clip.caption-leads .body { order: 1; margin-top: 0; margin-bottom: 0.9rem; }
-            .clip.caption-leads .note-images { order: 2; }
+            .clip .body { order: 2; }
+            .clip .note-images { order: 1; margin-bottom: 0.9rem; }
+            .clip.caption-leads .body { order: 1; margin-bottom: 0.9rem; }
+            .clip.caption-leads .note-images { order: 2; margin-bottom: 0; }
+            .note .body > :global(:first-child) { margin-top: 0; }
 
             .note-images { display: grid; gap: 0.4rem; margin: 0; }
             /* The mat. A photo that does not fill the column sits on a dark
