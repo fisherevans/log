@@ -10,6 +10,8 @@ import { getCollection, render } from 'astro:content';
 import { postHref } from '../../lib/posts';
 import { noteHref } from '../../lib/notes';
 import { JUDGMENT_CALLS, RECLASS_TO_NOTE } from '../../lib/specimen';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import BaseHead from '../../components/BaseHead.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 
@@ -103,6 +105,22 @@ items.push({
     html: '<p>A 3:4 phone photo - shrunk to the height cap and centred, still whole.</p>',
 });
 items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+
+// Responsive candidates for the seed images (real media would come off R2 the
+// same way). Serving a 1080px photo into a 384px slot was most of the 27MB the
+// page still weighed once the embeds were gone.
+const srcSet = (src: string) => {
+    const m = src.match(/^(.*)\.(jpg|jpeg|png|webp)$/i);
+    if (!m) return undefined;
+    // Only advertise candidates that exist - a srcset entry that 404s is not
+    // a graceful fallback, the browser just fails to paint it.
+    const cands: string[] = [];
+    for (const w of [400, 800, 1080, 1600]) {
+        const path = `${m[1]}-${w}.${m[2]}`;
+        if (existsSync(join('public', path))) cands.push(`${path} ${w}w`);
+    }
+    return cands.length > 1 ? cands.join(', ') : undefined;
+};
 
 const absolute = (d: Date) =>
     d.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -735,12 +753,63 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 margin-left: 0.2rem;
             }
 
-            #stream[data-split='split'] .item.was-multi { display: none; }
-            #stream[data-split='keep'] .item.split-part { display: none; }
+
+            /* ---------- YouTube facade ---------- */
+            .note .body :global(.yt-facade) {
+                position: relative;
+                display: block;
+                width: 100%;
+                background: #000;
+                border-radius: 10px;
+                overflow: hidden;
+                margin: 1rem 0;
+                cursor: pointer;
+            }
+            .note .body :global(.yt-poster) {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+            .note .body :global(.yt-play) {
+                position: absolute;
+                inset: 0;
+                margin: auto;
+                width: 68px;
+                height: 48px;
+                background: none;
+                border: none;
+                padding: 0;
+                cursor: pointer;
+            }
+            .note .body :global(.yt-play-bg) { fill: rgba(20, 18, 15, 0.72); transition: fill 120ms ease; }
+            .note .body :global(.yt-play-tri) { fill: #fff; }
+            .note .body :global(.yt-facade:hover .yt-play-bg) { fill: #e5350c; }
+            .note .body :global(.yt-title) {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                padding: 0.7em 0.9em 1.6em;
+                color: #fff;
+                font-family: var(--sans);
+                font-size: 0.85rem;
+                font-weight: 600;
+                line-height: 1.3;
+                text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+                background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+                pointer-events: none;
+            }
+            .note .body :global(iframe) { display: block; width: 100%; border: 0; border-radius: 10px; }
+
+            /* Off-screen entries skip layout and paint entirely. The intrinsic
+               size keeps the scrollbar honest while they are skipped. */
+            #stream > .item {
+                content-visibility: auto;
+                contain-intrinsic-size: auto 420px;
+            }
 
             /* ---------- filter behaviour ---------- */
-            #stream[data-showing='post'] .item.note { display: none; }
-            #stream[data-showing='note'] .item.post { display: none; }
 
             /* ---------- the "single entry" view + back-to-stream ---------- */
             #single {
@@ -842,6 +911,94 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 opacity: 0.75;
             }
         </style>
+        <style is:global>
+            /* The year rail and the pager are rendered at runtime, and Astro's
+               scoped styles are stamped onto elements at BUILD time - so scoped
+               CSS never reaches them and they fall back to UA button chrome.
+               These have to be global. */
+            /* ---------- year rail ---------- */
+            .stream-wrap { position: relative; }
+            .years {
+                overflow-x: auto;
+                scrollbar-width: none;
+                margin: 0 0 1.4rem;
+                padding-bottom: 0.3rem;
+            }
+            .years::-webkit-scrollbar { display: none; }
+            /* The inner span is the flex row, so the strip scrolls instead of
+               wrapping onto a second line on a phone. */
+            .years .years-inner { display: flex; gap: 0.3rem; width: max-content; }
+            .years button {
+                flex: 0 0 auto;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.72rem;
+                background: none;
+                border: 1px solid transparent;
+                color: var(--muted);
+                border-radius: 999px;
+                padding: 0.22em 0.6em;
+                cursor: pointer;
+            }
+            .years button:hover { color: var(--fg); }
+            .years button[aria-current='true'] { color: var(--accent); border-color: var(--rule); }
+            .years button[aria-pressed='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+            @media (min-width: 64rem) {
+                .years {
+                    position: absolute;
+                    left: -7.5rem;
+                    top: 0;
+                    bottom: 0;
+                    width: 6.5rem;
+                    margin: 0;
+                    display: block;
+                    overflow: visible;
+                }
+                .years .years-inner {
+                    position: sticky;
+                    top: 1.5rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    gap: 0.12rem;
+                    max-height: calc(100vh - 3rem);
+                    overflow-y: auto;
+                    scrollbar-width: none;
+                }
+                .years button { width: 100%; text-align: right; }
+            }
+
+            /* ---------- pagination ---------- */
+            .pager {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+                margin: 2.6rem 0 0;
+                padding-top: 1.4rem;
+                border-top: 1px solid var(--rule);
+                flex-wrap: wrap;
+            }
+            .pager button {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.75rem;
+                background: none;
+                border: 1px solid var(--rule);
+                color: var(--muted);
+                border-radius: 6px;
+                padding: 0.3em 0.7em;
+                cursor: pointer;
+            }
+            .pager button:hover:not(:disabled) { color: var(--fg); border-color: var(--muted); }
+            .pager button[aria-current='true'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+            .pager button:disabled { opacity: 0.35; cursor: default; }
+            .pager .range {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.7rem;
+                color: var(--muted);
+                margin-right: 0.5rem;
+            }
+
+        </style>
     </head>
     <body>
         <main>
@@ -912,6 +1069,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
             </div>
 
+            <div class="stream-wrap">
+            <nav class="years" id="years" aria-label="Jump to year"><span class="years-inner" id="years-inner"></span></nav>
             <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-meta="gutter" data-attach="fade" data-split="split" data-showing="all">
                 {
                     items.map((item) => (
@@ -921,6 +1080,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                             data-kind={item.kind}
                             data-slug={item.slug}
                             data-href={item.href}
+                            data-year={item.date.getUTCFullYear()}
                         >
                             <div class="frame">
                                 {item.kind === 'post' ? (
@@ -1016,7 +1176,14 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                                 >
                                                     {item.images.map((img) => (
                                                         <button class="shot" type="button">
-                                                            <img src={img.src} alt={img.alt ?? ''} loading="lazy" />
+                                                            <img
+                                                                src={img.src}
+                                                                srcset={srcSet(img.src)}
+                                                                sizes="(max-width: 40rem) 100vw, 44rem"
+                                                                alt={img.alt ?? ''}
+                                                                loading="lazy"
+                                                                decoding="async"
+                                                            />
                                                             <span class="expand">
                                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
                                                                 Full size
@@ -1035,6 +1202,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         </article>
                     ))
                 }
+            </div>
+            <nav class="pager" id="pager" aria-label="Pagination"></nav>
             </div>
         </main>
 
@@ -1091,9 +1260,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         saved = next;
                         localStorage.setItem(STORE, JSON.stringify(next));
                     } catch {}
-                    recount();
-                    sizeImages();
-                    sizeEmbeds();
+                    page = 1;
+                    applyView({ keepScroll: true });
                     measure();
                 });
             });
@@ -1108,15 +1276,14 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             });
 
             function recount() {
-                const live = (sel: string) =>
-                    Array.from(document.querySelectorAll<HTMLElement>(sel)).filter(
-                        (el) => getComputedStyle(el).display !== 'none',
-                    ).length;
-                const showing = stream.dataset.showing;
-                stream.dataset.showing = 'all';
-                const notes = live('.item.note');
-                const posts = live('.item.post');
-                stream.dataset.showing = showing!;
+                const split = stream.dataset.split;
+                const pool = (Array.from(stream.children) as HTMLElement[]).filter((el) => {
+                    if (split === 'split' && el.classList.contains('was-multi')) return false;
+                    if (split === 'keep' && el.classList.contains('split-part')) return false;
+                    return year === 'all' || el.dataset.year === year;
+                });
+                const notes = pool.filter((e) => e.dataset.kind === 'note').length;
+                const posts = pool.filter((e) => e.dataset.kind === 'post').length;
                 const set = (f: string, n: number) => {
                     const el = document.querySelector(`[data-filter="${f}"] .count`);
                     if (el) el.textContent = String(n);
@@ -1136,6 +1303,111 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 }
             } catch {}
 
+            // ---- one view: kind filter x year x page ----
+            // A year behaves exactly like the /posts/YYYY/ route would, and the
+            // page slice like /posts/page/N. Doing it client-side here keeps the
+            // specimen one file; the real thing is Astro's paginate().
+            const PER_PAGE = 20;
+            const pager = document.getElementById('pager')!;
+            const yearsInner = document.getElementById('years-inner')!;
+            let page = 1;
+            let year = 'all';
+
+            const allItems = () => Array.from(stream.children) as HTMLElement[];
+            function eligible() {
+                const showing = stream.dataset.showing;
+                const split = stream.dataset.split;
+                return allItems().filter((el) => {
+                    if (split === 'split' && el.classList.contains('was-multi')) return false;
+                    if (split === 'keep' && el.classList.contains('split-part')) return false;
+                    if (showing !== 'all' && el.dataset.kind !== showing) return false;
+                    if (year !== 'all' && el.dataset.year !== year) return false;
+                    return true;
+                });
+            }
+
+            function renderPager(total: number, pages: number) {
+                if (pages <= 1) { pager.innerHTML = ''; return; }
+                const from = (page - 1) * PER_PAGE + 1;
+                const to = Math.min(page * PER_PAGE, total);
+                const btn = (label: string, p: number, opts: { cur?: boolean; dis?: boolean } = {}) =>
+                    `<button data-page="${p}"${opts.cur ? ' aria-current="true"' : ''}${opts.dis ? ' disabled' : ''}>${label}</button>`;
+                let html = `<span class="range">${from}&ndash;${to} of ${total}</span>`;
+                html += btn('&larr; Newer', page - 1, { dis: page === 1 });
+                for (let p = 1; p <= pages; p++) html += btn(String(p), p, { cur: p === page });
+                html += btn('Older &rarr;', page + 1, { dis: page === pages });
+                pager.innerHTML = html;
+            }
+
+            function applyView(opts: { keepScroll?: boolean } = {}) {
+                const list = eligible();
+                const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
+                page = Math.min(Math.max(1, page), pages);
+                const slice = new Set(list.slice((page - 1) * PER_PAGE, page * PER_PAGE));
+                allItems().forEach((el) => { el.style.display = slice.has(el) ? '' : 'none'; });
+                renderPager(list.length, pages);
+                recount();
+                if (!opts.keepScroll) window.scrollTo({ top: 0 });
+                measure();
+                sizeImages();
+                sizeEmbeds();
+            }
+
+            pager.addEventListener('click', (e) => {
+                const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-page]');
+                if (!b || b.disabled) return;
+                page = Number(b.dataset.page);
+                applyView();
+            });
+
+            // ---- year rail ----
+            const years = [...new Set(allItems().map((el) => el.dataset.year!))].sort().reverse();
+            yearsInner.innerHTML =
+                `<button data-year="all">all</button>` +
+                years.map((y) => `<button data-year="${y}">${y}</button>`).join('');
+            yearsInner.addEventListener('click', (e) => {
+                const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-year]');
+                if (!b) return;
+                const next = b.dataset.year!;
+                if (next !== 'all' && year === 'all') {
+                    // Same year already on this page? Scroll to it rather than
+                    // navigating away - the rail should feel like a jump first.
+                    const hit = eligible().find(
+                        (el) => el.dataset.year === next && el.style.display !== 'none',
+                    );
+                    if (hit) {
+                        hit.scrollIntoView({ block: 'start' });
+                        return;
+                    }
+                }
+                year = next;
+                page = 1;
+                applyView();
+                syncYearButtons();
+            });
+            function syncYearButtons() {
+                yearsInner.querySelectorAll<HTMLButtonElement>('[data-year]').forEach((b) => {
+                    b.setAttribute('aria-pressed', String(year !== 'all' && b.dataset.year === year));
+                });
+            }
+
+            // Scroll-spy: highlight whichever year is currently in view.
+            const spy = new IntersectionObserver(
+                (entries) => {
+                    if (year !== 'all') return;
+                    const seen = entries
+                        .filter((e) => e.isIntersecting)
+                        .map((e) => (e.target as HTMLElement).dataset.year!);
+                    if (!seen.length) return;
+                    const cur = seen.sort().reverse()[0];
+                    yearsInner.querySelectorAll<HTMLButtonElement>('[data-year]').forEach((b) => {
+                        b.setAttribute('aria-current', String(b.dataset.year === cur));
+                    });
+                },
+                { rootMargin: '-25% 0px -60% 0px' },
+            );
+            allItems().forEach((el) => spy.observe(el));
+
             // ---- reader filter ----
             document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
                 b.addEventListener('click', () => {
@@ -1143,6 +1415,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     document
                         .querySelectorAll<HTMLButtonElement>('[data-filter]')
                         .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                    page = 1;
+                    applyView();
                 });
             });
 
@@ -1424,6 +1698,21 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 if (e.key === 'ArrowRight') nextBtn.click();
             });
 
+            // ---- facade -> real player, only on demand ----
+            document.addEventListener('click', (e) => {
+                const facade = (e.target as HTMLElement).closest<HTMLElement>('.yt-facade');
+                if (!facade) return;
+                const id = facade.dataset.yt;
+                if (!id) return;
+                const f = document.createElement('iframe');
+                f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+                f.title = facade.dataset.ytTitle || 'Video';
+                f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                f.allowFullscreen = true;
+                f.style.cssText = 'width:100%;aspect-ratio:16/9;border:0;border-radius:10px;display:block';
+                facade.replaceWith(f);
+            });
+
             // ---- relative timestamps ----
             // Rendered absolute so a no-JS reader still gets a real date, then
             // swapped to relative. Hover shows the absolute (title); tap toggles
@@ -1502,6 +1791,9 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     single.scrollTop = 0;
                 });
             });
+
+            syncYearButtons();
+            applyView({ keepScroll: true });
 
             document.getElementById('back')!.addEventListener('click', () => {
                 single.hidden = true;

@@ -5,6 +5,8 @@ import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import rehypeYoutubeFacade from './plugins/rehype-youtube-facade.mjs';
+import rehypeLazyMedia from './plugins/rehype-lazy-media.mjs';
 
 // Octicon "link" icon, as a hast node appended inside each heading. Styled and
 // wired up to copy-the-link in src/styles/global.css + src/layouts/BlogPost.astro.
@@ -45,6 +47,10 @@ export default defineConfig({
         // appended anchor the reader can click to copy a deep link.
         rehypePlugins: [
             rehypeSlug,
+            // Turn YouTube iframes into click-to-play posters. See the plugin for
+            // the measurements that motivated it.
+            rehypeYoutubeFacade,
+            rehypeLazyMedia,
             [
                 rehypeAutolinkHeadings,
                 {
