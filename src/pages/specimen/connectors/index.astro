@@ -63,8 +63,8 @@ const pad = (n: number) => String(n).padStart(2, '0');
             /* One source of truth for the node's geometry, so a connector can
                start exactly at its outer edge instead of a hand-tuned offset
                that drifts inside the circle. */
-            .slice { --ring-left: -1.9rem; --ring-d: 0.78rem; --ring-b: 2px; --ring-gap: 2px; }
-            .slice { --stub-left: calc(var(--ring-left) + var(--ring-d) + (2 * var(--ring-b)) + var(--ring-gap)); }
+            .slice { --ring-left: -1.9rem; --ring-d: 0.78rem; --ring-b: 2px; --ring-gap: 0px; }
+            .slice { --stub-left: calc(var(--ring-left) + var(--ring-d) + var(--ring-gap)); }
             .ring {
                 position: absolute; left: var(--ring-left); top: calc(var(--node-top) - 0.39rem);
                 width: var(--ring-d); height: var(--ring-d); border-radius: 50%;

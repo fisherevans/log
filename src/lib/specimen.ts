@@ -12,7 +12,6 @@ export const RECLASS_TO_NOTE = new Set([
     'pool-simulation',
     'lrk-music',
     'zsprite',
-    'every-blog-has-a-first-post',
     'lrk-notifications',
     'lrk-early-progress',
     'lrk-lighting',
@@ -22,6 +21,7 @@ export const RECLASS_TO_NOTE = new Set([
     'listr',
 ]);
 
-// Two entries where word count and character disagree, called out in the
-// specimen rather than silently decided.
-export const JUDGMENT_CALLS = new Set(['ian-lesperance-disc-jockey', 'every-blog-has-a-first-post']);
+// Both settled by Fisher, 2026-09-26: Ian is a note (short, a moment), the
+// inaugural post stays a post despite its 97 words (it is the site's opening
+// statement, not a beat). Kept as a record of what was decided, not as a flag.
+export const JUDGMENT_CALLS = new Set<string>();

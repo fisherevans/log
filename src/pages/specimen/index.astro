@@ -515,8 +515,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 --ring-left: -1.9rem;
                 --ring-d: 0.78rem;
                 --ring-b: 2px;
-                --ring-gap: 2px;
-                --stub-left: calc(var(--ring-left) + var(--ring-d) + (2 * var(--ring-b)) + var(--ring-gap));
+                --ring-gap: 0px;
+                --stub-left: calc(var(--ring-left) + var(--ring-d) + var(--ring-gap));
             }
             #stream[data-post='card'] .post { --node-top: 1.95rem; }
             #stream[data-post='row'] .post { --node-top: 2.5rem; }
