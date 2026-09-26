@@ -84,7 +84,23 @@ items.push({
     judgment: false,
     demo: true,
     captionLeads: true,
-    html: '<p>Three at once - a 1:3 frame, so the stream crops it. Tap it for the whole thing.</p>',
+    html: '<p>Three at once - a 1:3 frame. Too tall to shrink, so the stream crops it.</p>',
+});
+
+// The commonest real case and also missing from the corpus: an ordinary 3:4
+// phone photo, which the ladder shrinks and centres rather than crops.
+items.push({
+    kind: 'note',
+    slug: 'portrait-demo',
+    date: new Date('2023-05-20T00:00:00Z'),
+    tags: ['disc-dyes'],
+    href: '/notes/2023/05/20/portrait-demo/',
+    images: [{ src: '/seed/portrait-demo.jpg', alt: 'A dyed disc, portrait crop' }],
+    migrated: false,
+    judgment: false,
+    demo: true,
+    captionLeads: true,
+    html: '<p>A 3:4 phone photo - shrunk to the height cap and centred, still whole.</p>',
 });
 items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 
@@ -400,14 +416,11 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 object-fit: contain;
                 background: none;
             }
-            /* Taller than 5:4 gets cropped to it rather than letterboxed or
-               allowed to eat three screens of stream. */
-            .note-images .shot.is-cropped img {
-                aspect-ratio: 4 / 5;
-                height: 100%;
-                object-fit: cover;
-                object-position: top;
-            }
+            /* Sizing is computed per image (see sizeImages) - shrink to fit,
+               then centre, then crop only when shrinking would leave the photo
+               too small to see. */
+            .note-images .shot.is-cropped img { object-fit: cover; object-position: top; }
+            .note-images .shot.is-shrunk { margin-inline: auto; }
             .note-images.two { grid-template-columns: 1fr 1fr; }
             .note-images.many { grid-template-columns: repeat(3, 1fr); }
             .note-images.many img { aspect-ratio: 1 / 1; }
@@ -442,14 +455,86 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             }
             #stream[data-bound='node'][data-note='flush'] .note .meta::before { left: -0.28rem; }
             #stream[data-bound='node'][data-note='flush'] .note .frame { padding-left: 1rem; }
-            #stream[data-bound='node'] .note .meta .date.rel {
-                color: var(--fg);
-                font-size: 0.82em;
-                letter-spacing: 0.05em;
+            /* The dot now carries "a new entry starts here", so the date can
+               step back down - as a header it was competing with the post
+               titles it is supposed to sit below. */
+            #stream[data-bound='node'] .note .meta .date.rel,
+            #stream[data-bound='dots'] .note .meta .date.rel {
+                color: var(--muted);
+                font-size: 0.76em;
+                letter-spacing: 0.03em;
+            }
+
+            /* A post is a bigger stop on the same timeline: an open ring rather
+               than a filled dot, so the thread runs unbroken through both. */
+            #stream[data-bound='node'] .post .frame::before {
+                content: '';
+                position: absolute;
+                left: -1.9rem;
+                top: 1.75rem;
+                width: 0.78rem;
+                height: 0.78rem;
+                border-radius: 50%;
+                border: 2px solid var(--accent);
+                background: var(--bg);
+                box-shadow: 0 0 0 0.25rem var(--bg);
+            }
+            #stream[data-bound='node'] .post { padding-left: 0; }
+            #stream[data-bound='node'] .post .frame { position: relative; }
+            /* The spine itself, drawn once behind everything. */
+            #stream[data-bound='node'] { position: relative; }
+            #stream[data-bound='node']::before {
+                content: '';
+                position: absolute;
+                left: 0.2rem;
+                top: 0.5rem;
+                bottom: 0.5rem;
+                width: 1px;
+                background: var(--rule);
+            }
+            #stream[data-bound='node'] .item { margin-left: 1.6rem; }
+            #stream[data-bound='node'][data-note='rail'] .note .frame { border-left: none; padding-left: 0; margin-left: 0; }
+            #stream[data-bound='node'] .note .meta::before { left: -1.62rem; }
+
+            /* Meta in a left gutter: the date and tags stop interrupting the
+               reading column, and a note ends up narrower than a post without
+               any extra decoration saying so. Collapses on a phone, where a
+               150px gutter is a quarter of the screen. */
+            @media (min-width: 52rem) {
+                #stream[data-meta='gutter'] .note .frame {
+                    display: grid;
+                    grid-template-columns: 9rem 1fr;
+                    column-gap: 1.6rem;
+                }
+                #stream[data-meta='gutter'] .note .meta {
+                    grid-column: 1;
+                    grid-row: 1;
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 0.5em;
+                    margin: 0;
+                    padding-top: 0.1em;
+                }
+                #stream[data-meta='gutter'] .note .meta .chips { flex-direction: column; align-items: flex-start; }
+                #stream[data-meta='gutter'] .note .clip { grid-column: 2; grid-row: 1; }
+                #stream[data-meta='gutter'] .note .actions { grid-column: 2; grid-row: 2; }
             }
             /* Consecutive notes need more air than a note next to a post does -
                that is where the blending happens. */
-            #stream[data-bound='node'] .note + .note { margin-top: 2.8rem; }
+            #stream[data-bound='node'] .note + .note,
+            #stream[data-bound='dots'] .note + .note { margin-top: 2.8rem; }
+            #stream[data-bound='dots'] .note .frame { position: relative; }
+            #stream[data-bound='dots'] .note .meta::before {
+                content: '';
+                position: absolute;
+                left: -1.65rem;
+                top: 0.42em;
+                width: 0.5rem;
+                height: 0.5rem;
+                border-radius: 50%;
+                background: var(--accent);
+                box-shadow: 0 0 0 0.28rem var(--bg);
+            }
 
             /* N1 - flush. Unframed, full width, hairline above. */
             #stream[data-note='flush'] .note .frame { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
@@ -590,9 +675,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         <button data-set="split" data-val="keep" aria-pressed="false">keep together</button>
                     </span>
                     <span class="knob"
-                        ><span>note start</span>
-                        <button data-set="bound" data-val="node" aria-pressed="true">timeline node</button>
-                        <button data-set="bound" data-val="plain" aria-pressed="false">plain</button>
+                        ><span>timeline</span>
+                        <button data-set="bound" data-val="node" aria-pressed="true">dots + rings</button>
+                        <button data-set="bound" data-val="dots" aria-pressed="false">notes only</button>
+                        <button data-set="bound" data-val="plain" aria-pressed="false">off</button>
+                    </span>
+                    <span class="knob"
+                        ><span>note meta</span>
+                        <button data-set="meta" data-val="gutter" aria-pressed="true">left gutter</button>
+                        <button data-set="meta" data-val="inline" aria-pressed="false">inline</button>
                     </span>
                     <span class="knob"
                         ><span>note media</span>
@@ -625,7 +716,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
             </div>
 
-            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-split="split" data-showing="all">
+            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-meta="gutter" data-split="split" data-showing="all">
                 {
                     items.map((item) => (
                         <article
@@ -766,10 +857,17 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
         <script>
             const stream = document.getElementById('stream')!;
 
-            // ?post=row&note=rail&media=full - so a link can open a given combo.
+            // Knob state survives a reload (and a republish): the URL wins if it
+            // carries one, otherwise whatever was last picked here.
+            const KNOBS = ['post', 'note', 'media', 'bound', 'split', 'meta'];
+            const STORE = 'specimen-knobs-v1';
+            let saved: Record<string, string> = {};
+            try {
+                saved = JSON.parse(localStorage.getItem(STORE) || '{}');
+            } catch {}
             const qs = new URLSearchParams(location.search);
-            for (const key of ['post', 'note', 'media', 'bound', 'split']) {
-                const v = qs.get(key);
+            for (const key of KNOBS) {
+                const v = qs.get(key) || saved[key];
                 if (!v) continue;
                 stream.dataset[key] = v;
                 document
@@ -785,13 +883,20 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     document
                         .querySelectorAll<HTMLButtonElement>(`[data-set="${key}"]`)
                         .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+                    try {
+                        const next = { ...saved, [key]: b.dataset.val! };
+                        saved = next;
+                        localStorage.setItem(STORE, JSON.stringify(next));
+                    } catch {}
                     recount();
+                    sizeImages();
                     measure();
                 });
             });
             document.querySelectorAll<HTMLButtonElement>('[data-theme-set]').forEach((b) => {
                 b.addEventListener('click', () => {
                     document.documentElement.dataset.theme = b.dataset.themeSet!;
+                    try { localStorage.setItem('specimen-theme', b.dataset.themeSet!); } catch {}
                     document
                         .querySelectorAll<HTMLButtonElement>('[data-theme-set]')
                         .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
@@ -816,6 +921,16 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 set('post', posts);
                 set('all', notes + posts);
             }
+
+            try {
+                const th = localStorage.getItem('specimen-theme');
+                if (th) {
+                    document.documentElement.dataset.theme = th;
+                    document
+                        .querySelectorAll<HTMLButtonElement>('[data-theme-set]')
+                        .forEach((o) => o.setAttribute('aria-pressed', String(o.dataset.themeSet === th)));
+                }
+            } catch {}
 
             // ---- reader filter ----
             document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
@@ -967,20 +1082,58 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             if (stripped) console.info(`specimen: dropped ${stripped} redundant note heading(s)`);
 
             // ---- crop detection + full-screen viewer ----
-            const TALL = 5 / 4; // anything taller than 5:4 is cropped to 4:5
-            function markCrops() {
-                document.querySelectorAll<HTMLImageElement>('.note-images img').forEach((img) => {
-                    const apply = () => {
-                        if (!img.naturalWidth) return;
-                        const ratio = img.naturalHeight / img.naturalWidth;
-                        img.closest('.shot')!.classList.toggle('is-cropped', ratio > TALL);
-                        measure();
-                    };
-                    if (img.complete) apply();
-                    else img.addEventListener('load', apply, { once: true });
-                });
+            // An image may take at most 66% of the viewport height, so the note
+            // it belongs to never fills the screen on its own and the page stays
+            // connected. Three steps, in order of how much they cost the reader:
+            //   1. fits already          -> full column width, untouched
+            //   2. too tall             -> shrink and centre, still the whole image
+            //   3. shrinking made it small -> stop shrinking, crop to the floor width
+            const VH_CAP = 0.66;
+            const MIN_WIDTH_FRACTION = 0.62; // never shrink below this much of the column
+            function sizeImage(img: HTMLImageElement) {
+                if (!img.naturalWidth) return;
+                const shot = img.closest<HTMLElement>('.shot')!;
+                const grid = shot.parentElement!;
+                if (!grid.classList.contains('one')) return; // grids are already small
+                const colW = grid.clientWidth;
+                if (!colW) return;
+                const cap = window.innerHeight * VH_CAP;
+                const ratio = img.naturalHeight / img.naturalWidth;
+                const fullH = colW * ratio;
+
+                shot.classList.remove('is-cropped', 'is-shrunk');
+                shot.style.width = '';
+                shot.style.height = '';
+                img.style.height = '';
+
+                if (fullH <= cap) return; // step 1
+
+                const shrunkW = cap / ratio;
+                if (shrunkW >= colW * MIN_WIDTH_FRACTION) {
+                    shot.classList.add('is-shrunk'); // step 2
+                    shot.style.width = `${Math.round(shrunkW)}px`;
+                    return;
+                }
+
+                shot.classList.add('is-cropped', 'is-shrunk'); // step 3
+                shot.style.width = `${Math.round(colW * MIN_WIDTH_FRACTION)}px`;
+                shot.style.height = `${Math.round(cap)}px`;
+                img.style.height = '100%';
             }
-            markCrops();
+            function sizeImages() {
+                document
+                    .querySelectorAll<HTMLImageElement>('.note-images img')
+                    .forEach((img) => {
+                        if (img.complete) sizeImage(img);
+                        else img.addEventListener('load', () => { sizeImage(img); measure(); }, { once: true });
+                    });
+            }
+            sizeImages();
+            let rz: number;
+            window.addEventListener('resize', () => {
+                clearTimeout(rz);
+                rz = window.setTimeout(() => { sizeImages(); measure(); }, 150);
+            });
 
             const lb = document.getElementById('lightbox')!;
             const lbImg = document.getElementById('lb-img') as HTMLImageElement;
