@@ -62,6 +62,9 @@ for (const n of notes) {
 }
 items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 
+const absolute = (d: Date) =>
+    d.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
 const postCount = items.filter((i) => i.kind === 'post').length;
 const noteCount = items.filter((i) => i.kind === 'note').length;
 ---
@@ -196,7 +199,16 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 letter-spacing: 0.03em;
                 border-bottom: none;
             }
-            .meta .date:hover { color: var(--accent); }
+            .meta .date.rel {
+                cursor: help;
+                border-bottom: 1px dotted transparent;
+            }
+            .meta .date.rel:hover,
+            .meta .date.rel:focus-visible {
+                color: var(--fg);
+                border-bottom-color: var(--rule);
+                outline: none;
+            }
             .chips { display: flex; flex-wrap: wrap; gap: 0.3em; }
             .actions {
                 display: flex;
@@ -227,7 +239,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 padding: 0.35em 0.8em;
             }
             .act.primary:hover { background: var(--hover-bg); border-color: var(--hover-bg); color: var(--hover); }
-            .spacer { flex: 1; }
             .act.copied { color: var(--accent); }
 
             /* ================= POST treatments ================= */
@@ -293,8 +304,19 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 width: 100%; height: 100%; object-fit: cover;
                 border-radius: 8px; display: block; background: var(--code-bg);
             }
+            /* A single image spans the note's own column, so it reads as the
+               note's subject rather than a thumbnail hung off the left margin.
+               The height cap only binds on very tall crops; when it does, the
+               image centres instead of sitting left. */
             .note-images.one { grid-template-columns: 1fr; }
-            .note-images.one img { max-height: 20rem; object-fit: contain; object-position: left; background: none; }
+            .note-images.one img {
+                width: 100%;
+                height: auto;
+                max-height: 46rem;
+                object-fit: contain;
+                margin-inline: auto;
+                background: none;
+            }
             .note-images.two { grid-template-columns: 1fr 1fr; }
             .note-images.many { grid-template-columns: repeat(3, 1fr); }
             .note-images.many img { aspect-ratio: 1 / 1; }
@@ -309,7 +331,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 max-width: 30rem;
                 border-radius: 6px;
             }
-            #stream[data-media='cap'] .note .note-images.one img { max-height: 15rem; }
+            #stream[data-media='cap'] .note .note-images.one img { max-height: 17rem; object-position: left; margin-inline: 0; }
 
             /* N1 - flush. Unframed, full width, hairline above. */
             #stream[data-note='flush'] .note .frame { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
@@ -320,7 +342,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 padding-left: 1.4rem;
                 margin-left: 0.2rem;
             }
-            #stream[data-note='rail'] .note .body { max-width: 34em; }
 
             /* ---------- filter behaviour ---------- */
             #stream[data-showing='post'] .item.note { display: none; }
@@ -414,7 +435,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 The stream below is your actual corpus under the proposed split: {postCount} posts,
                 {noteCount} notes. Migrated notes have had their titles dropped, as decided. Posts show
                 a 2&ndash;3 block excerpt and always offer <em>Read post</em>; notes render in full,
-                clamped at 24rem with <em>Show more</em>. Both carry a share action. Opening either one
+                clamped on prose (never through an image or a video) with <em>Show more</em>. Both carry a share action. Opening either one
                 and coming back demonstrates the return-to-place behaviour. Entries marked
                 <span class="flag">judgment</span> are the two where word count and character disagree.
                 </p>
@@ -445,9 +466,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                             </a>
                                         </h2>
                                         <div class="meta">
-                                            <span class="date">
+                                            <time
+                                                class="date rel"
+                                                datetime={item.date.toISOString()}
+                                                title={absolute(item.date)}
+                                                data-abs={absolute(item.date)}
+                                                tabindex="0"
+                                            >
                                                 <FormattedDate date={item.date} />
-                                            </span>
+                                            </time>
                                             {item.tags.length > 0 && (
                                                 <span class="chips">
                                                     {item.tags.map((t) => (
@@ -463,7 +490,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                             <a class="act primary" href={item.href} data-open>
                                                 Read post &rarr;
                                             </a>
-                                            <span class="spacer" />
                                             <button class="act share" type="button">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 Share
@@ -473,9 +499,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                 ) : (
                                     <>
                                         <div class="meta">
-                                            <a class="date" href={item.href} data-open>
+                                            <time
+                                                class="date rel"
+                                                datetime={item.date.toISOString()}
+                                                title={absolute(item.date)}
+                                                data-abs={absolute(item.date)}
+                                                tabindex="0"
+                                            >
                                                 <FormattedDate date={item.date} />
-                                            </a>
+                                            </time>
                                             {item.judgment && <span class="flag">judgment</span>}
                                             {item.tags.length > 0 && (
                                                 <span class="chips">
@@ -508,7 +540,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                         </div>
                                         <div class="actions">
                                             <button class="act more" type="button">Show more</button>
-                                            <span class="spacer" />
+                                            <a class="act" href={item.href} data-open>Open note &rsaquo;</a>
                                             <button class="act share" type="button">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 Share
@@ -598,16 +630,23 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             });
 
             // ---- note clamping ----
-            const MAX = 24 * 16;
+            const PROSE_MAX = 20 * 16;
+            const hasMedia = (el: Element) => !!el.querySelector('img, iframe, video') || /^(IMG|IFRAME|VIDEO)$/.test(el.tagName);
             function measure() {
                 document.querySelectorAll<HTMLElement>('.note').forEach((n) => {
                     if (n.classList.contains('is-open')) return;
-                    const clip = n.querySelector<HTMLElement>('.clip')!;
-                    const prev = n.classList.contains('is-clamped');
                     n.classList.remove('is-clamped');
-                    const tall = clip.scrollHeight > MAX + 32;
-                    n.classList.toggle('is-clamped', tall);
-                    if (prev !== tall) void 0;
+                    const body = n.querySelector<HTMLElement>('.body');
+                    if (!body) return;
+                    // Only prose counts toward the clamp. A note that is one photo
+                    // and a sentence is complete; a note that is a pasted wall of
+                    // text is not.
+                    let prose = 0;
+                    for (const child of Array.from(body.children)) {
+                        if (hasMedia(child)) continue;
+                        prose += (child as HTMLElement).offsetHeight;
+                    }
+                    n.classList.toggle('is-clamped', prose > PROSE_MAX);
                 });
             }
             measure();
@@ -620,6 +659,38 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     note.classList.toggle('is-clamped', !opening);
                     b.textContent = opening ? 'Show less' : 'Show more';
                     if (!opening) note.scrollIntoView({ block: 'nearest' });
+                });
+            });
+
+            // ---- relative timestamps ----
+            // Rendered absolute so a no-JS reader still gets a real date, then
+            // swapped to relative. Hover shows the absolute (title); tap toggles
+            // it inline, because phones have no hover.
+            const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+            const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+                ['year', 365 * 24 * 3600],
+                ['month', 30 * 24 * 3600],
+                ['week', 7 * 24 * 3600],
+                ['day', 24 * 3600],
+                ['hour', 3600],
+                ['minute', 60],
+            ];
+            function relative(iso: string): string {
+                const secs = (Date.parse(iso) - Date.now()) / 1000;
+                const abs = Math.abs(secs);
+                if (abs < 60) return 'just now';
+                for (const [unit, size] of UNITS) {
+                    if (abs >= size) return rtf.format(Math.round(secs / size), unit);
+                }
+                return 'just now';
+            }
+            document.querySelectorAll<HTMLTimeElement>('time.rel').forEach((t) => {
+                const abs = t.dataset.abs!;
+                const rel = relative(t.dateTime);
+                t.textContent = rel;
+                t.addEventListener('click', () => {
+                    const showingRel = t.textContent === rel;
+                    t.textContent = showingRel ? abs : rel;
                 });
             });
 
