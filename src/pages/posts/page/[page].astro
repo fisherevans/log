@@ -1,66 +1,48 @@
 ---
-import type { GetStaticPaths, PaginateFunction } from 'astro';
-import { getCollection } from 'astro:content';
+// Pages 2..N of the stream. Page 1 is /posts.
+import type { GetStaticPaths } from 'astro';
 import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
 import Header from '../../../components/Header.astro';
-import PostList from '../../../components/PostList.astro';
+import Stream from '../../../components/Stream.astro';
+import { PAGE_SIZE, buildStream, yearsOf } from '../../../lib/stream';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
 
-// Pages 2..N of the "older posts" list. Page 1 lives on /posts (below the
-// featured latest post), so the featured post is excluded here and page 1 is
-// dropped from the generated routes.
-export const getStaticPaths: GetStaticPaths = async ({ paginate }: { paginate: PaginateFunction }) => {
-    const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-        (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-    );
-    const older = posts.slice(1);
-    return paginate(older, { pageSize: 25 }).filter((p) => p.params.page !== '1' && p.params.page !== undefined);
+export const getStaticPaths: GetStaticPaths = async () => {
+    const { buildStream, PAGE_SIZE } = await import('../../../lib/stream');
+    const all = await buildStream();
+    const last = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    return Array.from({ length: last - 1 }, (_, i) => i + 2).map((n) => ({
+        params: { page: String(n) },
+        props: { n, last },
+    }));
 };
 
-const { page } = Astro.props;
-const prevHref = page.currentPage === 2 ? '/posts/' : `/posts/page/${page.currentPage - 1}`;
-const nextHref = page.currentPage < page.lastPage ? `/posts/page/${page.currentPage + 1}` : null;
+const { n, last } = Astro.props;
+const all = await buildStream();
+const items = all.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
 ---
 
 <!doctype html>
 <html lang="en">
     <head>
-        <BaseHead title={`${SITE_TITLE} - posts (page ${page.currentPage})`} description={SITE_DESCRIPTION} />
+        <BaseHead title={`Posts · page ${n} · ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
         <style>
-            .pagination {
-                margin-top: 2em;
-                display: flex;
-                justify-content: space-between;
-                gap: 1em;
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.85rem;
-            }
-            .pagination .spacer {
-                margin-left: auto;
-            }
-            .list-end {
-                margin-top: 2.2em;
-                padding-top: 1.5em;
-                border-top: 1px solid var(--rule);
-                text-align: center;
-                color: var(--muted);
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.78rem;
-                letter-spacing: 0.06em;
-            }
+            h1 { margin: 0 0 1.4rem; }
+            .sub { color: var(--muted); font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.8rem; }
         </style>
     </head>
     <body>
         <Header />
         <main>
-            <p class="eyebrow">Older posts &middot; page {page.currentPage}</p>
-            <PostList posts={page.data} />
-            <div class="pagination">
-                <a href={prevHref}>&larr; Newer</a>
-                {nextHref && <a class="spacer" href={nextHref}>Older &rarr;</a>}
-            </div>
-            {!nextHref && <p class="list-end">That&rsquo;s everything &middot; no more posts.</p>}
+            <h1>Posts <span class="sub">page {n} of {last}</span></h1>
+            <Stream
+                items={items}
+                years={yearsOf(all)}
+                page={{ current: n, last, hrefFor: (p: number) => (p === 1 ? '/posts/' : `/posts/page/${p}/`) }}
+                total={all.length}
+                pageSize={PAGE_SIZE}
+            />
         </main>
         <Footer />
     </body>

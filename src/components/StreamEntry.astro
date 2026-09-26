@@ -1,0 +1,102 @@
+---
+// One entry in the stream. A post is a framed card with a title and an excerpt
+// - a door you go through. A note is unframed and complete where it stands:
+// no title (it has none), its whole body, nothing to "continue" to.
+//
+// Both hang off the timeline: a note marks it with a filled dot, a post with
+// an open ring and a fading stub into the card. The node is drawn in three
+// layers (disc / stub / hollow) rather than as a bordered circle, because a
+// connector that merely abuts a border always shows a seam at some zoom.
+import { render } from 'astro:content';
+import type { StreamItem } from '../lib/stream';
+import FormattedDate from './FormattedDate.astro';
+
+interface Props {
+    item: StreamItem;
+}
+const { item } = Astro.props;
+const { Content } = await render(item.entry as any);
+const tags = item.entry.data.tags ?? [];
+const absolute = item.date.toLocaleDateString('en-us', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+});
+const images = item.kind === 'note' ? item.entry.data.images : [];
+// A short note's prose reads as a caption, and captions lead. A long one would
+// push its picture off the fold, so it follows instead.
+const captionLeads =
+    item.kind === 'note' && (item.entry.body ?? '').trim().split(/\s+/).filter(Boolean).length <= 55;
+const gridClass = images.length === 1 ? 'one' : images.length === 2 ? 'two' : 'many';
+
+const shareIcon =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>';
+---
+
+<article class:list={['entry', item.kind]} id={`e-${item.entry.id}`} data-kind={item.kind} data-year={item.year} data-href={item.href}>
+    <div class="frame">
+        {
+            item.kind === 'post' ? (
+                <>
+                    <h2 class="p-title"><a href={item.href}>{item.entry.data.title}</a></h2>
+                    <div class="meta">
+                        <time class="date rel" datetime={item.date.toISOString()} title={absolute} data-abs={absolute} tabindex="0">
+                            <FormattedDate date={item.date} />
+                        </time>
+                        {tags.length > 0 && (
+                            <span class="chips">
+                                {tags.map((t) => (
+                                    <a class="chip" href={`/tags/${t}/`}>{t}</a>
+                                ))}
+                            </span>
+                        )}
+                    </div>
+                    <div class="prose excerpt"><Content /></div>
+                    <div class="actions">
+                        <a class="act cta" href={item.href}>Read post <span class="arrow">&rarr;</span></a>
+                        <button class="act share" type="button">Share<Fragment set:html={shareIcon} /></button>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div class="head">
+                        <div class="meta">
+                            <time class="date rel" datetime={item.date.toISOString()} title={absolute} data-abs={absolute} tabindex="0">
+                                <FormattedDate date={item.date} />
+                            </time>
+                            {tags.length > 0 && (
+                                <span class="chips">
+                                    {tags.map((t) => (
+                                        <a class="chip" href={`/tags/${t}/`}>{t}</a>
+                                    ))}
+                                </span>
+                            )}
+                        </div>
+                        <span class="right">
+                            <a class="act" href={item.href}><span class="lead">&rsaquo;</span> Open note</a>
+                            <button class="act share" type="button">Share<Fragment set:html={shareIcon} /></button>
+                        </span>
+                    </div>
+                    <div class:list={['clip', { 'caption-leads': captionLeads }]}>
+                        <div class="prose body"><Content /></div>
+                        {images.length > 0 && (
+                            <div class:list={['note-images', gridClass]}>
+                                {images.map((img) => (
+                                    <button class="shot" type="button">
+                                        <img src={img.src} alt={img.alt ?? ''} loading="lazy" decoding="async" />
+                                        <span class="expand">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                            Full size
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    <div class="actions"><button class="act more" type="button">Show more</button></div>
+                </>
+            )
+        }
+    </div>
+</article>

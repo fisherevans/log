@@ -1,0 +1,48 @@
+---
+// /posts/YYYY/ - everything from one year. The year rail links here; the rail
+// also scroll-spies on the unfiltered stream, so a year is both a jump and a
+// destination.
+import type { GetStaticPaths } from 'astro';
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import Stream from '../../components/Stream.astro';
+import { buildStream, yearsOf } from '../../lib/stream';
+import { SITE_TITLE } from '../../consts';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+    const { buildStream, yearsOf } = await import('../../lib/stream');
+    const all = await buildStream();
+    return yearsOf(all).map((y) => ({ params: { year: String(y) }, props: { year: y } }));
+};
+
+const { year } = Astro.props;
+const all = await buildStream();
+const items = all.filter((i) => i.year === year);
+const posts = items.filter((i) => i.kind === 'post').length;
+const notes = items.length - posts;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title={`${year} · ${SITE_TITLE}`} description={`Everything from ${year}.`} />
+        <style>
+            h1 { margin: 0 0 0.3rem; }
+            .count { color: var(--muted); margin: 0 0 2rem; font-size: 0.95em; }
+        </style>
+    </head>
+    <body>
+        <Header />
+        <main>
+            <p class="back"><a href="/posts/">&larr; everything</a></p>
+            <h1>{year}</h1>
+            <p class="count">
+                {items.length} {items.length === 1 ? 'entry' : 'entries'}
+                {posts > 0 && notes > 0 && ` — ${posts} ${posts === 1 ? 'post' : 'posts'}, ${notes} ${notes === 1 ? 'note' : 'notes'}`}
+            </p>
+            <Stream items={items} years={yearsOf(all)} activeYear={year} />
+        </main>
+        <Footer />
+    </body>
+</html>

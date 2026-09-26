@@ -1,0 +1,731 @@
+---
+// The stream: the site's single listing, posts and notes interleaved on one
+// timeline. Rendered server-side including the year rail and the pager, so
+// both are real links that work without JS (and so Astro's scoped styles
+// actually reach them - scoped CSS is stamped at build time and never reaches
+// anything built with innerHTML).
+import type { StreamItem } from '../lib/stream';
+import StreamEntry from './StreamEntry.astro';
+
+interface Props {
+    items: StreamItem[];
+    years: number[];
+    activeYear?: number;
+    page?: { current: number; last: number; hrefFor: (n: number) => string };
+    total?: number;
+    pageSize?: number;
+}
+const { items, years, activeYear, page, total, pageSize = 20 } = Astro.props;
+const from = page ? (page.current - 1) * pageSize + 1 : 1;
+const to = page ? Math.min(page.current * pageSize, total ?? items.length) : items.length;
+---
+
+<div class="stream-wrap">
+    <nav class="years" aria-label="Jump to year">
+        <span class="years-inner">
+            <a class="year" href="/posts/" aria-current={activeYear ? undefined : 'page'}>all</a>
+            {
+                years.map((y) => (
+                    <a class="year" href={`/posts/${y}/`} data-year={y} aria-current={activeYear === y ? 'page' : undefined}>
+                        {y}
+                    </a>
+                ))
+            }
+        </span>
+    </nav>
+
+    <div class="stream">
+        {items.map((item) => <StreamEntry item={item} />)}
+    </div>
+
+    {
+        page && page.last > 1 && (
+            <nav class="pager" aria-label="Pagination">
+                <span class="range">{from}&ndash;{to} of {total}</span>
+                {page.current > 1 ? (
+                    <a href={page.hrefFor(page.current - 1)}>&larr; Newer</a>
+                ) : (
+                    <span class="off">&larr; Newer</span>
+                )}
+                {Array.from({ length: page.last }, (_, i) => i + 1).map((n) =>
+                    n === page.current ? (
+                        <span class="cur" aria-current="page">{n}</span>
+                    ) : (
+                        <a href={page.hrefFor(n)}>{n}</a>
+                    ),
+                )}
+                {page.current < page.last ? (
+                    <a href={page.hrefFor(page.current + 1)}>Older &rarr;</a>
+                ) : (
+                    <span class="off">Older &rarr;</span>
+                )}
+            </nav>
+        )
+    }
+</div>
+
+<div id="lightbox" hidden>
+    <button class="lb-close" type="button">Close &times;</button>
+    <button class="lb-nav lb-prev" type="button" aria-label="Previous image">&lsaquo;</button>
+    <img id="lb-img" src="" alt="" />
+    <button class="lb-nav lb-next" type="button" aria-label="Next image">&rsaquo;</button>
+    <p class="lb-cap" id="lb-cap"></p>
+</div>
+
+<style>
+    /* ---------- the timeline ---------- */
+    .stream-wrap { position: relative; }
+    .stream {
+        position: relative;
+        /* Every offset below derives from these two, so the spine, the dots,
+           the rings and the connector cannot drift apart. */
+        /* The spine sits far enough in that the nodes drawn around it fall
+           INSIDE each entry's box. content-visibility: auto (below) applies
+           paint containment, which clips anything outside that box - which is
+           why the gutter has to be padding on the entry, not margin. */
+        --spine-x: 0.75rem;
+        --spine-c: calc(var(--spine-x) + 0.5px);
+        --item-indent: 1.9rem;
+        --branch: color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    .stream::before {
+        content: '';
+        position: absolute;
+        left: var(--spine-x);
+        top: 0.5rem;
+        bottom: 0.5rem;
+        width: 1px;
+        background: var(--rule);
+    }
+    .stream :global(.entry) {
+        padding-left: var(--item-indent);
+        position: relative;
+        /* Off-screen entries skip layout and paint; the intrinsic size keeps
+           the scrollbar honest while they are skipped. */
+        content-visibility: auto;
+        contain-intrinsic-size: auto 420px;
+        --ring-outer: 1.05rem;
+        --ring-b: 2px;
+        /* entry coordinates (the entry is the containing block) */
+        --ring-left: calc(var(--spine-c) - (var(--ring-outer) / 2));
+        /* frame coordinates, for anything drawn on .frame */
+        --node-x: calc(var(--spine-c) - var(--item-indent));
+    }
+    .stream :global(.entry .frame) { position: relative; }
+
+    /* ---------- notes ---------- */
+    .stream :global(.entry.note) { margin-top: 2.8rem; margin-bottom: 2.8rem; }
+    .stream :global(.entry.note .meta)::before {
+        content: '';
+        position: absolute;
+        left: calc(var(--node-x) - 0.25rem);
+        top: 0.42em;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 0.28rem var(--bg);
+    }
+    .stream :global(.entry.note .head) {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        margin: 0 0 0.3em;
+    }
+    .stream :global(.entry.note .head .right) { display: flex; align-items: baseline; gap: 0.9rem; flex: 0 0 auto; }
+    .stream :global(.entry.note .body) { font-size: 0.97em; line-height: 1.55; }
+    .stream :global(.entry.note .body > p) { margin: 0.75em 0; }
+    .stream :global(.entry.note .body > :first-child) { margin-top: 0; }
+    .stream :global(.entry.note .body > :last-child) { margin-bottom: 0; }
+    .stream :global(.entry.note .actions) { margin-top: 0.7em; }
+    /* No affordance unless there is something to expand. */
+    .stream :global(.entry.note:not(.is-clamped):not(.is-media-clamped):not(.is-open) .actions) { display: none; }
+
+    /* A note clamps on PROSE, never through a photo or a video frame: a
+       picture-and-a-sentence note is complete, a pasted wall of text is not. */
+    .stream :global(.clip) { position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    .stream :global(.entry.note.is-clamped .clip) { max-height: 24rem; }
+    .stream :global(.entry.note.is-clamped .clip)::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 5rem;
+        background: linear-gradient(to bottom, transparent, var(--bg));
+        pointer-events: none;
+    }
+    .stream :global(.entry.note.is-open .clip) { max-height: none; }
+    /* Media gets its own limit - several embeds is not long PROSE, so the
+       prose clamp never fires and the note ends up the tallest thing here. */
+    .stream :global(.entry.note.is-media-clamped .body .media-extra) { display: none; }
+
+    /* Caption order. The gap belongs to the photo, not the body - put it on
+       the body and a note with no images carries a phantom 16px under its date. */
+    .stream :global(.clip .body) { order: 2; }
+    .stream :global(.clip .note-images) { order: 1; margin-bottom: 0.9rem; }
+    .stream :global(.clip.caption-leads .body) { order: 1; margin-bottom: 0.9rem; }
+    .stream :global(.clip.caption-leads .note-images) { order: 2; margin-bottom: 0; }
+
+    /* ---------- posts ---------- */
+    .stream :global(.entry.post) { margin-top: 1.6rem; margin-bottom: 1.6rem; --node-top: 1.95rem; }
+    .stream :global(.entry.post .frame) {
+        background: var(--code-bg);
+        border: 1px solid var(--rule);
+        border-radius: 12px;
+        padding: 1.05rem 1.5rem 1.3rem;
+        /* the connector is positioned from the frame's PADDING box, so its
+           border has to come out of the offsets below */
+        --card-bt: 1px;
+        --card-bl: 1px;
+    }
+    /* layer 1: the ring's disc */
+    .stream :global(.entry.post)::before {
+        content: '';
+        position: absolute;
+        z-index: 1;
+        left: var(--ring-left);
+        top: calc(var(--node-top) - (var(--ring-outer) / 2));
+        width: var(--ring-outer);
+        height: var(--ring-outer);
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 0.25rem var(--bg);
+    }
+    /* layer 2: the connector, starting at the disc's centre */
+    .stream :global(.entry.post .frame)::after {
+        content: '';
+        position: absolute;
+        z-index: 2;
+        left: calc(var(--node-x) - var(--card-bl));
+        top: calc(var(--node-top) - 1px - var(--card-bt));
+        width: calc(0px - var(--node-x) + var(--card-bl));
+        height: 2px;
+        background: linear-gradient(to right, var(--accent) 0, var(--accent) calc(var(--ring-outer) / 2), transparent 100%);
+        pointer-events: none;
+    }
+    /* layer 3: the hollow, painted over the connector - so nothing has to align */
+    .stream :global(.entry.post)::after {
+        content: '';
+        position: absolute;
+        z-index: 3;
+        left: calc(var(--ring-left) + var(--ring-b));
+        top: calc(var(--node-top) - (var(--ring-outer) / 2) + var(--ring-b));
+        width: calc(var(--ring-outer) - (2 * var(--ring-b)));
+        height: calc(var(--ring-outer) - (2 * var(--ring-b)));
+        border-radius: 50%;
+        background: var(--bg);
+        pointer-events: none;
+    }
+    .stream :global(.p-title) { margin: 0; line-height: 1.15; }
+    .stream :global(.p-title a) {
+        color: var(--fg);
+        font-family: 'Marauder', serif;
+        font-weight: 700;
+        font-variation-settings: 'opsz' 24;
+        font-size: 1.75rem;
+    }
+    .stream :global(.p-title a:hover) {
+        color: var(--hover);
+        background-color: var(--hover-bg);
+        box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+    }
+    .stream :global(.entry.post .meta) { margin: 0.55em 0 1.2em; }
+    .stream :global(.excerpt > :first-child) { margin-top: 0; }
+    .stream :global(.excerpt > :last-child) { margin-bottom: 0; }
+
+    /* ---------- meta + actions ---------- */
+    .stream :global(.meta) { display: flex; flex-wrap: wrap; gap: 0.45em 0.9em; align-items: baseline; font-size: 0.85em; }
+    .stream :global(.date.rel) {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.76em;
+        color: var(--muted);
+        letter-spacing: 0.03em;
+        border-bottom: 1px dotted transparent;
+        cursor: help;
+    }
+    .stream :global(.date.rel:hover), .stream :global(.date.rel:focus-visible) {
+        color: var(--fg);
+        border-bottom-color: var(--rule);
+        outline: none;
+    }
+    .stream :global(.chips) { display: flex; flex-wrap: wrap; gap: 0.3em; }
+    .stream :global(.actions) { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-top: 1.1em; }
+    .stream :global(.act) {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.76rem;
+        font-weight: 400;
+        letter-spacing: 0.02em;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--muted);
+        /* Laid out inline, not as a flex box: an inline-flex takes its baseline
+           from its first item, and for a control with an icon that is the <svg>
+           - a replaced element whose baseline is its bottom edge, which floats
+           the whole label above its neighbours. */
+        display: inline-block;
+        white-space: nowrap;
+        text-decoration: none;
+        transition: color 120ms ease, background-color 120ms ease, border-color 120ms ease;
+    }
+    /* The site's link hover is a highlighter swipe; on an action row it renders
+       as two orange bars bracketing the label. */
+    .stream :global(.act:hover), .stream :global(.act:focus-visible) {
+        color: var(--accent);
+        background: none;
+        border-bottom-color: transparent;
+        box-shadow: none;
+        outline: none;
+    }
+    .stream :global(.act svg) { width: 0.95em; height: 0.95em; vertical-align: -0.13em; margin-left: 0.4em; }
+    .stream :global(.act .lead) { display: inline-block; margin-right: 0.3em; line-height: 1; transition: transform 140ms ease; }
+    .stream :global(.act:hover .lead) { transform: translateX(-0.2em); }
+    /* The post's one call to action, and the only contained control in the
+       stream - so it reads as the thing to do. */
+    .stream :global(.act.cta) {
+        font-family: var(--sans);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        padding: 0.5em 1.1em;
+    }
+    .stream :global(.act.cta:hover), .stream :global(.act.cta:focus-visible) {
+        background: var(--accent);
+        color: var(--bg);
+    }
+    .stream :global(.act.cta .arrow) { display: inline-block; margin-left: 0.45em; transition: transform 140ms ease; }
+    .stream :global(.act.cta:hover .arrow) { transform: translateX(0.25em); }
+    .stream :global(.act.more) { display: none; }
+    .stream :global(.entry.note.is-clamped .act.more),
+    .stream :global(.entry.note.is-media-clamped .act.more),
+    .stream :global(.entry.note.is-open .act.more) { display: inline-block; }
+
+    /* ---------- media ---------- */
+    .stream :global(.note-images) { display: grid; gap: 0.4rem; margin: 0; }
+    /* The mat: a photo that does not fill the column letterboxes onto a board
+       rather than leaving a ragged edge, and the frame reads as something you
+       can open - which it is. */
+    .stream :global(.shot) {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: var(--mat);
+        border: 1px solid var(--mat-edge);
+        cursor: zoom-in;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: border-color 120ms ease;
+    }
+    .stream :global(.shot:hover) { border-color: var(--accent); }
+    .stream :global(.shot img) { display: block; object-fit: contain; }
+    .stream :global(.shot.is-cropped img) { object-fit: cover; object-position: top; }
+    .stream :global(.note-images.two) { grid-template-columns: 1fr 1fr; }
+    .stream :global(.note-images.many) { grid-template-columns: repeat(3, 1fr); }
+    .stream :global(.note-images.many img) { aspect-ratio: 1 / 1; width: 100%; height: 100%; object-fit: cover; }
+    @media (max-width: 34rem) { .stream :global(.note-images.many) { grid-template-columns: repeat(2, 1fr); } }
+    /* The badge only appears on an image the stream actually cropped - on a
+       whole image it would be lying about what the tap does. */
+    .stream :global(.expand) {
+        position: absolute;
+        right: 0.55rem;
+        bottom: 0.55rem;
+        display: none;
+        align-items: center;
+        gap: 0.35em;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.68rem;
+        color: #f7f2e8;
+        background: rgba(20, 18, 15, 0.72);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(247, 242, 232, 0.22);
+        border-radius: 999px;
+        padding: 0.3em 0.7em;
+    }
+    .stream :global(.expand svg) { width: 0.85em; height: 0.85em; }
+    .stream :global(.shot.is-cropped .expand) { display: inline-flex; }
+    .stream :global(.shot.is-cropped)::after {
+        content: '';
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 4.5rem;
+        background: linear-gradient(to bottom, transparent, rgba(20, 18, 15, 0.55));
+        pointer-events: none;
+    }
+    /* An embed is media too - same board, same edge, same radius. */
+    .stream :global(.media-mat) {
+        background: var(--mat);
+        border: 1px solid var(--mat-edge);
+        border-radius: 10px;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 1rem 0;
+    }
+    .stream :global(.media-mat iframe) { display: block; border: 0; }
+
+    /* ---------- YouTube facade ---------- */
+    .stream :global(.yt-facade) {
+        position: relative;
+        display: block;
+        width: 100%;
+        background: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 1rem 0;
+        cursor: pointer;
+    }
+    .stream :global(.yt-poster) { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .stream :global(.yt-play) { position: absolute; inset: 0; margin: auto; width: 68px; height: 48px; background: none; border: none; padding: 0; cursor: pointer; }
+    .stream :global(.yt-play-bg) { fill: rgba(20, 18, 15, 0.72); transition: fill 120ms ease; }
+    .stream :global(.yt-play-tri) { fill: #fff; }
+    .stream :global(.yt-facade:hover .yt-play-bg) { fill: #e5350c; }
+    .stream :global(.yt-title) {
+        position: absolute;
+        left: 0; right: 0; top: 0;
+        padding: 0.7em 0.9em 1.6em;
+        color: #fff;
+        font-family: var(--sans);
+        font-size: 0.85rem;
+        font-weight: 600;
+        line-height: 1.3;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+        pointer-events: none;
+    }
+
+    /* ---------- year rail ---------- */
+    .years { overflow-x: auto; scrollbar-width: none; margin: 0 0 1.4rem; padding-bottom: 0.3rem; }
+    .years::-webkit-scrollbar { display: none; }
+    .years-inner { display: flex; gap: 0.3rem; width: max-content; }
+    .year {
+        flex: 0 0 auto;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.72rem;
+        border: 1px solid transparent;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 0.22em 0.6em;
+        text-decoration: none;
+    }
+    .year:hover { color: var(--fg); background: none; box-shadow: none; border-color: var(--rule); }
+    .year[aria-current='page'] { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    .year.in-view { color: var(--accent); border-color: var(--rule); }
+    @media (min-width: 64rem) {
+        .years { position: absolute; left: -7.5rem; top: 0; bottom: 0; width: 6.5rem; margin: 0; overflow: visible; }
+        .years-inner {
+            position: sticky;
+            top: 1.5rem;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.12rem;
+            width: auto;
+            max-height: calc(100vh - 3rem);
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .year { width: 100%; text-align: right; }
+    }
+
+    /* ---------- pager ---------- */
+    .pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        margin: 2.6rem 0 0;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--rule);
+        flex-wrap: wrap;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.75rem;
+    }
+    .pager a, .pager .cur, .pager .off {
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.3em 0.7em;
+        color: var(--muted);
+        text-decoration: none;
+    }
+    .pager a:hover { color: var(--fg); border-color: var(--muted); background: none; box-shadow: none; }
+    .pager .cur { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    .pager .off { opacity: 0.35; }
+    .pager .range { border: none; margin-right: 0.5rem; padding-left: 0; }
+
+    /* ---------- full-screen image viewer ---------- */
+    #lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        background: rgba(12, 11, 9, 0.94);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 3.5rem 1rem 4.5rem;
+        cursor: zoom-out;
+    }
+    #lightbox[hidden] { display: none; }
+    #lightbox img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+    #lightbox .lb-close, #lightbox .lb-nav {
+        position: absolute;
+        background: rgba(247, 242, 232, 0.1);
+        border: 1px solid rgba(247, 242, 232, 0.2);
+        color: #f7f2e8;
+        border-radius: 999px;
+        cursor: pointer;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.8rem;
+        padding: 0.45em 0.9em;
+    }
+    #lightbox .lb-close { top: 1rem; right: 1rem; }
+    #lightbox .lb-nav { top: 50%; transform: translateY(-50%); padding: 0.6em 0.8em; }
+    #lightbox .lb-prev { left: 0.8rem; }
+    #lightbox .lb-next { right: 0.8rem; }
+    #lightbox .lb-nav[hidden] { display: none; }
+    #lightbox .lb-cap { position: absolute; left: 0; right: 0; bottom: 1.2rem; text-align: center; color: var(--muted); font-size: 0.85rem; padding: 0 1.5rem; }
+</style>
+
+<script>
+    const stream = document.querySelector<HTMLElement>('.stream');
+    if (stream) {
+        // ---- post excerpts: 2-3 blocks, by length, never ending on a heading
+        const WORD_TARGET = 110;
+        document.querySelectorAll<HTMLElement>('.excerpt').forEach((ex) => {
+            const blocks = Array.from(ex.children) as HTMLElement[];
+            const isHeading = (el: Element) => /^H[1-6]$/.test(el.tagName);
+            let words = 0;
+            let keep = 0;
+            for (const b of blocks) {
+                keep++;
+                words += (b.textContent || '').trim().split(/\s+/).filter(Boolean).length;
+                if (keep >= 2 && words >= WORD_TARGET) break;
+                if (keep >= 3) break;
+            }
+            while (keep > 1 && isHeading(blocks[keep - 1])) keep--;
+            blocks.forEach((b, i) => { if (i >= keep) b.style.display = 'none'; });
+        });
+
+        // ---- give every embed the photo's frame
+        document.querySelectorAll<HTMLElement>('.entry.note .body').forEach((body) => {
+            body.querySelectorAll('iframe, .yt-facade').forEach((f) => {
+                if (f.parentElement?.classList.contains('media-mat')) return;
+                const mat = document.createElement('div');
+                mat.className = 'media-mat';
+                f.replaceWith(mat);
+                mat.appendChild(f);
+            });
+        });
+
+        // ---- note clamping: prose only, plus a separate media limit
+        const PROSE_MAX = 20 * 16;
+        const hasMedia = (el: Element) =>
+            !!el.querySelector('img, iframe, video, .yt-facade') || /^(IMG|IFRAME|VIDEO)$/.test(el.tagName);
+        function measure() {
+            document.querySelectorAll<HTMLElement>('.entry.note').forEach((n) => {
+                if (n.classList.contains('is-open')) return;
+                n.classList.remove('is-clamped');
+                const body = n.querySelector<HTMLElement>('.body');
+                if (!body) return;
+                let prose = 0;
+                for (const child of Array.from(body.children)) {
+                    if (hasMedia(child)) continue;
+                    prose += (child as HTMLElement).offsetHeight;
+                }
+                n.classList.toggle('is-clamped', prose > PROSE_MAX);
+                const media = Array.from(body.children).filter(hasMedia) as HTMLElement[];
+                media.forEach((el, i) => el.classList.toggle('media-extra', i > 0));
+                n.classList.toggle('is-media-clamped', media.length > 1);
+                const btn = n.querySelector<HTMLButtonElement>('.act.more');
+                if (btn && media.length > 1) {
+                    const k = media.length - 1;
+                    btn.dataset.openLabel = `Show ${k} more ${k === 1 ? 'video' : 'videos'}`;
+                }
+            });
+            document.querySelectorAll<HTMLButtonElement>('.act.more').forEach((b) => {
+                const note = b.closest('.entry.note')!;
+                if (!note.classList.contains('is-open')) b.textContent = b.dataset.openLabel || 'Show more';
+            });
+        }
+        document.querySelectorAll<HTMLButtonElement>('.act.more').forEach((b) => {
+            b.addEventListener('click', () => {
+                const note = b.closest('.entry.note')!;
+                const opening = !note.classList.contains('is-open');
+                note.classList.toggle('is-open', opening);
+                note.classList.toggle('is-media-clamped', !opening);
+                if (opening) note.classList.remove('is-clamped');
+                else measure();
+                b.textContent = opening ? 'Show less' : b.dataset.openLabel || 'Show more';
+                if (!opening) note.scrollIntoView({ block: 'nearest' });
+            });
+        });
+
+        // ---- image height ladder: fit, else shrink and centre, else crop
+        // An image may take at most 66% of the viewport height, so a note never
+        // fills the screen on its own and the page stays connected.
+        const VH_CAP = 0.66;
+        const MIN_WIDTH_FRACTION = 0.62;
+        const PHOTO_CAP = 24 * 16;
+        function sizeImage(img: HTMLImageElement) {
+            if (!img.naturalWidth) return;
+            const shot = img.closest<HTMLElement>('.shot');
+            const grid = shot?.parentElement;
+            if (!shot || !grid || !grid.classList.contains('one')) return;
+            const matW = grid.clientWidth;
+            if (!matW) return;
+            const maxW = Math.min(matW, PHOTO_CAP);
+            const cap = window.innerHeight * VH_CAP;
+            const ratio = img.naturalHeight / img.naturalWidth;
+            shot.classList.remove('is-cropped');
+            let w = maxW;
+            let h = maxW * ratio;
+            if (h > cap) {
+                const shrunk = cap / ratio;
+                if (shrunk >= maxW * MIN_WIDTH_FRACTION) { w = shrunk; h = cap; }
+                else { w = maxW * MIN_WIDTH_FRACTION; h = cap; shot.classList.add('is-cropped'); }
+            }
+            shot.style.height = `${Math.round(h)}px`;
+            img.style.width = `${Math.round(w)}px`;
+            img.style.height = `${Math.round(h)}px`;
+        }
+        function sizeImages() {
+            document.querySelectorAll<HTMLImageElement>('.note-images img').forEach((img) => {
+                if (img.complete) sizeImage(img);
+                else img.addEventListener('load', () => { sizeImage(img); measure(); }, { once: true });
+            });
+        }
+        function sizeEmbeds() {
+            const cap = window.innerHeight * VH_CAP;
+            document.querySelectorAll<HTMLElement>('.media-mat').forEach((mat) => {
+                const f = mat.querySelector<HTMLElement>('iframe, .yt-facade');
+                if (!f) return;
+                const w = mat.clientWidth;
+                if (!w) return;
+                // A video needs width to be watchable, so it fills the board
+                // rather than obeying the photo cap - but it answers to the
+                // same height ceiling.
+                const h = Math.min((w * 9) / 16, cap);
+                f.style.width = `${Math.round((h * 16) / 9)}px`;
+                f.style.height = `${Math.round(h)}px`;
+                f.style.maxWidth = '100%';
+            });
+        }
+        sizeImages();
+        sizeEmbeds();
+        measure();
+        window.addEventListener('load', () => { sizeImages(); sizeEmbeds(); measure(); });
+        let rz: number;
+        window.addEventListener('resize', () => {
+            clearTimeout(rz);
+            rz = window.setTimeout(() => { sizeImages(); sizeEmbeds(); measure(); }, 150);
+        });
+
+        // ---- facade -> real player, only on demand
+        document.addEventListener('click', (e) => {
+            const facade = (e.target as HTMLElement).closest<HTMLElement>('.yt-facade');
+            if (!facade) return;
+            const id = facade.dataset.yt;
+            if (!id) return;
+            const f = document.createElement('iframe');
+            f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+            f.title = facade.dataset.ytTitle || 'Video';
+            f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+            f.allowFullscreen = true;
+            f.style.cssText = 'width:100%;aspect-ratio:16/9;border:0;display:block';
+            facade.replaceWith(f);
+        });
+
+        // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
+        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+        const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+            ['year', 365 * 24 * 3600], ['month', 30 * 24 * 3600], ['week', 7 * 24 * 3600],
+            ['day', 24 * 3600], ['hour', 3600], ['minute', 60],
+        ];
+        function relative(iso: string): string {
+            const secs = (Date.parse(iso) - Date.now()) / 1000;
+            const abs = Math.abs(secs);
+            if (abs < 60) return 'just now';
+            for (const [unit, size] of UNITS) if (abs >= size) return rtf.format(Math.round(secs / size), unit);
+            return 'just now';
+        }
+        document.querySelectorAll<HTMLTimeElement>('time.rel').forEach((t) => {
+            const abs = t.dataset.abs!;
+            const rel = relative(t.dateTime);
+            t.textContent = rel;
+            // Phones have no hover, so a tap toggles to the absolute date.
+            t.addEventListener('click', () => { t.textContent = t.textContent === rel ? abs : rel; });
+        });
+
+        // ---- share
+        document.querySelectorAll<HTMLButtonElement>('.act.share').forEach((b) => {
+            b.addEventListener('click', async () => {
+                const item = b.closest<HTMLElement>('.entry')!;
+                const url = new URL(item.dataset.href!, location.origin).href;
+                try { await navigator.clipboard.writeText(url); } catch {}
+                const label = b.firstChild!;
+                label.textContent = 'Link copied';
+                setTimeout(() => { label.textContent = 'Share'; }, 1600);
+            });
+        });
+
+        // ---- full-screen viewer
+        const lb = document.getElementById('lightbox')!;
+        const lbImg = document.getElementById('lb-img') as HTMLImageElement;
+        const lbCap = document.getElementById('lb-cap')!;
+        const prevBtn = lb.querySelector<HTMLButtonElement>('.lb-prev')!;
+        const nextBtn = lb.querySelector<HTMLButtonElement>('.lb-next')!;
+        let group: HTMLImageElement[] = [];
+        let idx = 0;
+        function paint() {
+            const img = group[idx];
+            lbImg.src = img.currentSrc || img.src;
+            lbImg.alt = img.alt;
+            lbCap.textContent = (img.alt || '') + (group.length > 1 ? `  (${idx + 1}/${group.length})` : '');
+            prevBtn.hidden = group.length < 2;
+            nextBtn.hidden = group.length < 2;
+        }
+        function closeLb() { lb.hidden = true; document.body.style.overflow = ''; }
+        document.querySelectorAll<HTMLButtonElement>('.shot').forEach((b) => {
+            b.addEventListener('click', () => {
+                const img = b.querySelector('img')!;
+                group = Array.from(b.closest('.note-images')!.querySelectorAll<HTMLImageElement>('img'));
+                idx = group.indexOf(img);
+                paint();
+                lb.hidden = false;
+                document.body.style.overflow = 'hidden';
+            });
+        });
+        lb.addEventListener('click', (e) => { if (e.target === lb || e.target === lbImg) closeLb(); });
+        lb.querySelector('.lb-close')!.addEventListener('click', closeLb);
+        prevBtn.addEventListener('click', (e) => { e.stopPropagation(); idx = (idx - 1 + group.length) % group.length; paint(); });
+        nextBtn.addEventListener('click', (e) => { e.stopPropagation(); idx = (idx + 1) % group.length; paint(); });
+        document.addEventListener('keydown', (e) => {
+            if (lb.hidden) return;
+            if (e.key === 'Escape') closeLb();
+            if (e.key === 'ArrowLeft') prevBtn.click();
+            if (e.key === 'ArrowRight') nextBtn.click();
+        });
+
+        // ---- year rail scroll-spy (the rail's links work without this)
+        const yearLinks = new Map<string, HTMLElement>();
+        document.querySelectorAll<HTMLElement>('.year[data-year]').forEach((a) => yearLinks.set(a.dataset.year!, a));
+        if (yearLinks.size && !document.querySelector('.year[aria-current="page"][data-year]')) {
+            const spy = new IntersectionObserver(
+                (entries) => {
+                    const seen = entries.filter((e) => e.isIntersecting).map((e) => (e.target as HTMLElement).dataset.year!);
+                    if (!seen.length) return;
+                    const cur = seen.sort().reverse()[0];
+                    yearLinks.forEach((a, y) => a.classList.toggle('in-view', y === cur));
+                },
+                { rootMargin: '-25% 0px -60% 0px' },
+            );
+            document.querySelectorAll('.entry').forEach((el) => spy.observe(el));
+        }
+    }
+</script>

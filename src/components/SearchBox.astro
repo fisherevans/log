@@ -1,0 +1,131 @@
+---
+// Search over the whole stream. Pagefind builds the real full-text index after
+// `astro build`, so under the dev server it does not exist - the metadata index
+// below is the fallback so the box is never dead while writing.
+interface Entry { title: string; href: string; date: string; tags: string[]; description: string }
+interface Props { index: Entry[]; dateMap: Record<string, string> }
+const { index, dateMap } = Astro.props;
+---
+
+<div class="searchbar" id="searchbar">
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path></svg>
+    <input type="search" id="search-input" placeholder="Search posts &amp; notes…" aria-label="Search" autocomplete="off" />
+    <button type="button" class="clear" id="search-clear" aria-label="Clear search">&times;</button>
+</div>
+<div id="results" hidden></div>
+
+<style>
+    .searchbar { position: relative; margin: 0 0 2.4rem; }
+    .searchbar input {
+        width: 100%;
+        background: var(--code-bg);
+        color: var(--fg);
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 0.7em 2.6em 0.7em 2.4em;
+        font: inherit;
+        font-size: 1rem;
+    }
+    .searchbar input::placeholder { color: var(--muted); }
+    .searchbar input:focus-visible { outline: none; border-color: var(--accent); }
+    .searchbar .icon { position: absolute; left: 0.85em; top: 50%; transform: translateY(-50%); width: 1.05em; height: 1.05em; color: var(--muted); pointer-events: none; }
+    .searchbar .clear { position: absolute; right: 0.6em; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; padding: 0.2em; display: none; }
+    .searchbar.has-query .clear { display: block; }
+    .searchbar .clear:hover { color: var(--fg); }
+</style>
+
+<style is:global>
+    /* Result rows are injected with innerHTML, so they never carry Astro's
+       scope attribute - these have to be global. */
+    #results .results-meta { font-family: var(--sans); font-weight: 600; font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 1.2em; }
+    #results .results { list-style: none; margin: 0; padding: 0; }
+    #results .results li { padding: 1.1em 0; border-bottom: 1px solid var(--rule); position: relative; }
+    #results .results li::before { content: none; }
+    #results .results li:last-child { border-bottom: none; }
+    #results .r-title { color: var(--fg); border-bottom: none; font-family: 'Marauder', serif; font-weight: 700; font-variation-settings: 'opsz' 20; font-size: 1.35rem; line-height: 1.2; }
+    #results .r-title:hover { color: var(--hover); background-color: var(--hover-bg); box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg); }
+    #results .r-snippet { margin: 0.35em 0 0; color: var(--muted); font-size: 0.95em; }
+    #results mark { background: rgba(229, 120, 6, 0.22); color: var(--fg); padding: 0 0.1em; border-radius: 2px; }
+    #results .r-meta { margin-top: 0.45em; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.72em; color: var(--muted); letter-spacing: 0.03em; }
+    #results .results-note { color: var(--muted); font-size: 0.95em; line-height: 1.6; max-width: 36em; }
+</style>
+
+<script type="application/json" id="post-dates" set:html={JSON.stringify(dateMap)} />
+<script type="application/json" id="posts-index" set:html={JSON.stringify(index)} />
+<script is:inline>
+    (() => {
+        const bar = document.getElementById('searchbar');
+        const input = document.getElementById('search-input');
+        const clearBtn = document.getElementById('search-clear');
+        const listing = document.getElementById('listing');
+        const results = document.getElementById('results');
+        const dates = JSON.parse(document.getElementById('post-dates').textContent || '{}');
+        const index = JSON.parse(document.getElementById('posts-index').textContent || '[]');
+
+        let pf = null, pfFailed = false;
+        async function getPagefind() {
+            if (pf || pfFailed) return pf;
+            try { pf = await import(/* @vite-ignore */ '/pagefind/pagefind.js'); await pf.init(); }
+            catch { pfFailed = true; pf = null; }
+            return pf;
+        }
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const norm = (u) => (u.endsWith('/') ? u : u + '/').split('#')[0].split('?')[0];
+        const mark = (text, q) => {
+            const i = text.toLowerCase().indexOf(q.toLowerCase());
+            if (i < 0) return esc(text);
+            return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+        };
+        function showListing() { listing.hidden = false; results.hidden = true; results.innerHTML = ''; }
+        function renderRows(rows, q, note) {
+            results.innerHTML =
+                '<p class="results-meta">' + rows.length + ' result' + (rows.length === 1 ? '' : 's') +
+                ' for &ldquo;' + esc(q) + '&rdquo;</p>' +
+                (note ? '<p class="results-note">' + note + '</p>' : '') +
+                '<ul class="results">' + rows.join('') + '</ul>';
+        }
+        function fallback(q) {
+            const lc = q.toLowerCase();
+            const hits = index.filter((p) =>
+                p.title.toLowerCase().includes(lc) || p.description.toLowerCase().includes(lc) ||
+                p.tags.some((t) => t.toLowerCase().includes(lc)));
+            if (!hits.length) { results.innerHTML = '<p class="results-meta">No results for &ldquo;' + esc(q) + '&rdquo;</p>'; return; }
+            renderRows(hits.map((p) =>
+                '<li><a class="r-title" href="' + p.href + '">' + mark(p.title, q) + '</a>' +
+                (p.description ? '<p class="r-snippet">' + mark(p.description, q) + '</p>' : '') +
+                '<div class="r-meta">' + esc(p.date) + '</div></li>'), q,
+                'Matching titles &amp; tags. Full-text search runs on the deployed site.');
+        }
+        let token = 0;
+        async function run(q) {
+            const mine = ++token;
+            listing.hidden = true; results.hidden = false;
+            const lib = await getPagefind();
+            if (mine !== token) return;
+            if (!lib) return fallback(q);
+            const search = await lib.search(q);
+            if (mine !== token) return;
+            const items = await Promise.all(search.results.slice(0, 30).map((r) => r.data()));
+            if (mine !== token) return;
+            if (!items.length) { results.innerHTML = '<p class="results-meta">No results for &ldquo;' + esc(q) + '&rdquo;</p>'; return; }
+            renderRows(items.map((it) => {
+                const title = it.meta && it.meta.title ? it.meta.title : it.url;
+                const date = dates[norm(it.url)];
+                return '<li><a class="r-title" href="' + it.url + '">' + esc(title) + '</a>' +
+                    '<p class="r-snippet">' + (it.excerpt || '') + '</p>' +
+                    (date ? '<div class="r-meta">' + date + '</div>' : '') + '</li>';
+            }), q, '');
+        }
+        let t;
+        input.addEventListener('input', () => {
+            const q = input.value.trim();
+            bar.classList.toggle('has-query', q.length > 0);
+            clearTimeout(t);
+            if (!q) { token++; showListing(); return; }
+            t = setTimeout(() => run(q), 160);
+        });
+        clearBtn.addEventListener('click', () => {
+            input.value = ''; bar.classList.remove('has-query'); token++; showListing(); input.focus();
+        });
+    })();
+</script>

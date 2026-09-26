@@ -1,18 +1,19 @@
 ---
-import { getCollection, render } from 'astro:content';
-import { hasMoreThanExcerpt, postHref } from '../lib/posts';
+// Home: the hero, the latest post, and the last three notes. Deliberately not
+// a shorter copy of /posts - it shows one of each kind at their natural weight
+// and sends you to the stream for the rest.
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
-import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import Stream from '../components/Stream.astro';
+import { buildStream, yearsOf } from '../lib/stream';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
-    (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
-);
-const featured = posts[0];
-const { Content } = await render(featured);
-const featuredHasMore = hasMoreThanExcerpt(featured);
+const all = await buildStream();
+const latestPost = all.find((i) => i.kind === 'post');
+const latestNotes = all.filter((i) => i.kind === 'note').slice(0, 3);
+const items = [latestPost, ...latestNotes].filter(Boolean) as typeof all;
+items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 ---
 
 <!doctype html>
@@ -20,111 +21,12 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
     <head>
         <BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
         <style>
-            .hero {
-                margin: 0 0 2.4rem;
-            }
-            .hero h1 {
-                margin: 0 0 0.35em;
-            }
-            .hero .lede {
-                font-size: 1.12em;
-                line-height: 1.6;
-                color: var(--fg);
-                max-width: 34em;
-            }
-            .hero .followline {
-                font-size: 1.02em;
-                color: var(--muted);
-                max-width: 34em;
-                margin: 1.3rem 0 0;
-            }
-
-            /* Latest-post card - one isolated unit. */
-            .latest {
-                margin: 0 calc(-1 * var(--content-pad-x)) 2.5rem;
-                padding: 1.5rem var(--content-pad-x) 1.7rem;
-                background: var(--code-bg);
-                border: 1px solid var(--rule);
-                border-radius: 12px;
-            }
-            @media (max-width: 700px) {
-                .latest {
-                    margin-left: 0;
-                    margin-right: 0;
-                    padding: 1.25rem 1rem 1.4rem;
-                }
-            }
-            .feat-title {
-                margin: 0;
-                line-height: 1.15;
-            }
-            .feat-title a {
-                color: var(--fg);
-                font-family: 'Marauder', serif;
-                font-weight: 700;
-                font-variation-settings: 'opsz' 28;
-                font-size: 2rem;
-            }
-            .feat-title a:hover {
-                color: var(--hover);
-                background-color: var(--hover-bg);
-                box-shadow:
-                    0.15em 0 0 var(--hover-bg),
-                    -0.15em 0 0 var(--hover-bg);
-            }
-            .feat-meta {
-                margin: 0.6em 0 1.4em;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.5em 1em;
-                align-items: baseline;
-                font-size: 0.85em;
-            }
-            .feat-meta .date {
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.78em;
-                color: var(--muted);
-                letter-spacing: 0.03em;
-            }
-            .feat-meta .chips {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.35em;
-            }
-
-            /* Excerpt: show only the first EXCERPT_BLOCKS (3) top-level blocks
-               up front; the trailing-heading trim runs in the script below. Keep
-               n+4 in sync with EXCERPT_BLOCKS in lib/posts.ts. */
-            .excerpt > :global(:nth-child(n + 4)) {
-                display: none;
-            }
-            .excerpt > :global(:nth-child(3):is(h1, h2, h3, h4, h5, h6)) {
-                display: none;
-            }
-            .excerpt > :global(:nth-child(2):is(h1, h2, h3, h4, h5, h6):has(+ :is(h1, h2, h3, h4, h5, h6))) {
-                display: none;
-            }
-            .excerpt > :global(:first-child) {
-                margin-top: 0;
-            }
-            .continue {
-                display: inline-block;
-                margin-top: 1.4em;
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.85rem;
-                color: var(--accent);
-            }
-            .continue:hover {
-                color: var(--hover);
-            }
-
-            .browse-all {
-                margin-top: 1.6rem;
-                text-align: center;
-            }
-            .browse-all a {
-                font-size: 1.02rem;
-            }
+            .hero { margin: 0 0 2.4rem; }
+            .hero h1 { margin: 0 0 0.35em; }
+            .hero .lede { font-size: 1.12em; line-height: 1.6; color: var(--fg); max-width: 34em; }
+            .hero .followline { font-size: 1.02em; color: var(--muted); max-width: 34em; margin: 1.3rem 0 0; }
+            .browse-all { margin-top: 2.4rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); text-align: center; }
+            .browse-all a { font-size: 1.02rem; }
         </style>
     </head>
     <body>
@@ -146,57 +48,10 @@ const featuredHasMore = hasMoreThanExcerpt(featured);
                 </p>
             </section>
 
-            <section class="latest">
-                <p class="eyebrow">Latest post</p>
-                <h2 class="feat-title"><a href={postHref(featured)}>{featured.data.title}</a></h2>
-                <div class="feat-meta">
-                    <span class="date"><FormattedDate date={featured.data.date} /></span>
-                    {
-                        featured.data.tags.length > 0 && (
-                            <span class="chips">
-                                {featured.data.tags.map((tag) => (
-                                    <a class="chip" href={`/tags/${tag}/`}>
-                                        {tag}
-                                    </a>
-                                ))}
-                            </span>
-                        )
-                    }
-                </div>
-                <div class="prose excerpt">
-                    <Content />
-                </div>
-                {
-                    featuredHasMore && (
-                        <a class="continue" href={`${postHref(featured)}#continue`}>
-                            Continue reading &rarr;
-                        </a>
-                    )
-                }
-            </section>
+            <Stream items={items} years={yearsOf(all)} />
 
-            <p class="browse-all"><a href="/posts/">View all posts &rarr;</a></p>
+            <p class="browse-all"><a href="/posts/">Everything, oldest to newest &rarr;</a></p>
         </main>
         <Footer />
-        <script>
-            // Trim a trailing heading from the excerpt so the teaser never ends
-            // on a dangling header, then point "Continue reading" at the first
-            // hidden block. (CSS already caps it at 3 top-level blocks.)
-            const ex = document.querySelector('.excerpt');
-            const cont = document.querySelector('.continue');
-            if (ex) {
-                const blocks = Array.from(ex.children) as HTMLElement[];
-                const isHeading = (el: Element) => /^H[1-6]$/.test(el.tagName);
-                let cut = Math.min(3, blocks.length);
-                while (cut > 1 && isHeading(blocks[cut - 1])) cut--;
-                blocks.forEach((b, i) => {
-                    if (i >= cut) b.style.display = 'none';
-                });
-                if (cont) {
-                    const base = (cont.getAttribute('href') || '').split('#')[0];
-                    cont.setAttribute('href', `${base}#continue=${cut}`);
-                }
-            }
-        </script>
     </body>
 </html>

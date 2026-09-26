@@ -83,7 +83,9 @@ const images = note.data.images;
                 )
             }
 
-            <div class="prose body">
+            <!-- data-pagefind-body puts notes in the search index alongside
+                 posts; the derived title is the meta title, since a note has none. -->
+            <div class="prose body" data-pagefind-body data-pagefind-meta={`title:${derived}`}>
                 <Content />
             </div>
 
