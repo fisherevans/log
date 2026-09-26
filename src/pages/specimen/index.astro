@@ -26,8 +26,16 @@ type Item = {
     images: { src: string; alt?: string }[];
     migrated: boolean;
     judgment: boolean;
-    Content: any;
+    demo?: boolean;
+    html?: string;
+    // A short note's prose reads as a caption, and captions lead. A long one
+    // would push its picture off the fold, so it follows instead.
+    captionLeads: boolean;
+    Content?: any;
 };
+
+const CAPTION_WORDS = 55;
+const wordCount = (body: string) => body.trim().split(/\s+/).filter(Boolean).length;
 
 const items: Item[] = [];
 for (const p of posts) {
@@ -43,6 +51,7 @@ for (const p of posts) {
         images: [],
         migrated: asNote,
         judgment: JUDGMENT_CALLS.has(p.id),
+        captionLeads: false,
         Content,
     });
 }
@@ -57,9 +66,26 @@ for (const n of notes) {
         images: n.data.images,
         migrated: false,
         judgment: false,
+        captionLeads: wordCount(n.body ?? '') <= CAPTION_WORDS,
         Content,
     });
 }
+
+// Every real note image is 1:1, so nothing in the corpus exercises the tall-image
+// crop. This one is three of Fisher's own dye shots stacked into a 1:3 frame.
+items.push({
+    kind: 'note',
+    slug: 'tall-demo',
+    date: new Date('2023-05-19T00:00:00Z'),
+    tags: ['disc-dyes'],
+    href: '/notes/2023/05/19/tall-demo/',
+    images: [{ src: '/seed/tall-demo.jpg', alt: 'Three dyed discs, stacked' }],
+    migrated: false,
+    judgment: false,
+    demo: true,
+    captionLeads: true,
+    html: '<p>Three at once - a 1:3 frame, so the stream crops it. Tap it for the whole thing.</p>',
+});
 items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
 
 const absolute = (d: Date) =>
@@ -296,10 +322,69 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 pointer-events: none;
             }
             .note.is-open .clip { max-height: none; }
+            /* A note with several embeds (the OpenGL coursework note is five
+               videos) is not long in PROSE, so the prose clamp never fires and
+               the note ends up taller than anything else on the page. Media gets
+               its own limit: the stream shows the first one, the rest expand. */
+            .note.is-media-clamped .body :global(.media-extra) { display: none; }
             .note .more { display: none; }
-            .note.is-clamped .more, .note.is-open .more { display: inline-flex; }
+            .note.is-clamped .more,
+            .note.is-media-clamped .more,
+            .note.is-open .more { display: inline-flex; }
 
-            .note-images { display: grid; gap: 0.4rem; margin: 0 0 1rem; }
+            /* Caption order. A short note's text leads its picture; the images
+               grid is source-ordered after the body, so this is one line. */
+            .clip { display: flex; flex-direction: column; }
+            .clip .body { order: 2; margin-top: 1rem; }
+            .clip .note-images { order: 1; }
+            .clip.caption-leads .body { order: 1; margin-top: 0; margin-bottom: 0.9rem; }
+            .clip.caption-leads .note-images { order: 2; }
+
+            .note-images { display: grid; gap: 0.4rem; margin: 0; }
+            .note-images .shot {
+                position: relative;
+                display: block;
+                padding: 0;
+                border: none;
+                background: none;
+                cursor: zoom-in;
+                width: 100%;
+                border-radius: 8px;
+                overflow: hidden;
+                -webkit-tap-highlight-color: transparent;
+            }
+            .note-images .shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+            /* The affordance only appears on an image the stream actually cropped -
+               on a whole image it would be a lie about what the tap does. */
+            .note-images .expand {
+                position: absolute;
+                right: 0.55rem;
+                bottom: 0.55rem;
+                display: none;
+                align-items: center;
+                gap: 0.35em;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.68rem;
+                letter-spacing: 0.02em;
+                color: #f7f2e8;
+                background: rgba(20, 18, 15, 0.72);
+                backdrop-filter: blur(6px);
+                border: 1px solid rgba(247, 242, 232, 0.22);
+                border-radius: 999px;
+                padding: 0.3em 0.7em;
+            }
+            .note-images .expand svg { width: 0.85em; height: 0.85em; }
+            .note-images .shot.is-cropped .expand { display: inline-flex; }
+            /* A cropped image is cut from the top - the subject of a tall photo is
+               usually up there - and the gradient says there is more below. */
+            .note-images .shot.is-cropped::after {
+                content: '';
+                position: absolute;
+                inset: auto 0 0 0;
+                height: 4.5rem;
+                background: linear-gradient(to bottom, transparent, rgba(20, 18, 15, 0.55));
+                pointer-events: none;
+            }
             .note-images img {
                 width: 100%; height: 100%; object-fit: cover;
                 border-radius: 8px; display: block; background: var(--code-bg);
@@ -312,10 +397,16 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             .note-images.one img {
                 width: 100%;
                 height: auto;
-                max-height: 46rem;
                 object-fit: contain;
-                margin-inline: auto;
                 background: none;
+            }
+            /* Taller than 5:4 gets cropped to it rather than letterboxed or
+               allowed to eat three screens of stream. */
+            .note-images .shot.is-cropped img {
+                aspect-ratio: 4 / 5;
+                height: 100%;
+                object-fit: cover;
+                object-position: top;
             }
             .note-images.two { grid-template-columns: 1fr 1fr; }
             .note-images.many { grid-template-columns: repeat(3, 1fr); }
@@ -331,7 +422,34 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 max-width: 30rem;
                 border-radius: 6px;
             }
-            #stream[data-media='cap'] .note .note-images.one img { max-height: 17rem; object-position: left; margin-inline: 0; }
+            #stream[data-media='cap'] .note .note-images.one .shot { max-width: 24rem; }
+
+            /* Without a title or an avatar, nothing says "a new note starts
+               here" - a run of notes reads as one long column of prose. The
+               rail becomes a timeline: a node marks each entry's start, and the
+               date is promoted from a muted footnote to the note's header. */
+            #stream[data-bound='node'] .note .frame { position: relative; }
+            #stream[data-bound='node'] .note .meta::before {
+                content: '';
+                position: absolute;
+                left: -1.65rem;
+                top: 0.42em;
+                width: 0.5rem;
+                height: 0.5rem;
+                border-radius: 50%;
+                background: var(--accent);
+                box-shadow: 0 0 0 0.28rem var(--bg);
+            }
+            #stream[data-bound='node'][data-note='flush'] .note .meta::before { left: -0.28rem; }
+            #stream[data-bound='node'][data-note='flush'] .note .frame { padding-left: 1rem; }
+            #stream[data-bound='node'] .note .meta .date.rel {
+                color: var(--fg);
+                font-size: 0.82em;
+                letter-spacing: 0.05em;
+            }
+            /* Consecutive notes need more air than a note next to a post does -
+               that is where the blending happens. */
+            #stream[data-bound='node'] .note + .note { margin-top: 2.8rem; }
 
             /* N1 - flush. Unframed, full width, hairline above. */
             #stream[data-note='flush'] .note .frame { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
@@ -390,6 +508,53 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             }
             .item.landed .frame { animation: land 1.6s ease-out; border-radius: 12px; }
 
+            /* ---------- full-screen image viewer ---------- */
+            #lightbox {
+                position: fixed;
+                inset: 0;
+                z-index: 80;
+                background: rgba(12, 11, 9, 0.94);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 3.5rem 1rem 4.5rem;
+                cursor: zoom-out;
+            }
+            #lightbox[hidden] { display: none; }
+            #lightbox img {
+                max-width: 100%;
+                max-height: 100%;
+                object-fit: contain;
+                border-radius: 4px;
+            }
+            #lightbox .lb-close,
+            #lightbox .lb-nav {
+                position: absolute;
+                background: rgba(247, 242, 232, 0.1);
+                border: 1px solid rgba(247, 242, 232, 0.2);
+                color: #f7f2e8;
+                border-radius: 999px;
+                cursor: pointer;
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.8rem;
+                padding: 0.45em 0.9em;
+            }
+            #lightbox .lb-close { top: 1rem; right: 1rem; }
+            #lightbox .lb-nav { top: 50%; transform: translateY(-50%); padding: 0.6em 0.8em; }
+            #lightbox .lb-prev { left: 0.8rem; }
+            #lightbox .lb-next { right: 0.8rem; }
+            #lightbox .lb-nav[hidden] { display: none; }
+            #lightbox .lb-cap {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 1.2rem;
+                text-align: center;
+                color: var(--muted);
+                font-size: 0.85rem;
+                padding: 0 1.5rem;
+            }
+
             .flag {
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.66rem;
@@ -417,6 +582,11 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         <button data-set="note" data-val="rail" aria-pressed="false">inset rail</button>
                     </span>
                     <span class="knob"
+                        ><span>note start</span>
+                        <button data-set="bound" data-val="node" aria-pressed="true">timeline node</button>
+                        <button data-set="bound" data-val="plain" aria-pressed="false">plain</button>
+                    </span>
+                    <span class="knob"
                         ><span>note media</span>
                         <button data-set="media" data-val="cap" aria-pressed="true">capped</button>
                         <button data-set="media" data-val="full" aria-pressed="false">full width</button>
@@ -435,7 +605,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 The stream below is your actual corpus under the proposed split: {postCount} posts,
                 {noteCount} notes. Migrated notes have had their titles dropped, as decided. Posts show
                 a 2&ndash;3 block excerpt and always offer <em>Read post</em>; notes render in full,
-                clamped on prose (never through an image or a video) with <em>Show more</em>. Both carry a share action. Opening either one
+                clamped on prose, and limited to one embed, with <em>Show more</em>. Both carry a share action. Opening either one
                 and coming back demonstrates the return-to-place behaviour. Entries marked
                 <span class="flag">judgment</span> are the two where word count and character disagree.
                 </p>
@@ -447,7 +617,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
             </div>
 
-            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-showing="all">
+            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-showing="all">
                 {
                     items.map((item) => (
                         <article
@@ -509,6 +679,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                                 <FormattedDate date={item.date} />
                                             </time>
                                             {item.judgment && <span class="flag">judgment</span>}
+                                            {item.demo && <span class="flag">demo image</span>}
                                             {item.tags.length > 0 && (
                                                 <span class="chips">
                                                     {item.tags.map((t) => (
@@ -517,7 +688,14 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                                 </span>
                                             )}
                                         </div>
-                                        <div class="clip">
+                                        <div class:list={['clip', { 'caption-leads': item.captionLeads }]}>
+                                            <div class="prose body">
+                                                {item.html ? (
+                                                    <Fragment set:html={item.html} />
+                                                ) : (
+                                                    <item.Content />
+                                                )}
+                                            </div>
                                             {item.images.length > 0 && (
                                                 <div
                                                     class:list={[
@@ -530,13 +708,16 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                                     ]}
                                                 >
                                                     {item.images.map((img) => (
-                                                        <img src={img.src} alt={img.alt ?? ''} loading="lazy" />
+                                                        <button class="shot" type="button">
+                                                            <img src={img.src} alt={img.alt ?? ''} loading="lazy" />
+                                                            <span class="expand">
+                                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                                                                Full size
+                                                            </span>
+                                                        </button>
                                                     ))}
                                                 </div>
                                             )}
-                                            <div class="prose body">
-                                                <item.Content />
-                                            </div>
                                         </div>
                                         <div class="actions">
                                             <button class="act more" type="button">Show more</button>
@@ -555,6 +736,14 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             </div>
         </main>
 
+        <div id="lightbox" hidden>
+            <button class="lb-close" type="button">Close &times;</button>
+            <button class="lb-nav lb-prev" type="button" aria-label="Previous image">&lsaquo;</button>
+            <img id="lb-img" src="" alt="" />
+            <button class="lb-nav lb-next" type="button" aria-label="Next image">&rsaquo;</button>
+            <p class="lb-cap" id="lb-cap"></p>
+        </div>
+
         <div id="single" hidden>
             <div class="single-inner">
                 <div class="backbar">
@@ -571,7 +760,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             // ?post=row&note=rail&media=full - so a link can open a given combo.
             const qs = new URLSearchParams(location.search);
-            for (const key of ['post', 'note', 'media']) {
+            for (const key of ['post', 'note', 'media', 'bound']) {
                 const v = qs.get(key);
                 if (!v) continue;
                 stream.dataset[key] = v;
@@ -647,6 +836,21 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         prose += (child as HTMLElement).offsetHeight;
                     }
                     n.classList.toggle('is-clamped', prose > PROSE_MAX);
+
+                    // Media limit, counted separately from prose.
+                    const media = Array.from(body.children).filter(hasMedia) as HTMLElement[];
+                    media.forEach((el, i) => el.classList.toggle('media-extra', i > 0));
+                    n.classList.toggle('is-media-clamped', media.length > 1);
+                    const btn = n.querySelector<HTMLButtonElement>('.more');
+                    if (btn && media.length > 1) {
+                        const n_ = media.length - 1;
+                        btn.dataset.openLabel = `Show ${n_} more ${n_ === 1 ? 'video' : 'videos'}`;
+                    }
+                });
+                document.querySelectorAll<HTMLButtonElement>('.note .more').forEach((b) => {
+                    const note = b.closest('.note')!;
+                    if (note.classList.contains('is-open')) return;
+                    b.textContent = b.dataset.openLabel || 'Show more';
                 });
             }
             measure();
@@ -656,10 +860,109 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                     const note = b.closest('.note')!;
                     const opening = !note.classList.contains('is-open');
                     note.classList.toggle('is-open', opening);
-                    note.classList.toggle('is-clamped', !opening);
-                    b.textContent = opening ? 'Show less' : 'Show more';
+                    note.classList.toggle('is-media-clamped', !opening);
+                    if (opening) note.classList.remove('is-clamped');
+                    else measure();
+                    b.textContent = opening ? 'Show less' : b.dataset.openLabel || 'Show more';
                     if (!opening) note.scrollIntoView({ block: 'nearest' });
                 });
+            });
+
+            // ---- notes: drop a heading the embed under it already says ----
+            // These migrated notes were structured like posts: "### Update #1"
+            // above a video whose own player reads "zSprite - Update #1". In a
+            // post that scaffolding earns its place; in a note it is the same
+            // sentence twice, and it is what makes a note look like a document.
+            // Only a heading the following embed demonstrably repeats is dropped
+            // - a heading that says something new survives.
+            const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9]/g, '');
+            let stripped = 0;
+            document.querySelectorAll<HTMLElement>('.note .body').forEach((body) => {
+                const kids = Array.from(body.children) as HTMLElement[];
+                kids.forEach((el, i) => {
+                    if (!/^H[1-6]$/.test(el.tagName)) return;
+                    const next = kids[i + 1];
+                    if (!next) return;
+                    const frame = next.matches('iframe') ? next : next.querySelector('iframe');
+                    if (!frame) return;
+                    const embedTitle = norm(frame.getAttribute('title') || '');
+                    const heading = norm(el.textContent || '');
+                    if (heading && embedTitle.includes(heading)) {
+                        el.remove();
+                        stripped++;
+                    }
+                });
+            });
+            if (stripped) console.info(`specimen: dropped ${stripped} redundant note heading(s)`);
+
+            // ---- crop detection + full-screen viewer ----
+            const TALL = 5 / 4; // anything taller than 5:4 is cropped to 4:5
+            function markCrops() {
+                document.querySelectorAll<HTMLImageElement>('.note-images img').forEach((img) => {
+                    const apply = () => {
+                        if (!img.naturalWidth) return;
+                        const ratio = img.naturalHeight / img.naturalWidth;
+                        img.closest('.shot')!.classList.toggle('is-cropped', ratio > TALL);
+                        measure();
+                    };
+                    if (img.complete) apply();
+                    else img.addEventListener('load', apply, { once: true });
+                });
+            }
+            markCrops();
+
+            const lb = document.getElementById('lightbox')!;
+            const lbImg = document.getElementById('lb-img') as HTMLImageElement;
+            const lbCap = document.getElementById('lb-cap')!;
+            const prevBtn = lb.querySelector<HTMLButtonElement>('.lb-prev')!;
+            const nextBtn = lb.querySelector<HTMLButtonElement>('.lb-next')!;
+            let group: HTMLImageElement[] = [];
+            let idx = 0;
+
+            function paint() {
+                const img = group[idx];
+                lbImg.src = img.src;
+                lbImg.alt = img.alt;
+                lbCap.textContent =
+                    (img.alt || '') + (group.length > 1 ? `  (${idx + 1}/${group.length})` : '');
+                prevBtn.hidden = group.length < 2;
+                nextBtn.hidden = group.length < 2;
+            }
+            function openLb(img: HTMLImageElement) {
+                group = Array.from(
+                    img.closest('.note-images')!.querySelectorAll<HTMLImageElement>('img'),
+                );
+                idx = group.indexOf(img);
+                paint();
+                lb.hidden = false;
+                document.body.style.overflow = 'hidden';
+            }
+            function closeLb() {
+                lb.hidden = true;
+                if (document.getElementById('single')!.hidden) document.body.style.overflow = '';
+            }
+            document.querySelectorAll<HTMLButtonElement>('.note-images .shot').forEach((b) => {
+                b.addEventListener('click', () => openLb(b.querySelector('img')!));
+            });
+            lb.addEventListener('click', (e) => {
+                if (e.target === lb || e.target === lbImg) closeLb();
+            });
+            lb.querySelector('.lb-close')!.addEventListener('click', closeLb);
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                idx = (idx - 1 + group.length) % group.length;
+                paint();
+            });
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                idx = (idx + 1) % group.length;
+                paint();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (lb.hidden) return;
+                if (e.key === 'Escape') closeLb();
+                if (e.key === 'ArrowLeft') prevBtn.click();
+                if (e.key === 'ArrowRight') nextBtn.click();
             });
 
             // ---- relative timestamps ----
