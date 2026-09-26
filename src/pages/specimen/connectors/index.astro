@@ -1,0 +1,208 @@
+---
+// SPECIMEN - twenty ways to join a post card to its node on the timeline.
+// Each panel is a real slice of the stream: spine, a note above, the post card,
+// a note below - so the join is judged in the company it keeps, not in isolation.
+import BaseHead from '../../../components/BaseHead.astro';
+import { CONNECTORS } from '../../../lib/specimen-connectors';
+const pad = (n: number) => String(n).padStart(2, '0');
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <BaseHead title="Specimen · card-to-node connectors" description="Twenty ways to attach a post card to the timeline." />
+        <style>
+            main { padding-bottom: 6rem; }
+            h1 { font-size: 1.9rem; margin: 0 0 0.3em; }
+            .lede { color: var(--muted); max-width: 42em; margin: 0 0 1.6rem; line-height: 1.6; }
+            .theme-toggle {
+                font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.7rem;
+                background: none; border: 1px solid var(--rule); color: var(--muted);
+                border-radius: 999px; padding: 0.2em 0.7em; cursor: pointer;
+            }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6rem 1.4rem; }
+            @media (max-width: 52rem) { .grid { grid-template-columns: 1fr; } }
+
+            .opt h2 {
+                font-family: 'DraftingMono', ui-monospace, monospace;
+                font-size: 0.78rem; font-weight: 700; letter-spacing: 0.04em;
+                margin: 0 0 0.25em;
+            }
+            .opt h2 .num { color: var(--accent); margin-right: 0.6em; }
+            .opt .why { margin: 0 0 0.8rem; color: var(--muted); font-size: 0.88em; line-height: 1.5; }
+
+            /* ---- the slice ---- */
+            .slice {
+                position: relative;
+                padding: 1.1rem 0 1.1rem 1.7rem;
+                --branch: color-mix(in srgb, var(--accent) 55%, transparent);
+            }
+            .slice::before { /* the spine */
+                content: ''; position: absolute; left: 0.2rem; top: 0.4rem; bottom: 0.4rem;
+                width: 1px; background: var(--rule);
+            }
+            .note-line { position: relative; margin: 0 0 0.9rem; font-size: 0.82rem; color: var(--muted); }
+            .note-line:last-child { margin: 0.9rem 0 0; }
+            .note-line::before {
+                content: ''; position: absolute; left: -1.62rem; top: 0.42em;
+                width: 0.5rem; height: 0.5rem; border-radius: 50%;
+                background: var(--accent); box-shadow: 0 0 0 0.28rem var(--bg);
+            }
+            .card {
+                position: relative;
+                background: var(--code-bg); border: 1px solid var(--rule);
+                border-radius: 12px; padding: 0.85rem 1rem 0.9rem;
+                --node-top: 1.35rem;
+            }
+            .card h3 {
+                margin: 0; font-family: 'Marauder', serif; font-weight: 700;
+                font-variation-settings: 'opsz' 20; font-size: 1.2rem; line-height: 1.15;
+            }
+            .card p { margin: 0.5em 0 0; font-size: 0.86rem; color: var(--muted); }
+            /* the ring, shared by every option that keeps it on the spine */
+            .ring {
+                position: absolute; left: -1.9rem; top: calc(var(--node-top) - 0.39rem);
+                width: 0.78rem; height: 0.78rem; border-radius: 50%;
+                border: 2px solid var(--accent); background: var(--bg);
+                box-shadow: 0 0 0 0.25rem var(--bg);
+            }
+            .card::after { content: ''; position: absolute; }
+
+            /* 01 nothing */
+            .c1 .card::after { display: none; }
+            /* 02 straight stub */
+            .c2 .card::after { left: -1.35rem; top: var(--node-top); width: 1.35rem; height: 1px; background: var(--branch); }
+            /* 03 quarter-arc elbow */
+            .c3 .card::after {
+                left: -1.38rem; top: calc(var(--node-top) - 1.15rem); width: 1.38rem; height: 1.15rem;
+                border-left: 1px solid var(--branch); border-bottom: 1px solid var(--branch);
+                border-bottom-left-radius: 1.15rem;
+            }
+            /* 04 long sweep */
+            .c4 .card::after {
+                left: -1.38rem; top: calc(var(--node-top) - 3rem); width: 1.38rem; height: 3rem;
+                border-left: 1px solid var(--branch); border-bottom: 1px solid var(--branch);
+                border-bottom-left-radius: 2.6rem;
+            }
+            /* 05 s-curve */
+            .c5 .card::after {
+                left: -1.5rem; top: calc(var(--node-top) - 1.4rem); width: 1.5rem; height: 1.4rem;
+                border-bottom: 1px solid var(--branch); border-left: 1px solid var(--branch);
+                border-radius: 0 0 0 1.4rem; transform: skewY(-12deg);
+            }
+            /* 06 filled tail */
+            .c6 .card::after {
+                left: -13px; top: calc(var(--node-top) - 8px); width: 0; height: 0;
+                border-top: 8px solid transparent; border-bottom: 8px solid transparent;
+                border-right: 13px solid var(--code-bg);
+            }
+            /* 07 outlined tail */
+            .c7 .card::after {
+                left: -9px; top: calc(var(--node-top) - 8px); width: 12px; height: 12px;
+                background: var(--code-bg);
+                border-left: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+                transform: rotate(45deg);
+            }
+            /* 08 tapered stem */
+            .c8 .card::after {
+                left: -1.35rem; top: calc(var(--node-top) - 0.22rem); width: 1.35rem; height: 0.44rem;
+                background: var(--branch);
+                clip-path: polygon(0 40%, 100% 0, 100% 100%, 0 60%);
+            }
+            /* 09 dotted stub */
+            .c9 .card::after { left: -1.35rem; top: var(--node-top); width: 1.35rem; height: 0; border-top: 1px dotted var(--accent); }
+            /* 10 dashed stub */
+            .c10 .card::after { left: -1.35rem; top: var(--node-top); width: 1.35rem; height: 0; border-top: 1px dashed var(--branch); }
+            /* 11 heavy accent bar */
+            .c11 .card::after { left: -1.1rem; top: calc(var(--node-top) - 1.5px); width: 1.1rem; height: 3px; border-radius: 2px; background: var(--accent); }
+            /* 12 fading stub */
+            .c12 .card::after {
+                left: -1.35rem; top: calc(var(--node-top) - 1px); width: 1.35rem; height: 2px;
+                background: linear-gradient(to right, var(--accent), transparent);
+            }
+            /* 13 ring on the edge */
+            .c13 .ring { left: -0.39rem; }
+            .c13 .card::after { display: none; }
+            /* 14 ring inside */
+            .c14 .ring { left: 0.75rem; box-shadow: none; }
+            .c14 .card { padding-left: 2.1rem; }
+            .c14 .card::after { display: none; }
+            /* 15 spine gap */
+            .c15 .card::after {
+                left: -2.05rem; top: -0.7rem; bottom: -0.7rem; width: 3px; height: auto;
+                background: var(--bg);
+            }
+            .c15 .ring { z-index: 1; }
+            /* 16 accent left edge */
+            .c16 .card { border-left: 2px solid var(--accent); }
+            .c16 .card::after { display: none; }
+            /* 17 corner hook */
+            .c17 .card { border-top-left-radius: 0; }
+            .c17 .card::after {
+                left: -1.4rem; top: -1px; width: 1.4rem; height: 1.4rem;
+                border-top: 1px solid var(--branch); border-left: 1px solid var(--branch);
+                border-top-left-radius: 1.4rem;
+            }
+            .c17 .ring { top: -0.39rem; }
+            /* 18 bracket ticks */
+            .c18 .card::after { left: -0.7rem; top: var(--node-top); width: 0.7rem; height: 1px; background: var(--branch); }
+            .c18 .card::before {
+                content: ''; position: absolute; left: -0.7rem; bottom: 1rem; width: 0.7rem; height: 1px; background: var(--rule);
+            }
+            /* 19 notch */
+            .c19 .card::after {
+                left: -0.55rem; top: calc(var(--node-top) - 0.55rem); width: 1.1rem; height: 1.1rem;
+                border-radius: 50%; background: var(--bg);
+                border: 1px solid var(--rule); clip-path: inset(0 50% 0 0);
+            }
+            /* 20 double rule */
+            .c20 .card::after {
+                left: -1.35rem; top: calc(var(--node-top) - 2px); width: 1.35rem; height: 5px;
+                border-top: 1px solid var(--branch); border-bottom: 1px solid var(--branch);
+            }
+        </style>
+    </head>
+    <body>
+        <main>
+            <h1>Card &rarr; node</h1>
+            <p class="lede">
+                Twenty ways to attach a post card to its ring on the timeline. Each panel is a real
+                slice of the stream &mdash; a note above, the card, a note below &mdash; so the join is
+                judged next to the dots it has to live with.
+                <button class="theme-toggle" id="theme">light / dark</button>
+            </p>
+
+            <div class="grid">
+                {
+                    CONNECTORS.map((c) => (
+                        <section class="opt">
+                            <h2><span class="num">{pad(c.n)}</span>{c.name}</h2>
+                            <p class="why">{c.why}</p>
+                            <div class:list={['slice', `c${c.n}`]}>
+                                <p class="note-line">a note, for company</p>
+                                <div class="card">
+                                    <span class="ring" />
+                                    <h3>Your corner of the internet</h3>
+                                    <p>Do you have one? I want to visit it.</p>
+                                </div>
+                                <p class="note-line">and another below it</p>
+                            </div>
+                        </section>
+                    ))
+                }
+            </div>
+        </main>
+        <script>
+            const btn = document.getElementById('theme')!;
+            btn.addEventListener('click', () => {
+                const cur = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+                document.documentElement.dataset.theme = cur;
+                try { localStorage.setItem('specimen-theme', cur); } catch {}
+            });
+            try {
+                const th = localStorage.getItem('specimen-theme');
+                if (th) document.documentElement.dataset.theme = th;
+            } catch {}
+        </script>
+    </body>
+</html>

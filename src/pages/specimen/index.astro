@@ -261,6 +261,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             .act {
                 font-family: 'DraftingMono', ui-monospace, monospace;
                 font-size: 0.76rem;
+                font-weight: 400;
                 letter-spacing: 0.02em;
                 background: none;
                 border: none;
@@ -280,12 +281,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 box-shadow: none;
             }
             .act svg { width: 0.95em; height: 0.95em; }
-            .act.primary {
-                color: var(--accent);
-                border: 1px solid var(--rule);
-                border-radius: 6px;
-                padding: 0.35em 0.8em;
-            }
+            /* No pill, no border: the leading chevron is the affordance. */
+            .act .lead { transition: transform 140ms ease; }
+            .act:hover .lead, .act:focus-visible .lead { transform: translateX(-0.2em); }
+
+            /* Left group and right group, rather than one run of controls.
+               Show more belongs to the content it expands; the permalink and
+               share belong to the entry. */
+            .actions { justify-content: space-between; }
+            .actions .right { display: flex; align-items: center; gap: 0.9rem; }
             .act.primary:hover,
             .act.primary:focus-visible {
                 background: none;
@@ -360,6 +364,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                its own limit: the stream shows the first one, the rest expand. */
             .note.is-media-clamped .body :global(.media-extra) { display: none; }
             .note .more { display: none; }
+            .note:not(.is-clamped):not(.is-media-clamped):not(.is-open) .actions { justify-content: flex-end; }
             .note.is-clamped .more,
             .note.is-media-clamped .more,
             .note.is-open .more { display: inline-flex; }
@@ -832,12 +837,14 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                         </div>
                                         <div class="actions">
                                             <a class="act primary" href={item.href} data-open>
-                                                Read post &rarr;
+                                                <span class="lead">&rsaquo;</span> Read post
                                             </a>
+                                            <span class="right">
                                             <button class="act share" type="button">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 Share
                                             </button>
+                                            </span>
                                         </div>
                                     </>
                                 ) : (
@@ -895,11 +902,15 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                                         </div>
                                         <div class="actions">
                                             <button class="act more" type="button">Show more</button>
-                                            <a class="act" href={item.href} data-open>Open note &rsaquo;</a>
+                                            <span class="right">
+                                            <a class="act" href={item.href} data-open>
+                                                <span class="lead">&rsaquo;</span> Open note
+                                            </a>
                                             <button class="act share" type="button">
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l3-3A5 5 0 0 0 13 3l-1 1"/><path d="M14 11a5 5 0 0 0-7.1 0l-3 3A5 5 0 0 0 11 21l1-1"/></svg>
                                                 Share
                                             </button>
+                                            </span>
                                         </div>
                                     </>
                                 )}
