@@ -357,18 +357,26 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             .clip.caption-leads .note-images { order: 2; }
 
             .note-images { display: grid; gap: 0.4rem; margin: 0; }
+            /* The mat. A photo that does not fill the column sits on a dark
+               board spanning the full width, so the note keeps one edge rather
+               than a ragged one - and the frame reads as a photo embed you can
+               open, which is what it is. */
             .note-images .shot {
                 position: relative;
-                display: block;
+                display: flex;
+                align-items: center;
+                justify-content: center;
                 padding: 0;
-                border: none;
-                background: none;
+                background: var(--mat);
+                border: 1px solid var(--mat-edge);
                 cursor: zoom-in;
                 width: 100%;
-                border-radius: 8px;
+                border-radius: 10px;
                 overflow: hidden;
                 -webkit-tap-highlight-color: transparent;
+                transition: border-color 120ms ease;
             }
+            .note-images .shot:hover { border-color: var(--accent); }
             .note-images .shot:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
             /* The affordance only appears on an image the stream actually cropped -
                on a whole image it would be a lie about what the tap does. */
@@ -419,8 +427,8 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             /* Sizing is computed per image (see sizeImages) - shrink to fit,
                then centre, then crop only when shrinking would leave the photo
                too small to see. */
+            .note-images .shot img { display: block; }
             .note-images .shot.is-cropped img { object-fit: cover; object-position: top; }
-            .note-images .shot.is-shrunk { margin-inline: auto; }
             .note-images.two { grid-template-columns: 1fr 1fr; }
             .note-images.many { grid-template-columns: repeat(3, 1fr); }
             .note-images.many img { aspect-ratio: 1 / 1; }
@@ -435,7 +443,6 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 max-width: 30rem;
                 border-radius: 6px;
             }
-            #stream[data-media='cap'] .note .note-images.one .shot { max-width: 24rem; }
 
             /* Without a title or an avatar, nothing says "a new note starts
                here" - a run of notes reads as one long column of prose. The
@@ -467,7 +474,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             /* A post is a bigger stop on the same timeline: an open ring rather
                than a filled dot, so the thread runs unbroken through both. */
-            #stream[data-bound='node'] .post .frame::before {
+            #stream[data-bound='node'] .post::before {
                 content: '';
                 position: absolute;
                 left: -1.9rem;
@@ -479,8 +486,48 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 background: var(--bg);
                 box-shadow: 0 0 0 0.25rem var(--bg);
             }
-            #stream[data-bound='node'] .post { padding-left: 0; }
+            #stream[data-bound='node'] .post { padding-left: 0; position: relative; }
             #stream[data-bound='node'] .post .frame { position: relative; }
+
+            /* Attach the card to its node. Unattached, the ring reads as a
+               bullet sitting beside a box; attached, the card hangs off the
+               timeline. */
+            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::before,
+            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::after {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 0;
+                border-top: 9px solid transparent;
+                border-bottom: 9px solid transparent;
+            }
+            /* outline, then the fill one pixel inside it */
+            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::before {
+                left: -14px;
+                top: 1.62rem;
+                border-right: 14px solid var(--rule);
+            }
+            #stream[data-bound='node'][data-attach='pointer'][data-post='card'] .post .frame::after {
+                left: -12px;
+                top: calc(1.62rem + 1px);
+                border-top-width: 8px;
+                border-bottom-width: 8px;
+                border-right: 13px solid var(--code-bg);
+            }
+            /* A stub instead: a rule from the node to a squared-off corner, so
+               the card looks docked rather than spoken from. */
+            #stream[data-bound='node'][data-attach='stub'][data-post='card'] .post .frame::after {
+                content: '';
+                position: absolute;
+                left: -1.35rem;
+                top: 2.14rem;
+                width: 1.35rem;
+                height: 1px;
+                background: var(--rule);
+            }
+            #stream[data-bound='node'][data-attach='stub'][data-post='card'] .post .frame {
+                border-top-left-radius: 0;
+            }
             /* The spine itself, drawn once behind everything. */
             #stream[data-bound='node'] { position: relative; }
             #stream[data-bound='node']::before {
@@ -681,6 +728,12 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                         <button data-set="bound" data-val="plain" aria-pressed="false">off</button>
                     </span>
                     <span class="knob"
+                        ><span>card attach</span>
+                        <button data-set="attach" data-val="pointer" aria-pressed="true">pointer</button>
+                        <button data-set="attach" data-val="stub" aria-pressed="false">stub</button>
+                        <button data-set="attach" data-val="plain" aria-pressed="false">plain</button>
+                    </span>
+                    <span class="knob"
                         ><span>note meta</span>
                         <button data-set="meta" data-val="gutter" aria-pressed="true">left gutter</button>
                         <button data-set="meta" data-val="inline" aria-pressed="false">inline</button>
@@ -716,7 +769,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
                 <button data-filter="note" aria-pressed="false">Notes <span class="count">{noteCount}</span></button>
             </div>
 
-            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-meta="gutter" data-split="split" data-showing="all">
+            <div id="stream" data-post="card" data-note="flush" data-media="cap" data-bound="node" data-meta="gutter" data-attach="pointer" data-split="split" data-showing="all">
                 {
                     items.map((item) => (
                         <article
@@ -859,7 +912,7 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
 
             // Knob state survives a reload (and a republish): the URL wins if it
             // carries one, otherwise whatever was last picked here.
-            const KNOBS = ['post', 'note', 'media', 'bound', 'split', 'meta'];
+            const KNOBS = ['post', 'note', 'media', 'bound', 'split', 'meta', 'attach'];
             const STORE = 'specimen-knobs-v1';
             let saved: Record<string, string> = {};
             try {
@@ -1089,36 +1142,39 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             //   2. too tall             -> shrink and centre, still the whole image
             //   3. shrinking made it small -> stop shrinking, crop to the floor width
             const VH_CAP = 0.66;
-            const MIN_WIDTH_FRACTION = 0.62; // never shrink below this much of the column
+            const MIN_WIDTH_FRACTION = 0.62; // never shrink below this much of the mat
+            const CAP_PX = 24 * 16; // 'capped' note media
             function sizeImage(img: HTMLImageElement) {
                 if (!img.naturalWidth) return;
                 const shot = img.closest<HTMLElement>('.shot')!;
                 const grid = shot.parentElement!;
                 if (!grid.classList.contains('one')) return; // grids are already small
-                const colW = grid.clientWidth;
-                if (!colW) return;
+                const matW = grid.clientWidth;
+                if (!matW) return;
+                const maxW = stream.dataset.media === 'cap' ? Math.min(matW, CAP_PX) : matW;
                 const cap = window.innerHeight * VH_CAP;
                 const ratio = img.naturalHeight / img.naturalWidth;
-                const fullH = colW * ratio;
 
-                shot.classList.remove('is-cropped', 'is-shrunk');
-                shot.style.width = '';
-                shot.style.height = '';
-                img.style.height = '';
+                shot.classList.remove('is-cropped');
+                let w = maxW;
+                let h = maxW * ratio;
 
-                if (fullH <= cap) return; // step 1
-
-                const shrunkW = cap / ratio;
-                if (shrunkW >= colW * MIN_WIDTH_FRACTION) {
-                    shot.classList.add('is-shrunk'); // step 2
-                    shot.style.width = `${Math.round(shrunkW)}px`;
-                    return;
+                if (h > cap) {
+                    const shrunkW = cap / ratio;
+                    if (shrunkW >= maxW * MIN_WIDTH_FRACTION) {
+                        w = shrunkW; // step 2: shrink, still whole
+                        h = cap;
+                    } else {
+                        w = maxW * MIN_WIDTH_FRACTION; // step 3: hold the floor, crop
+                        h = cap;
+                        shot.classList.add('is-cropped');
+                    }
                 }
 
-                shot.classList.add('is-cropped', 'is-shrunk'); // step 3
-                shot.style.width = `${Math.round(colW * MIN_WIDTH_FRACTION)}px`;
-                shot.style.height = `${Math.round(cap)}px`;
-                img.style.height = '100%';
+                // The mat spans the column; the photo sits centred on it.
+                shot.style.height = `${Math.round(h)}px`;
+                img.style.width = `${Math.round(w)}px`;
+                img.style.height = `${Math.round(h)}px`;
             }
             function sizeImages() {
                 document
