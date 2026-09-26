@@ -60,11 +60,15 @@ const pad = (n: number) => String(n).padStart(2, '0');
             }
             .card p { margin: 0.5em 0 0; font-size: 0.86rem; color: var(--muted); }
             /* the ring, shared by every option that keeps it on the spine */
-            /* One source of truth for the node's geometry, so a connector can
-               start exactly at its outer edge instead of a hand-tuned offset
-               that drifts inside the circle. */
-            .slice { --ring-left: -1.9rem; --ring-d: 0.78rem; --ring-b: 2px; --ring-gap: 0px; }
-            .slice { --stub-left: calc(var(--ring-left) + var(--ring-d) + var(--ring-gap)); }
+            /* One source of truth for the node's geometry, so a connector starts
+               exactly at its outer edge instead of a hand-tuned offset that
+               drifts into the circle. NOTE: global `* { box-sizing: border-box }`
+               does NOT match pseudo-elements, so the ring is content-box and its
+               2px border is genuinely extra width - hence the (2 * --ring-b).
+               The -1px gap tucks the stub's first pixel under the ring's stroke
+               so the two always meet, never hairline-apart at odd zooms. */
+            .slice { --ring-left: -1.9rem; --ring-d: 0.78rem; --ring-b: 2px; --ring-gap: -1px; }
+            .slice { --stub-left: calc(var(--ring-left) + var(--ring-d) + (2 * var(--ring-b)) + var(--ring-gap)); }
             .ring {
                 position: absolute; left: var(--ring-left); top: calc(var(--node-top) - 0.39rem);
                 width: var(--ring-d); height: var(--ring-d); border-radius: 50%;

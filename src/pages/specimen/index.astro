@@ -510,13 +510,17 @@ const noteCount = items.filter((i) => i.kind === 'note').length;
             /* A post is a bigger stop on the same timeline: an open ring rather
                than a filled dot, so the thread runs unbroken through both. */
             /* The node's geometry in one place, so a connector starts at its
-               outer edge rather than crossing into the circle. */
+               outer edge rather than crossing into the circle. NOTE: global
+               `* { box-sizing: border-box }` does NOT match pseudo-elements, so
+               the ring is content-box and its 2px border is extra width - hence
+               the (2 * --ring-b). The -1px gap tucks the stub's first pixel
+               under the ring's stroke so they always meet. */
             #stream[data-bound='node'] .post {
                 --ring-left: -1.9rem;
                 --ring-d: 0.78rem;
                 --ring-b: 2px;
-                --ring-gap: 0px;
-                --stub-left: calc(var(--ring-left) + var(--ring-d) + var(--ring-gap));
+                --ring-gap: -1px;
+                --stub-left: calc(var(--ring-left) + var(--ring-d) + (2 * var(--ring-b)) + var(--ring-gap));
             }
             #stream[data-post='card'] .post { --node-top: 1.95rem; }
             #stream[data-post='row'] .post { --node-top: 2.5rem; }
