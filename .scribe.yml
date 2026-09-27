@@ -12,6 +12,16 @@ collections:
             updatedDate: updatedDate
         references:
             tags: tags
+    notes:
+        experience: note
+        fields:
+            body: body
+            date: date
+            draft: draft
+            images: images
+            tags: tags
+        references:
+            tags: tags
     tags:
         experience: tag
         fields:
