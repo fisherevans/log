@@ -11,6 +11,44 @@ fixed by `src/content.config.ts` - don't add fields the schema doesn't define.
 > path. The frontmatter-schema constraint above still holds regardless of which
 > tool writes the file.
 
+## The stream
+
+`/posts` is the site's **only** listing: posts and notes interleaved by date, 20 per
+page, with a year rail down the side. There is no `/notes` index - notes keep their
+permalinks because comments live there, but they have no separate stream. Home shows
+the hero, the latest post and the last three notes.
+
+A **post** is a framed card with a title, a 2-3 block excerpt and one contained CTA -
+a door you go through. A **note** is unframed, titleless and complete where it stands.
+Both hang off one timeline. Components: `Stream.astro` (spine, rail, pager, all the
+client behaviour) and `StreamEntry.astro` (one entry of either kind). Shared data
+helpers in `src/lib/stream.ts`.
+
+Two CSS rules this depends on, both of which fail silently if broken:
+
+- **`:global(.foo::before)` does not compile** - the pseudo-element goes outside the
+  parens: `:global(.foo)::before`.
+- **`content-visibility: auto` applies paint containment**, clipping anything drawn
+  outside the element's box. The timeline nodes live in the gutter, so the gutter is
+  `padding` on `.entry`, never `margin`.
+
+## Media is optimised at build time, not by hand
+
+Three rehype plugins in `plugins/` run over every post and note body. Do not undo
+them, and do not hand-roll around them:
+
+- `rehype-youtube-facade` - YouTube iframes become a poster + play button; the player
+  is created on click. An iframe fetches ~1MB of player JS on load whether or not it
+  is watched, and `display: none` does not stop it. **Never add `maxresdefault` to the
+  poster srcset**: for videos without one YouTube serves a grey placeholder rather than
+  a 404, so `onerror` never fires and the poster goes blank.
+- `rehype-lazy-media` - markdown images carry no `loading` attribute otherwise, so the
+  browser fetches even the ones an excerpt has hidden.
+- `rehype-media-srcset` - every `media.fisher.sh` image gets a width ladder via
+  Cloudflare image transformations (`/cdn-cgi/image/...`). Enabled on the `fisher.sh`
+  zone; 5,000 unique transformations/month are free. **Keep pasting plain URLs** - the
+  ladder is derived, there are no derivative objects in R2 and nothing to backfill.
+
 ## Posts
 
 - Live in `src/content/posts/*.md`. The filename (minus `.md`) is the slug.
@@ -35,6 +73,15 @@ fixed by `src/content.config.ts` - don't add fields the schema doesn't define.
 
 So "push it as a draft" = it deploys and is viewable at its URL, but nobody
 finds it unless you hand them the link.
+
+## Notes
+
+- Live in `src/content/notes/*.md`. **No `title`** - that is deliberate, see the schema
+  comment in `content.config.ts`. Display text is derived from the body, falling back
+  to an embed's `title` attribute for the notes that are one video and no prose.
+- URL is `/notes/YYYY/MM/DD/<slug>/`, same shape as a post.
+- `images` is a list of `{src, alt}` with plain string sources (media.fisher.sh URLs),
+  not Astro `image()` assets.
 
 ## Images
 
