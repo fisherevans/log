@@ -8,6 +8,7 @@
 // layers (disc / stub / hollow) rather than as a bordered circle, because a
 // connector that merely abuts a border always shows a seam at some zoom.
 import { render } from 'astro:content';
+import { mediaSrcSet, DEFAULT_SIZES } from '../../plugins/media-urls.mjs';
 import type { StreamItem } from '../lib/stream';
 import FormattedDate from './FormattedDate.astro';
 
@@ -84,7 +85,7 @@ const shareIcon =
                             <div class:list={['note-images', gridClass]}>
                                 {images.map((img) => (
                                     <button class="shot" type="button">
-                                        <img src={img.src} alt={img.alt ?? ''} loading="lazy" decoding="async" />
+                                        <img src={img.src} srcset={mediaSrcSet(img.src)} sizes={DEFAULT_SIZES} alt={img.alt ?? ''} loading="lazy" decoding="async" />
                                         <span class="expand">
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
                                             Full size

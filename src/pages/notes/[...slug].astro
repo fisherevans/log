@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
+import { mediaSrcSet, DEFAULT_SIZES } from '../../../plugins/media-urls.mjs';
 import { noteSlug, noteTitle } from '../../lib/notes';
 import BackToStream from '../../components/BackToStream.astro';
 import BaseHead from '../../components/BaseHead.astro';
@@ -78,7 +79,7 @@ const images = note.data.images;
                 images.length > 0 && (
                     <div class:list={['images', { multi: images.length > 1 }]}>
                         {images.map((img) => (
-                            <img src={img.src} alt={img.alt ?? ''} loading="lazy" decoding="async" />
+                            <img src={img.src} srcset={mediaSrcSet(img.src)} sizes={DEFAULT_SIZES} alt={img.alt ?? ''} loading="lazy" decoding="async" />
                         ))}
                     </div>
                 )

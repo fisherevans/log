@@ -1,12 +1,16 @@
 ---
 id: nt4Wv8Rd1p
-date: 2023-05-18
+date: 2023-05-18T09:10:24Z
 tags:
   - disc-dyes
   - disc-golf
 images:
-  - src: /seed/glow-eagle.jpg
-    alt: A glow disc dyed with an eagle stencil
+  - src: https://media.fisher.sh/notes/2023/05/18/glow-eagle-for-a-buddy-1.webp
+    alt: "A glow eagle for a buddy - @disco___biscuit stencil"
+  - src: https://media.fisher.sh/notes/2023/05/18/glow-eagle-for-a-buddy-2.webp
+    alt: "A glow eagle for a buddy - @disco___biscuit stencil"
+  - src: https://media.fisher.sh/notes/2023/05/18/glow-eagle-for-a-buddy-3.webp
+    alt: "A glow eagle for a buddy - @disco___biscuit stencil"
 draft: false
 ---
-A glow eagle for a buddy - [@disco___biscuit](https://www.instagram.com/disco___biscuit/) stencil.
+A glow eagle for a buddy - [@disco___biscuit](https://www.instagram.com/disco___biscuit/) stencil

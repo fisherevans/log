@@ -9,6 +9,7 @@
 // opts into `layout: grid` in its YAML - a visual tag whose pictures are the
 // point (disc dyes) becomes a gallery instead.
 import { getCollection } from 'astro:content';
+import { mediaSrcSet } from '../../../plugins/media-urls.mjs';
 import { noteCover, noteHref, noteTitle } from '../../lib/notes';
 import { postHref } from '../../lib/posts';
 import BaseHead from '../../components/BaseHead.astro';
@@ -78,6 +79,9 @@ const showFilter = !isGrid && posts > 0 && notes > 0;
             /* Gallery layout, opt-in per tag. The pictures are the point, so
                notes become tiles and posts keep a full-width row above them. */
             .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.5rem; }
+            /* A phone is 3 tiles wide, not one full-width square per note - 58 dyes at one
+               per screen is a 60,000px page. */
+            @media (max-width: 40rem) { .grid { grid-template-columns: repeat(3, 1fr); gap: 0.35rem; } }
             .grid .row { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.9em 0; border-bottom: 1px solid var(--rule); }
             .grid .row .title-link { font-family: 'Marauder', serif; font-weight: 700; font-size: 1.3rem; color: var(--fg); }
             .grid .row .date { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.75em; color: var(--muted); }
@@ -120,7 +124,7 @@ const showFilter = !isGrid && posts > 0 && notes > 0;
                             ) : (
                                 <a class="tile" href={noteHref(item.entry)}>
                                     {noteCover(item.entry) ? (
-                                        <img src={noteCover(item.entry)!.src} alt={noteCover(item.entry)!.alt ?? ''} loading="lazy" decoding="async" />
+                                        <img src={noteCover(item.entry)!.src} srcset={mediaSrcSet(noteCover(item.entry)!.src)} sizes="(max-width: 40rem) 33vw, 11rem" alt={noteCover(item.entry)!.alt ?? ''} loading="lazy" decoding="async" />
                                     ) : (
                                         <span class="tile-fallback">{noteTitle(item.entry, 60)}</span>
                                     )}
