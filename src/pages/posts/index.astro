@@ -6,13 +6,14 @@ import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import SearchBox from '../../components/SearchBox.astro';
 import Stream from '../../components/Stream.astro';
-import { PAGE_SIZE, buildStream, yearsOf } from '../../lib/stream';
+import { PAGE_SIZE, buildStream, groupBursts, pageOf, yearsOf } from '../../lib/stream';
 import { dateMap, searchIndex } from '../../lib/search';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
 const all = await buildStream();
-const items = all.slice(0, PAGE_SIZE);
-const last = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+const blocks = groupBursts(all);
+const last = Math.max(1, Math.ceil(blocks.length / PAGE_SIZE));
+const page = pageOf(blocks, 1);
 ---
 
 <!doctype html>
@@ -30,7 +31,8 @@ const last = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
             <SearchBox index={searchIndex(all)} dateMap={dateMap(all)} />
             <div id="listing">
                 <Stream
-                    items={items}
+                    blocks={page.blocks}
+                    offset={page.offset}
                     years={yearsOf(all)}
                     page={{ current: 1, last, hrefFor: (n: number) => (n === 1 ? '/posts/' : `/posts/page/${n}/`) }}
                     total={all.length}

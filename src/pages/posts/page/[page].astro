@@ -5,13 +5,13 @@ import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
 import Header from '../../../components/Header.astro';
 import Stream from '../../../components/Stream.astro';
-import { PAGE_SIZE, buildStream, yearsOf } from '../../../lib/stream';
+import { PAGE_SIZE, buildStream, groupBursts, pageOf, yearsOf } from '../../../lib/stream';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
 
 export const getStaticPaths: GetStaticPaths = async () => {
-    const { buildStream, PAGE_SIZE } = await import('../../../lib/stream');
+    const { buildStream, groupBursts, PAGE_SIZE } = await import('../../../lib/stream');
     const all = await buildStream();
-    const last = Math.max(1, Math.ceil(all.length / PAGE_SIZE));
+    const last = Math.max(1, Math.ceil(groupBursts(all).length / PAGE_SIZE));
     return Array.from({ length: last - 1 }, (_, i) => i + 2).map((n) => ({
         params: { page: String(n) },
         props: { n, last },
@@ -20,7 +20,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 const { n, last } = Astro.props;
 const all = await buildStream();
-const items = all.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
+const page = pageOf(groupBursts(all), n);
 ---
 
 <!doctype html>
@@ -37,7 +37,8 @@ const items = all.slice((n - 1) * PAGE_SIZE, n * PAGE_SIZE);
         <main>
             <h1>Posts <span class="sub">page {n} of {last}</span></h1>
             <Stream
-                items={items}
+                blocks={page.blocks}
+                offset={page.offset}
                 years={yearsOf(all)}
                 page={{ current: n, last, hrefFor: (p: number) => (p === 1 ? '/posts/' : `/posts/page/${p}/`) }}
                 total={all.length}

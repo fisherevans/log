@@ -6,9 +6,17 @@
 // anything built with innerHTML).
 import type { StreamItem } from '../lib/stream';
 import StreamEntry from './StreamEntry.astro';
+import { groupBursts, type StreamBlock } from '../lib/stream';
+import { fmtDate } from '../lib/search';
 
 interface Props {
-    items: StreamItem[];
+    // Either a flat list (folded into bursts here unless collapse is false)...
+    items?: StreamItem[];
+    // ...or blocks already cut into a page by pageOf(), with the number of
+    // items on earlier pages so the pager's range can say "21-40 of 96".
+    blocks?: StreamBlock[];
+    offset?: number;
+    collapse?: boolean;
     years: number[];
     activeYear?: number;
     page?: { current: number; last: number; hrefFor: (n: number) => string };
@@ -19,9 +27,16 @@ interface Props {
     // that silently leaves the tag.
     showYears?: boolean;
 }
-const { items, years, activeYear, page, total, pageSize = 20, showYears = true } = Astro.props;
-const from = page ? (page.current - 1) * pageSize + 1 : 1;
-const to = page ? Math.min(page.current * pageSize, total ?? items.length) : items.length;
+const { items = [], years, activeYear, page, total, showYears = true, collapse = true, offset = 0 } = Astro.props;
+const blocks: StreamBlock[] = Astro.props.blocks ?? (collapse ? groupBursts(items) : items.map((item) => ({ kind: 'entry' as const, item })));
+const count = blocks.reduce((s, b) => s + (b.kind === 'entry' ? 1 : b.lead.length + b.rest.length), 0);
+const from = offset + 1;
+const to = offset + count;
+const span = (a: StreamItem[]) => {
+    const first = fmtDate(a[a.length - 1].date);
+    const last = fmtDate(a[0].date);
+    return first === last ? first : `${first} - ${last}`;
+};
 ---
 
 <div class="stream-wrap">
@@ -41,7 +56,31 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
     )}
 
     <div class="stream">
-        {items.map((item) => <StreamEntry item={item} />)}
+        {blocks.map((b) =>
+            b.kind === 'entry' ? (
+                <StreamEntry item={b.item} />
+            ) : (
+                <>
+                    {b.lead.map((item) => <StreamEntry item={item} />)}
+                    <div class="burst" data-tag={b.tag}>
+                        <div class="burst-card">
+                            <p class="burst-text">
+                                <strong>{b.rest.length} more {b.rest.length === 1 ? 'note' : 'notes'}</strong> tagged{' '}
+                                <a class="chip" href={`/tags/${b.tag}/`}>{b.tag}</a>
+                                <span class="burst-span">{span(b.rest)}</span>
+                            </p>
+                            <div class="burst-actions">
+                                <button type="button" class="burst-open" aria-expanded="false">Show all {b.rest.length}</button>
+                                <a class="burst-tag" href={`/tags/${b.tag}/`}>Everything in #{b.tag}&nbsp;&rarr;</a>
+                            </div>
+                        </div>
+                        <div class="burst-more" hidden>
+                            {b.rest.map((item) => <StreamEntry item={item} />)}
+                        </div>
+                    </div>
+                </>
+            ),
+        )}
     </div>
 
     {
@@ -449,6 +488,34 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
         .year { width: 100%; text-align: right; }
     }
 
+    /* ---------- bursts ---------- */
+    /* The fold card sits on the spine like an entry, marked by a short column
+       of small dots: several things here, stacked. */
+    .stream :global(.burst) { position: relative; padding-left: var(--item-indent); margin: 0.2rem 0 1.6rem; }
+    .stream :global(.burst-card) { position: relative; padding: 0.15rem 0 0; }
+    .stream :global(.burst-card)::before {
+        content: '';
+        position: absolute;
+        left: calc(var(--spine-c) - var(--item-indent) - 0.2rem);
+        top: 0.35em;
+        width: 0.4rem;
+        height: 1.5rem;
+        background: radial-gradient(circle, var(--muted) 0 0.13rem, transparent 0.16rem) 0 0 / 0.4rem 0.5rem repeat-y;
+    }
+    .stream :global(.burst-text) { margin: 0; font-size: 0.92em; color: var(--muted); line-height: 1.6; }
+    .stream :global(.burst-text strong) { color: var(--fg); font-weight: 600; }
+    .stream :global(.burst-text .chip) { margin: 0 0.15em; }
+    .stream :global(.burst-span) { display: inline-block; margin-left: 0.6em; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.82em; }
+    .stream :global(.burst-actions) { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.6rem 1.2rem; margin-top: 0.5rem; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.85em; }
+    .stream :global(.burst-open) { white-space: nowrap; background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 0.3em 0.9em; color: var(--fg); font: inherit; cursor: pointer; }
+    .stream :global(.burst-open:hover) { border-color: var(--accent); color: var(--accent); }
+    .stream :global(.burst-tag) { color: var(--muted); }
+    .stream :global(.burst-tag:hover) { color: var(--accent); }
+    .stream :global(.burst-more) { margin-top: 1.4rem; }
+    .stream :global(.burst-more[hidden]) { display: none; }
+    /* an expanded burst's card fades so the run reads as one stretch */
+    .stream :global(.burst.is-open .burst-card) { opacity: 0.7; }
+
     /* ---------- pager ---------- */
     .pager {
         display: flex;
@@ -735,6 +802,30 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
             if (e.key === 'ArrowRight') nextBtn.click();
         });
 
+        // ---- bursts: fold and unfold in place
+        function openBurst(burst: HTMLElement) {
+            burst.classList.add('is-open');
+            burst.querySelector<HTMLElement>('.burst-more')!.hidden = false;
+            const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
+            btn.textContent = 'Show fewer';
+            btn.setAttribute('aria-expanded', 'true');
+        }
+        document.querySelectorAll<HTMLElement>('.burst').forEach((burst) => {
+            const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
+            btn.addEventListener('click', () => {
+                if (burst.classList.contains('is-open')) {
+                    burst.classList.remove('is-open');
+                    burst.querySelector<HTMLElement>('.burst-more')!.hidden = true;
+                    btn.textContent = `Show all ${burst.querySelectorAll('.burst-more .entry').length}`;
+                    btn.setAttribute('aria-expanded', 'false');
+                    // don't leave the reader stranded below the fold they just closed
+                    burst.scrollIntoView({ block: 'nearest' });
+                } else {
+                    openBurst(burst);
+                }
+            });
+        });
+
         // ---- return to where you were -----------------------------------
         // The browser's own scroll restoration cannot be trusted here:
         // `content-visibility: auto` means most entries have an ESTIMATED height
@@ -770,6 +861,10 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
             sessionStorage.removeItem(RETURN_KEY);
             const el = document.getElementById(saved.id);
             if (!el) return;
+            // Left from inside a burst? It folded again on reload - unfold it
+            // first, or the target has no box to scroll to.
+            const fold = el.closest<HTMLElement>('.burst');
+            if (fold && !fold.classList.contains('is-open')) openBurst(fold);
             const target = () => {
                 const docTop = el.getBoundingClientRect().top + window.scrollY;
                 return Math.max(0, Math.round(docTop - saved!.viewportTop));

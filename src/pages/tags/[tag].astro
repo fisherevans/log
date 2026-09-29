@@ -134,7 +134,7 @@ const showFilter = !isGrid && posts > 0 && notes > 0;
                     </div>
                 ) : (
                     <div class="tagstream" data-showing="all">
-                        <Stream items={items} years={yearsOf(all)} showYears={false} />
+                        <Stream items={items} years={yearsOf(all)} showYears={false} collapse={false} />
                     </div>
                 )
             }
