@@ -423,7 +423,7 @@ const span = (a: StreamItem[]) => {
         justify-content: center;
         margin: 1rem 0;
     }
-    .stream :global(.media-mat iframe) { display: block; border: 0; }
+    .stream :global(.media-mat iframe), .stream :global(.media-mat video) { display: block; border: 0; background: #000; }
 
     /* ---------- YouTube facade ---------- */
     .stream :global(.yt-facade) {
@@ -604,7 +604,7 @@ const span = (a: StreamItem[]) => {
 
         // ---- give every embed the photo's frame
         document.querySelectorAll<HTMLElement>('.entry.note .body').forEach((body) => {
-            body.querySelectorAll('iframe, .yt-facade').forEach((f) => {
+            body.querySelectorAll('iframe, video, .yt-facade').forEach((f) => {
                 if (f.parentElement?.classList.contains('media-mat')) return;
                 const mat = document.createElement('div');
                 mat.className = 'media-mat';
@@ -693,15 +693,17 @@ const span = (a: StreamItem[]) => {
         function sizeEmbeds() {
             const cap = window.innerHeight * VH_CAP;
             document.querySelectorAll<HTMLElement>('.media-mat').forEach((mat) => {
-                const f = mat.querySelector<HTMLElement>('iframe, .yt-facade');
+                const f = mat.querySelector<HTMLElement>('iframe, video, .yt-facade');
                 if (!f) return;
+                // a self-hosted video knows its own shape; embeds are 16:9
+                const ar = f instanceof HTMLVideoElement && f.width && f.height ? f.width / f.height : 16 / 9;
                 const w = mat.clientWidth;
                 if (!w) return;
                 // A video needs width to be watchable, so it fills the board
                 // rather than obeying the photo cap - but it answers to the
                 // same height ceiling.
-                const h = Math.min((w * 9) / 16, cap);
-                f.style.width = `${Math.round((h * 16) / 9)}px`;
+                const h = Math.min(w / ar, cap);
+                f.style.width = `${Math.round(h * ar)}px`;
                 f.style.height = `${Math.round(h)}px`;
                 f.style.maxWidth = '100%';
             });
