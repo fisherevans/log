@@ -106,6 +106,9 @@ const playIcon =
                         </div>
                         <div class="burst-more" hidden>
                             {b.rest.map((item) => <StreamEntry item={item} />)}
+                            <div class="burst-end">
+                                <button type="button" class="burst-close">Hide these {b.rest.length} notes <span class="up" aria-hidden="true">&#8963;</span></button>
+                            </div>
                         </div>
                     </div>
                 </>
@@ -602,8 +605,50 @@ const playIcon =
     .stream :global(.burst-open:hover) { background: var(--fg); border-color: var(--fg); }
     .stream :global(.burst-tag) { color: var(--muted); }
     .stream :global(.burst-tag:hover) { color: var(--accent); }
-    .stream :global(.burst-more) { margin-top: 1.6rem; }
+    /* The revealed notes hang off a branch: a second line drops out of the
+       card, runs through their dots (which sit one indent in from the main
+       spine, because the burst is indented), and rejoins the spine with an
+       elbow under a "Hide these" control. So you can tell, scrolling, where
+       the expanded set ends and the main stream resumes. */
+    .stream :global(.burst-more) { position: relative; margin-top: 1.6rem; }
+    .stream :global(.burst-more)::before {
+        content: '';
+        position: absolute;
+        left: var(--spine-c);
+        top: -1.6rem;
+        bottom: 1.3rem;
+        width: 1px;
+        background: rgba(232, 155, 75, 0.55);
+        pointer-events: none;
+    }
     .stream :global(.burst-more[hidden]) { display: none; }
+    .stream :global(.burst-end) { position: relative; height: 2.6rem; display: flex; align-items: center; padding-left: var(--item-indent); }
+    .stream :global(.burst-end)::before {
+        /* the elbow: down the branch, then left into the main spine */
+        content: '';
+        position: absolute;
+        left: calc(var(--spine-c) - var(--item-indent));
+        top: 0;
+        width: var(--item-indent);
+        height: 1.3rem;
+        border-right: 1px solid rgba(232, 155, 75, 0.55);
+        border-bottom: 1px solid rgba(232, 155, 75, 0.55);
+        border-bottom-right-radius: 10px;
+        pointer-events: none;
+    }
+    .stream :global(.burst-close) {
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.8rem;
+        background: none;
+        border: 1px solid rgba(232, 155, 75, 0.55);
+        border-radius: 999px;
+        padding: 0.3em 0.9em;
+        color: var(--muted);
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    .stream :global(.burst-close:hover) { color: var(--accent); border-color: var(--accent); }
+    .stream :global(.burst-close .up) { display: inline-block; margin-left: 0.3em; transform: translateY(0.1em); }
     /* an expanded burst's card quietens so the run reads as one stretch */
     .stream :global(.burst.is-open .burst-card) { opacity: 0.75; }
     .stream :global(.burst.is-open .burst-card .front) { border-color: rgba(232, 155, 75, 0.5); }
@@ -905,8 +950,18 @@ const playIcon =
             btn.textContent = 'Show fewer';
             btn.setAttribute('aria-expanded', 'true');
         }
+        function closeBurst(burst: HTMLElement) {
+            burst.classList.remove('is-open');
+            burst.querySelector<HTMLElement>('.burst-more')!.hidden = true;
+            const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
+            btn.textContent = `Show all ${burst.querySelectorAll('.burst-more .entry').length}`;
+            btn.setAttribute('aria-expanded', 'false');
+            // don't leave the reader stranded below the fold they just closed
+            burst.scrollIntoView({ block: 'nearest' });
+        }
         document.querySelectorAll<HTMLElement>('.burst').forEach((burst) => {
             const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
+            burst.querySelector<HTMLButtonElement>('.burst-close')?.addEventListener('click', () => closeBurst(burst));
             burst.querySelector<HTMLButtonElement>('.burst-open-alt')?.addEventListener('click', () => {
                 openBurst(burst);
                 burst.querySelector<HTMLElement>('.burst-more')!.scrollIntoView({ block: 'start', behavior: 'smooth' });
@@ -917,16 +972,8 @@ const playIcon =
                 spanBtn.textContent = showingRange ? spanBtn.dataset.span! : spanBtn.dataset.range!;
             });
             btn.addEventListener('click', () => {
-                if (burst.classList.contains('is-open')) {
-                    burst.classList.remove('is-open');
-                    burst.querySelector<HTMLElement>('.burst-more')!.hidden = true;
-                    btn.textContent = `Show all ${burst.querySelectorAll('.burst-more .entry').length}`;
-                    btn.setAttribute('aria-expanded', 'false');
-                    // don't leave the reader stranded below the fold they just closed
-                    burst.scrollIntoView({ block: 'nearest' });
-                } else {
-                    openBurst(burst);
-                }
+                if (burst.classList.contains('is-open')) closeBurst(burst);
+                else openBurst(burst);
             });
         });
 
