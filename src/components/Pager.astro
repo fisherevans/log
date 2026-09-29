@@ -4,17 +4,17 @@
 // a page was to scroll to the bottom again.
 interface Props {
     page: { current: number; last: number; hrefFor: (n: number) => string };
-    from: number;
-    to: number;
-    total: number;
 }
-const { page, from, to, total } = Astro.props;
+const { page } = Astro.props;
 ---
 
-<nav class="pager" aria-label="Pagination">
-                <span class="range">{from}&ndash;{to} of {total}</span>
+<nav class="pager" aria-label="Pagination" data-current={page.current} data-last={page.last}>
+                {/* A page is a fixed number of blocks, and a burst is one block
+                    however many notes it folds - so an entry range ("1-122 of
+                    152") reads as nonsense. Page-of-pages is the honest unit. */}
+                <span class="range">page {page.current} of {page.last}</span>
                 {page.current > 1 ? (
-                    <a href={page.hrefFor(page.current - 1)}>&larr; Newer</a>
+                    <a href={page.hrefFor(page.current - 1)} rel="prev">&larr; Newer</a>
                 ) : (
                     <span class="off">&larr; Newer</span>
                 )}
@@ -26,7 +26,7 @@ const { page, from, to, total } = Astro.props;
                     ),
                 )}
                 {page.current < page.last ? (
-                    <a href={page.hrefFor(page.current + 1)}>Older &rarr;</a>
+                    <a href={page.hrefFor(page.current + 1)} rel="next">Older &rarr;</a>
                 ) : (
                     <span class="off">Older &rarr;</span>
                 )}

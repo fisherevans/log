@@ -31,9 +31,6 @@ interface Props {
 }
 const { items = [], years, activeYear, page, total, showYears = true, collapse = true, offset = 0 } = Astro.props;
 const blocks: StreamBlock[] = Astro.props.blocks ?? (collapse ? groupBursts(items) : items.map((item) => ({ kind: 'entry' as const, item })));
-const count = blocks.reduce((s, b) => s + (b.kind === 'entry' ? 1 : b.lead.length + b.rest.length), 0);
-const from = offset + 1;
-const to = offset + count;
 const span = (a: StreamItem[]) => {
     const first = fmtDate(a[a.length - 1].date);
     const last = fmtDate(a[0].date);
@@ -66,7 +63,7 @@ const playIcon =
     </nav>
     )}
 
-    {page && page.last > 1 && page.current > 1 && <Pager page={page} from={from} to={to} total={total ?? to} />}
+    {page && page.last > 1 && page.current > 1 && <Pager page={page} />}
 
     <div class="stream">
         {blocks.map((b) =>
@@ -116,7 +113,10 @@ const playIcon =
         )}
     </div>
 
-    {page && page.last > 1 && <Pager page={page} from={from} to={to} total={total ?? to} />}
+    {page && page.last > 1 && <Pager page={page} />}
+    {/* With JS the pagers become load-more: older pages append as you near the
+        bottom, and from page 2 on a "newer" control prepends. The static pages
+        stay underneath for no-JS, crawlers, and deep links. */}
 </div>
 
 
@@ -517,6 +517,12 @@ const playIcon =
         .year { width: 100%; text-align: right; }
     }
 
+    /* ---------- load more ---------- */
+    .load-more { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin: 2.2rem 0 1rem; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.82rem; color: var(--muted); }
+    .load-more.top { margin: 0 0 2rem; }
+    .load-more .load-btn { background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 0.4em 1.1em; color: var(--fg); font: inherit; cursor: pointer; }
+    .load-more .load-btn:hover { border-color: var(--accent); color: var(--accent); }
+
     /* ---------- bursts ---------- */
     /* The fold is a deck: a bright front card with two fading cards behind it,
        offset down and right, so "several things are stacked here" reads at
@@ -692,9 +698,52 @@ const playIcon =
 <script>
     const stream = document.querySelector<HTMLElement>('.stream');
     if (stream) {
+        // ---- delegated clicks: one listener per control class, so entries that
+        // load-more appends later behave like the first page's
+        const handlers: [string, (el: HTMLElement) => void][] = [];
+        function on(selector: string, fn: (el: HTMLElement) => void) { handlers.push([selector, fn]); }
+        document.addEventListener('click', (e) => {
+            for (const [selector, fn] of handlers) {
+                const el = (e.target as HTMLElement).closest<HTMLElement>(selector);
+                if (el) { fn(el); return; }
+            }
+        });
+
+        // ---- year rail scroll-spy (the rail's links work without this)
+        const yearLinks = new Map<string, HTMLElement>();
+        document.querySelectorAll<HTMLElement>('.year[data-year]').forEach((a) => yearLinks.set(a.dataset.year!, a));
+        const spy = yearLinks.size && !document.querySelector('.year[aria-current="page"][data-year]')
+            ? new IntersectionObserver(
+                  (entries) => {
+                      const seen = entries.filter((e) => e.isIntersecting).map((e) => (e.target as HTMLElement).dataset.year!);
+                      if (!seen.length) return;
+                      const cur = seen.sort().reverse()[0];
+                      yearLinks.forEach((a, y) => a.classList.toggle('in-view', y === cur));
+                  },
+                  { rootMargin: '-25% 0px -60% 0px' },
+              )
+            : null;
+
+        // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
+        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+        const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+            ['year', 365 * 24 * 3600], ['month', 30 * 24 * 3600], ['week', 7 * 24 * 3600],
+            ['day', 24 * 3600], ['hour', 3600], ['minute', 60],
+        ];
+        function relative(iso: string): string {
+            const secs = (Date.parse(iso) - Date.now()) / 1000;
+            const abs = Math.abs(secs);
+            if (abs < 60) return 'just now';
+            for (const [unit, size] of UNITS) if (abs >= size) return rtf.format(Math.round(secs / size), unit);
+            return 'just now';
+        }
+        // Everything that has to run per entry lives in enhance(root) so a page
+        // appended by load-more gets the same treatment as the first one.
+        // Click handling is delegated at the document, for the same reason.
+        function enhance(root: ParentNode) {
         // ---- post excerpts: 2-3 blocks, by length, never ending on a heading
         const WORD_TARGET = 110;
-        document.querySelectorAll<HTMLElement>('.excerpt').forEach((ex) => {
+        root.querySelectorAll<HTMLElement>('.excerpt').forEach((ex) => {
             const blocks = Array.from(ex.children) as HTMLElement[];
             const isHeading = (el: Element) => /^H[1-6]$/.test(el.tagName);
             let words = 0;
@@ -710,7 +759,7 @@ const playIcon =
         });
 
         // ---- give every embed the photo's frame
-        document.querySelectorAll<HTMLElement>('.entry.note .body').forEach((body) => {
+        root.querySelectorAll<HTMLElement>('.entry.note .body').forEach((body) => {
             body.querySelectorAll('iframe, video, .yt-facade').forEach((f) => {
                 if (f.parentElement?.classList.contains('media-mat')) return;
                 const mat = document.createElement('div');
@@ -719,6 +768,16 @@ const playIcon =
                 mat.appendChild(f);
             });
         });
+        // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
+        root.querySelectorAll<HTMLTimeElement>('time.rel').forEach((t) => {
+            const abs = t.dataset.abs!;
+            const rel = relative(t.dateTime);
+            t.textContent = rel;
+            // Phones have no hover, so a tap toggles to the absolute date.
+            t.addEventListener('click', () => { t.textContent = t.textContent === rel ? abs : rel; });
+        });
+        root.querySelectorAll('.entry').forEach((el) => spy?.observe(el));
+        }
 
         // ---- note clamping: prose only, plus a separate media limit
         const PROSE_MAX = 20 * 16;
@@ -757,20 +816,18 @@ const playIcon =
                 if (!note.classList.contains('is-open')) b.textContent = b.dataset.openLabel || 'Show more';
             });
         }
-        document.querySelectorAll<HTMLButtonElement>('.act.more').forEach((b) => {
-            b.addEventListener('click', () => {
-                const note = b.closest('.entry.note')!;
-                const opening = !note.classList.contains('is-open');
-                note.classList.toggle('is-open', opening);
-                note.classList.toggle('is-media-clamped', !opening);
-                if (opening) {
-                    note.classList.remove('is-clamped');
-                    const clip = note.querySelector<HTMLElement>('.clip');
-                    if (clip) clip.style.maxHeight = '';
-                } else measure();
-                b.textContent = opening ? 'Show less' : b.dataset.openLabel || 'Show more';
-                if (!opening) note.scrollIntoView({ block: 'nearest' });
-            });
+        on('.act.more', (b) => {
+            const note = b.closest('.entry.note')!;
+            const opening = !note.classList.contains('is-open');
+            note.classList.toggle('is-open', opening);
+            note.classList.toggle('is-media-clamped', !opening);
+            if (opening) {
+                note.classList.remove('is-clamped');
+                const clip = note.querySelector<HTMLElement>('.clip');
+                if (clip) clip.style.maxHeight = '';
+            } else measure();
+            b.textContent = opening ? 'Show less' : b.dataset.openLabel || 'Show more';
+            if (!opening) note.scrollIntoView({ block: 'nearest' });
         });
 
         // ---- image height ladder: fit, else shrink and centre, else crop
@@ -825,6 +882,7 @@ const playIcon =
                 f.style.maxWidth = '100%';
             });
         }
+        enhance(document);
         sizeImages();
         sizeEmbeds();
         measure();
@@ -850,27 +908,6 @@ const playIcon =
             facade.replaceWith(f);
         });
 
-        // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
-        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-        const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-            ['year', 365 * 24 * 3600], ['month', 30 * 24 * 3600], ['week', 7 * 24 * 3600],
-            ['day', 24 * 3600], ['hour', 3600], ['minute', 60],
-        ];
-        function relative(iso: string): string {
-            const secs = (Date.parse(iso) - Date.now()) / 1000;
-            const abs = Math.abs(secs);
-            if (abs < 60) return 'just now';
-            for (const [unit, size] of UNITS) if (abs >= size) return rtf.format(Math.round(secs / size), unit);
-            return 'just now';
-        }
-        document.querySelectorAll<HTMLTimeElement>('time.rel').forEach((t) => {
-            const abs = t.dataset.abs!;
-            const rel = relative(t.dateTime);
-            t.textContent = rel;
-            // Phones have no hover, so a tap toggles to the absolute date.
-            t.addEventListener('click', () => { t.textContent = t.textContent === rel ? abs : rel; });
-        });
-
         // ---- copy link / share
         // Link copies the permalink. Share hands it to the OS share sheet where
         // there is one (phones), and copies where there is not.
@@ -881,21 +918,17 @@ const playIcon =
             setTimeout(() => { lbl.textContent = was; }, 1600);
         };
         const permalink = (b: HTMLElement) => new URL(b.closest<HTMLElement>('.entry')!.dataset.href!, location.origin).href;
-        document.querySelectorAll<HTMLButtonElement>('.act.copy').forEach((b) => {
-            b.addEventListener('click', async () => {
-                try { await navigator.clipboard.writeText(permalink(b)); flash(b, 'Copied'); } catch { flash(b, 'Failed'); }
-            });
+        on('.act.copy', async (b) => {
+            try { await navigator.clipboard.writeText(permalink(b)); flash(b, 'Copied'); } catch { flash(b, 'Failed'); }
         });
-        document.querySelectorAll<HTMLButtonElement>('.act.share').forEach((b) => {
-            b.addEventListener('click', async () => {
-                const url = permalink(b);
-                const title = b.closest<HTMLElement>('.entry')!.querySelector('.title-link, .body, .excerpt')?.textContent?.trim().slice(0, 80) || document.title;
-                if (navigator.share) {
-                    try { await navigator.share({ title, url }); } catch {}
-                } else {
-                    try { await navigator.clipboard.writeText(url); flash(b, 'Copied'); } catch { flash(b, 'Failed'); }
-                }
-            });
+        on('.act.share', async (b) => {
+            const url = permalink(b);
+            const title = b.closest<HTMLElement>('.entry')!.querySelector('.title-link, .body, .excerpt')?.textContent?.trim().slice(0, 80) || document.title;
+            if (navigator.share) {
+                try { await navigator.share({ title, url }); } catch {}
+            } else {
+                try { await navigator.clipboard.writeText(url); flash(b, 'Copied'); } catch { flash(b, 'Failed'); }
+            }
         });
 
         // ---- full-screen viewer
@@ -915,15 +948,13 @@ const playIcon =
             nextBtn.hidden = group.length < 2;
         }
         function closeLb() { lb.hidden = true; document.body.style.overflow = ''; }
-        document.querySelectorAll<HTMLButtonElement>('.shot').forEach((b) => {
-            b.addEventListener('click', () => {
-                const img = b.querySelector('img')!;
-                group = Array.from(b.closest('.note-images')!.querySelectorAll<HTMLImageElement>('img'));
-                idx = group.indexOf(img);
-                paint();
-                lb.hidden = false;
-                document.body.style.overflow = 'hidden';
-            });
+        on('.shot', (b) => {
+            const img = b.querySelector('img')!;
+            group = Array.from(b.closest('.note-images')!.querySelectorAll<HTMLImageElement>('img'));
+            idx = group.indexOf(img);
+            paint();
+            lb.hidden = false;
+            document.body.style.overflow = 'hidden';
         });
         lb.addEventListener('click', (e) => { if (e.target === lb || e.target === lbImg) closeLb(); });
         lb.querySelector('.lb-close')!.addEventListener('click', closeLb);
@@ -959,22 +990,17 @@ const playIcon =
             // don't leave the reader stranded below the fold they just closed
             burst.scrollIntoView({ block: 'nearest' });
         }
-        document.querySelectorAll<HTMLElement>('.burst').forEach((burst) => {
-            const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
-            burst.querySelector<HTMLButtonElement>('.burst-close')?.addEventListener('click', () => closeBurst(burst));
-            burst.querySelector<HTMLButtonElement>('.burst-open-alt')?.addEventListener('click', () => {
-                openBurst(burst);
-                burst.querySelector<HTMLElement>('.burst-more')!.scrollIntoView({ block: 'start', behavior: 'smooth' });
-            });
-            const spanBtn = burst.querySelector<HTMLButtonElement>('.burst-span');
-            spanBtn?.addEventListener('click', () => {
-                const showingRange = spanBtn.textContent === spanBtn.dataset.range;
-                spanBtn.textContent = showingRange ? spanBtn.dataset.span! : spanBtn.dataset.range!;
-            });
-            btn.addEventListener('click', () => {
-                if (burst.classList.contains('is-open')) closeBurst(burst);
-                else openBurst(burst);
-            });
+        const burstOf = (el: HTMLElement) => el.closest<HTMLElement>('.burst')!;
+        on('.burst-open', (b) => { const burst = burstOf(b); if (burst.classList.contains('is-open')) closeBurst(burst); else openBurst(burst); });
+        on('.burst-close', (b) => closeBurst(burstOf(b)));
+        on('.burst-open-alt', (b) => {
+            const burst = burstOf(b);
+            openBurst(burst);
+            burst.querySelector<HTMLElement>('.burst-more')!.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        });
+        on('.burst-span', (b) => {
+            const showingRange = b.textContent === b.dataset.range;
+            b.textContent = showingRange ? b.dataset.span! : b.dataset.range!;
         });
 
         // ---- return to where you were -----------------------------------
@@ -996,8 +1022,11 @@ const playIcon =
             try {
                 const p = location.pathname;
                 const from = p.startsWith('/posts') ? 'everything' : p.startsWith('/tags/') ? '#' + decodeURIComponent(p.split('/')[2]) : p === '/' ? 'home' : 'back';
+                // An entry that load-more appended belongs to a later page;
+                // remember that page, so the return renders the one it is on.
+                const chunk = entry.closest<HTMLElement>('[data-page-url]');
                 sessionStorage.setItem(RETURN_KEY, JSON.stringify({
-                    path: location.pathname + location.search,
+                    path: chunk ? chunk.dataset.pageUrl : location.pathname + location.search,
                     from,
                     ts: Date.now(),
                     id: entry.id,
@@ -1078,20 +1107,91 @@ const playIcon =
         // module script does not re-run - pageshow is the only hook that fires.
         window.addEventListener('pageshow', (e) => { if (e.persisted) restoreReturn(); });
 
-        // ---- year rail scroll-spy (the rail's links work without this)
-        const yearLinks = new Map<string, HTMLElement>();
-        document.querySelectorAll<HTMLElement>('.year[data-year]').forEach((a) => yearLinks.set(a.dataset.year!, a));
-        if (yearLinks.size && !document.querySelector('.year[aria-current="page"][data-year]')) {
-            const spy = new IntersectionObserver(
-                (entries) => {
-                    const seen = entries.filter((e) => e.isIntersecting).map((e) => (e.target as HTMLElement).dataset.year!);
-                    if (!seen.length) return;
-                    const cur = seen.sort().reverse()[0];
-                    yearLinks.forEach((a, y) => a.classList.toggle('in-view', y === cur));
-                },
-                { rootMargin: '-25% 0px -60% 0px' },
-            );
-            document.querySelectorAll('.entry').forEach((el) => spy.observe(el));
+        // ---- load more: the static pages become one growing stream ----------
+        // Older pages append as the reader nears the bottom; from page 2 on, a
+        // "newer" control prepends (manually - prepending on scroll would fight
+        // the reader). Each appended page is wrapped in a chunk that records
+        // its URL, which is what the return-to-entry memory keys on.
+        const pagers = Array.from(document.querySelectorAll<HTMLElement>('.pager'));
+        const bottomPager = pagers[pagers.length - 1];
+        const topPager = pagers.length > 1 ? pagers[0] : null;
+        let olderUrl: string | null = bottomPager?.querySelector<HTMLAnchorElement>('a[rel=next]')?.getAttribute('href') ?? null;
+        let newerUrl: string | null = bottomPager?.querySelector<HTMLAnchorElement>('a[rel=prev]')?.getAttribute('href') ?? null;
+        const lastPage = Number(bottomPager?.dataset.last || 1);
+        const pageNo = (url: string) => Number(url.match(/\/page\/(\d+)\//)?.[1] ?? 1);
+        async function fetchPage(url: string) {
+            const res = await fetch(url, { headers: { Accept: 'text/html' } });
+            if (!res.ok) throw new Error(String(res.status));
+            const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+            const chunk = document.createElement('div');
+            chunk.className = 'page-chunk';
+            chunk.dataset.pageUrl = new URL(url, location.origin).pathname;
+            chunk.innerHTML = doc.querySelector('.stream')?.innerHTML ?? '';
+            const pager = doc.querySelector('.pager');
+            return {
+                chunk,
+                next: pager?.querySelector('a[rel=next]')?.getAttribute('href') ?? null,
+                prev: pager?.querySelector('a[rel=prev]')?.getAttribute('href') ?? null,
+            };
+        }
+        const settle = () => { sizeImages(); sizeEmbeds(); measure(); };
+        if (bottomPager) {
+            const more = document.createElement('div');
+            more.className = 'load-more';
+            more.innerHTML = '<button type="button" class="load-btn"></button><span class="load-status"></span>';
+            bottomPager.replaceWith(more);
+            const btn = more.querySelector<HTMLButtonElement>('.load-btn')!;
+            const status = more.querySelector<HTMLElement>('.load-status')!;
+            let busy = false;
+            const paint = () => {
+                if (olderUrl) { btn.hidden = false; btn.textContent = `Load older · page ${pageNo(olderUrl)} of ${lastPage}`; status.textContent = ''; }
+                else { btn.hidden = true; status.textContent = 'That is everything.'; }
+            };
+            async function loadOlder() {
+                if (busy || !olderUrl) return;
+                busy = true;
+                btn.textContent = 'Loading…';
+                try {
+                    const { chunk, next } = await fetchPage(olderUrl);
+                    stream!.appendChild(chunk);
+                    enhance(chunk);
+                    settle();
+                    olderUrl = next;
+                } catch { status.textContent = 'Could not load more - '; btn.textContent = 'try again'; busy = false; return; }
+                busy = false;
+                paint();
+            }
+            btn.addEventListener('click', loadOlder);
+            paint();
+            // auto-load when the control comes within a screen of the viewport
+            new IntersectionObserver((es) => { if (es.some((e) => e.isIntersecting)) loadOlder(); }, { rootMargin: '100% 0px' }).observe(more);
+        }
+        if (topPager) {
+            const newer = document.createElement('div');
+            newer.className = 'load-more top';
+            newer.innerHTML = '<button type="button" class="load-btn"></button>';
+            topPager.replaceWith(newer);
+            const btn = newer.querySelector<HTMLButtonElement>('.load-btn')!;
+            const paint = () => {
+                if (newerUrl) { btn.hidden = false; btn.textContent = `Load newer · page ${pageNo(newerUrl)} of ${lastPage}`; }
+                else newer.remove();
+            };
+            btn.addEventListener('click', async () => {
+                if (!newerUrl) return;
+                btn.textContent = 'Loading…';
+                try {
+                    const { chunk, prev } = await fetchPage(newerUrl);
+                    // keep what the reader is looking at where it is
+                    const before = document.documentElement.scrollHeight;
+                    stream!.prepend(chunk);
+                    enhance(chunk);
+                    settle();
+                    window.scrollBy(0, document.documentElement.scrollHeight - before);
+                    newerUrl = prev;
+                } catch { btn.textContent = 'Could not load - try again'; return; }
+                paint();
+            });
+            paint();
         }
     }
 </script>
