@@ -34,3 +34,14 @@ are browsable; "58 disc-dyes" alone is not.
 - **A project's tag page says "project" and the project's name**, not
   `#Project: Primortal`. Metadata files cannot carry a colon, so `project:lrk`
   lives in `project-lrk.yaml`; both pages now look the tag up by either spelling.
+
+## Later the same day: direction H
+
+`/tags` is now hubs. A topic tag with five or more entries is a hub unless it is
+nearly always inside a bigger one (`disc-dyes` never appears without `disc-golf`,
+`pixel-art` never without `gamedev` - those are facets, not hubs, however many
+entries they have); every smaller tag files under the hub it most often shares an
+entry with; the few that share with none sit in an "elsewhere" row. Each hub card
+shows a per-year sparkline, its span, its description and its facets as chips with
+counts. Five hubs and two projects instead of 34 cards. All computed - a new tag
+files itself. Chosen from `quiver.fisher.sh/static/reports/log/2026-09-29-tags-options/`.
