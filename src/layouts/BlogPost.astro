@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import BackToStream from '../components/BackToStream.astro';
+import { tagMeta, tagName, isProjectTag } from '../lib/tags';
 import BaseHead from '../components/BaseHead.astro';
 import Comments from '../components/Comments.astro';
 import Footer from '../components/Footer.astro';
@@ -11,6 +12,7 @@ import Header from '../components/Header.astro';
 type Props = CollectionEntry<'posts'>['data'] & { backHref?: string; entryKey?: string };
 
 const { id, title, description, date, updatedDate, heroImage, tags, draft, backHref, entryKey } = Astro.props;
+const meta = await tagMeta();
 ---
 
 <html lang="en">
@@ -139,7 +141,7 @@ const { id, title, description, date, updatedDate, heroImage, tags, draft, backH
                     </div>
                     {(tags && tags.length > 0) && (
                         <div class="meta">
-                            {tags?.map((tag) => <a class="chip" href={`/tags/${tag}/`}>{tag}</a>)}
+                            {tags?.map((tag) => <a class={isProjectTag(tag) ? 'chip project' : 'chip'} href={`/tags/${tag}/`}>{tagName(tag, meta)}</a>)}
                         </div>
                     )}
                 </header>

@@ -26,6 +26,17 @@ content:
       - name: description
         label: Description
         type: string
+      - name: links
+        label: Links (showcase page, repo, ...)
+        type: object
+        list: true
+        fields:
+          - name: label
+            label: Label
+            type: string
+          - name: url
+            label: URL
+            type: string
 
   - name: posts
     label: Posts

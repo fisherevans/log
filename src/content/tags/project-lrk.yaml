@@ -1,2 +1,5 @@
-name: 'Project: Lost Relics of Kazar'
+name: Lost Relics of Kazar
 description: The Lost Relics of Kazar was a top down 2D action rpg I never finished.
+links:
+  - label: GitHub
+    url: https://github.com/fisherevans/LRK

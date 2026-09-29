@@ -9,6 +9,7 @@ import StreamEntry from './StreamEntry.astro';
 import Pager from './Pager.astro';
 import { groupBursts, previewOf, spanLabel, type StreamBlock } from '../lib/stream';
 import { cfImage, isMediaUrl } from '../../plugins/media-urls.mjs';
+import { tagMeta, tagName } from '../lib/tags';
 import { fmtDate } from '../lib/search';
 
 interface Props {
@@ -38,6 +39,7 @@ const span = (a: StreamItem[]) => {
 };
 // The strip shows up to four previews; the fifth tile is the "+N" that opens
 // the rest. A run with no pictures at all gets no strip - the text carries it.
+const names = await tagMeta();
 const STRIP = 4;
 // An opened burst reveals this many at a time; 38 notes at once takes over the
 // page, and the footer's "Show 5 more · 33 left" keeps the reader in control.
@@ -47,6 +49,8 @@ const thumb = (src: string) => (isMediaUrl(src) ? cfImage(src, 200) : src);
 type Prev = NonNullable<ReturnType<typeof previewOf>>;
 const previewsFor = (b: StreamBlock): Prev[] =>
     b.kind === 'burst' ? (b.rest.map(previewOf).filter(Boolean).slice(0, STRIP) as Prev[]) : [];
+const chevDown = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+const chevUp = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>';
 const playIcon =
     '<svg class="play" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(5,5,5,0.7)"/><path d="M9.5 7.5v9l7-4.5z" fill="#fff"/></svg>';
 ---
@@ -76,14 +80,14 @@ const playIcon =
             ) : (
                 <>
                     {b.lead.map((item) => <StreamEntry item={item} />)}
-                    <div class="burst" data-tag={b.tag}>
+                    <div class="burst" data-tag={b.tag} data-tag-name={tagName(b.tag, names)}>
                         <div class="burst-card">
                             <div class="front">
                                 <p class="burst-hl">
                                     <span class="n">{b.rest.length}</span> more {b.rest.length === 1 ? 'note' : 'notes'}
                                 </p>
                                 <p class="burst-meta">
-                                    in <a href={`/tags/${b.tag}/`}>#{b.tag}</a>
+                                    in <a href={`/tags/${b.tag}/`}>{tagName(b.tag, names)}</a>
                                     <span class="when"><span class="sep">·</span><time class="rel" datetime={b.rest[0].date.toISOString()} data-abs={longDate(b.rest[0].date)} title={longDate(b.rest[0].date)}>{fmtDate(b.rest[0].date)}</time><span class="sep">·</span><button type="button" class="burst-span" data-span={spanLabel(b.rest)} data-range={span(b.rest)} title={span(b.rest)}>{spanLabel(b.rest)}</button></span>
                                 </p>
                                 {previewsFor(b).length > 0 && (
@@ -101,15 +105,17 @@ const playIcon =
                                 )}
                                 <div class="burst-actions">
                                     <button type="button" class="burst-open" aria-expanded="false">View the notes</button>
-                                    <a class="burst-tag" href={`/tags/${b.tag}/`}>Everything in #{b.tag}&nbsp;&rarr;</a>
+                                    <a class="burst-tag" href={`/tags/${b.tag}/`}>All of {tagName(b.tag, names)}&nbsp;&rarr;</a>
                                 </div>
                             </div>
                         </div>
                         <div class="burst-more" hidden data-page-size={BURST_PAGE}>
                             {b.rest.map((item) => <StreamEntry item={item} />)}
                             <div class="burst-end">
-                                <button type="button" class="burst-page" hidden></button>
-                                <button type="button" class="burst-close">Hide these {b.rest.length} #{b.tag} notes <span class="up" aria-hidden="true">&#8963;</span></button>
+                                <span class="burst-btns">
+                                    <button type="button" class="burst-page" hidden><Fragment set:html={chevDown} /><span class="lbl"></span></button>
+                                    <button type="button" class="burst-close"><Fragment set:html={chevUp} /><span class="lbl">Hide {tagName(b.tag, names)} notes</span></button>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -186,6 +192,7 @@ const playIcon =
 
     /* ---------- notes ---------- */
     .stream :global(.entry.note) { margin-top: 2.8rem; margin-bottom: 2.8rem; }
+    .stream :global(.chip.project) { border-color: rgba(232, 155, 75, 0.55); }
     .stream :global(.entry.note .meta)::before {
         content: '';
         position: absolute;
@@ -637,9 +644,15 @@ const playIcon =
     .stream :global(.burst-more)::before {
         content: '';
         position: absolute;
-        left: var(--spine-c);
-        top: -1.6rem;
-        bottom: 1.6rem;
+        /* centred on the dots to the half pixel; the line is 1px wide */
+        left: calc(var(--spine-c) - 0.5px);
+        /* starts under the deck (its back cards reach 14px below the front),
+           so the line emerges from the card rather than from nothing */
+        top: calc(-1.6rem - 18px);
+        z-index: -1;
+        /* ends where the elbow's straight part ends, so no foot pokes below
+           the start of the curve */
+        bottom: calc(1.6rem + 10px);
         width: 1px;
         background: rgba(232, 155, 75, 0.55);
         pointer-events: none;
@@ -648,11 +661,13 @@ const playIcon =
     /* The branch ends by turning right into the controls, which sit centred
        in the column: the line runs to the middle and the pills (opaque) cover
        its end. The set's actions belong to the set, not to the main spine. */
-    .stream :global(.burst-end) { position: relative; height: 3.2rem; display: flex; align-items: center; justify-content: center; gap: 0.7rem; padding-left: var(--item-indent); flex-wrap: wrap; }
+    .stream :global(.burst-end) { position: relative; height: 3.2rem; display: flex; align-items: center; justify-content: center; padding-left: var(--item-indent); }
+    /* the pair sits on the line's end; its own background covers the gap */
+    .stream :global(.burst-btns) { position: relative; display: flex; gap: 0.5rem; background: var(--bg); padding: 0 0.5rem; flex-wrap: wrap; justify-content: center; }
     .stream :global(.burst-end)::before {
         content: '';
         position: absolute;
-        left: var(--spine-c);
+        left: calc(var(--spine-c) - 0.5px);
         top: 0;
         width: calc(50% - var(--spine-c));
         height: 1.6rem;
@@ -661,36 +676,24 @@ const playIcon =
         border-bottom-left-radius: 10px;
         pointer-events: none;
     }
-    .stream :global(.burst-page) {
-        position: relative;
+    .stream :global(.burst-page), .stream :global(.burst-close) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4em;
         font-family: 'DraftingMono', ui-monospace, monospace;
         font-size: 0.8rem;
-        background: var(--accent);
-        border: 1px solid var(--accent);
         border-radius: 999px;
-        padding: 0.3em 0.9em;
-        color: var(--bg);
-        font-weight: 600;
+        padding: 0.35em 0.95em 0.35em 0.75em;
         cursor: pointer;
         white-space: nowrap;
+        line-height: 1.2;
     }
+    .stream :global(.burst-page svg), .stream :global(.burst-close svg) { width: 1em; height: 1em; }
+    .stream :global(.burst-page) { background: var(--accent); border: 1px solid var(--accent); color: var(--bg); font-weight: 600; }
     .stream :global(.burst-page:hover) { background: var(--fg); border-color: var(--fg); }
     .stream :global(.burst-page[hidden]) { display: none; }
-    .stream :global(.burst-close) {
-        position: relative;
-        background: var(--bg);
-        font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.8rem;
-        background: none;
-        border: 1px solid rgba(232, 155, 75, 0.55);
-        border-radius: 999px;
-        padding: 0.3em 0.9em;
-        color: var(--muted);
-        cursor: pointer;
-        white-space: nowrap;
-    }
+    .stream :global(.burst-close) { background: var(--bg); border: 1px solid rgba(232, 155, 75, 0.55); color: var(--muted); }
     .stream :global(.burst-close:hover) { color: var(--accent); border-color: var(--accent); }
-    .stream :global(.burst-close .up) { display: inline-block; margin-left: 0.3em; transform: translateY(0.1em); }
     /* an expanded burst's card quietens so the run reads as one stretch */
     .stream :global(.burst.is-open .burst-card) { opacity: 0.75; }
     .stream :global(.burst.is-open .burst-card .front) { border-color: rgba(232, 155, 75, 0.5); }
@@ -1006,7 +1009,8 @@ const playIcon =
             const pageBtn = more.querySelector<HTMLButtonElement>('.burst-page')!;
             const left = entries.length - shown;
             pageBtn.hidden = left <= 0;
-            pageBtn.textContent = `Show ${Math.min(size, left)} more #${burst.dataset.tag} notes · ${left} left`;
+            pageBtn.querySelector('.lbl')!.textContent = `${Math.min(size, left)} more ${burst.dataset.tagName} notes`;
+            pageBtn.title = `${left} left`;
             settle();
         }
         function openBurst(burst: HTMLElement, upTo?: HTMLElement) {

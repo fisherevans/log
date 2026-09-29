@@ -10,6 +10,7 @@
 // point (disc dyes) becomes a gallery instead.
 import { getCollection } from 'astro:content';
 import BackToStream from '../../components/BackToStream.astro';
+import { tagMeta, tagName } from '../../lib/tags';
 import { mediaSrcSet } from '../../../plugins/media-urls.mjs';
 import { noteCover, noteHref, noteTitle } from '../../lib/notes';
 import { postHref } from '../../lib/posts';
@@ -22,9 +23,8 @@ import { buildStream, yearsOf } from '../../lib/stream';
 import { SITE_TITLE } from '../../consts';
 
 export async function getStaticPaths() {
-    const allTagMeta = await getCollection('tags');
-    // `project:lrk` is `project-lrk.yaml` on disk (no colons in file names)
-    const tagMetaMap = Object.fromEntries(allTagMeta.flatMap((t) => [[t.id, t.data], [t.id.replace(/^project-/, 'project:'), t.data]]));
+    const { tagMeta } = await import('../../lib/tags');
+    const tagMetaMap = Object.fromEntries(await tagMeta());
     const posts = await getCollection('posts', ({ data }) => !data.draft);
     const notes = await getCollection('notes', ({ data }) => !data.draft);
     const tags = new Set<string>();
@@ -34,6 +34,7 @@ export async function getStaticPaths() {
 
 const { tag } = Astro.params;
 const { meta } = Astro.props;
+const names = await tagMeta();
 const all = await buildStream();
 const items = all.filter((i) => (i.entry.data.tags ?? []).includes(tag));
 const posts = items.filter((i) => i.kind === 'post').length;
@@ -51,7 +52,8 @@ const showFilter = posts > 0 && notes > 0;
             h1 { margin: 0 0 0.25em; }
             .eyebrow { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 0.2rem; }
             h1 .hash { color: var(--accent); }
-            .tag-description { color: var(--muted); max-width: 40em; margin: 0 0 1.4rem; }
+            .tag-description { color: var(--muted); max-width: 40em; margin: 0 0 1rem; }
+            .tag-links { display: flex; gap: 1.2rem; margin: 0 0 1.4rem; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.82rem; }
             .count { color: var(--muted); font-size: 0.95em; margin: 0 0 1.6rem; }
 
             .filter { display: flex; gap: 0.4rem; margin: 0 0 1.8rem; }
@@ -87,12 +89,19 @@ const showFilter = posts > 0 && notes > 0;
             {tag.startsWith('project:') ? (
                 <>
                     <p class="eyebrow">project</p>
-                    <h1>{(meta?.name ?? tag).replace(/^Project:\s*/i, '')}</h1>
+                    <h1>{tagName(tag, names)}</h1>
                 </>
             ) : (
-                <h1><span class="hash">#</span>{meta?.name ?? tag}</h1>
+                <h1><span class="hash">#</span>{tagName(tag, names)}</h1>
             )}
             {meta?.description && <p class="tag-description">{meta.description}</p>}
+            {meta?.links?.length > 0 && (
+                <p class="tag-links">
+                    {meta.links.map((l: { label: string; url: string }) => (
+                        <a href={l.url} rel="noopener">{l.label} &nearr;</a>
+                    ))}
+                </p>
+            )}
             <p class="count">
                 {items.length} {items.length === 1 ? 'entry' : 'entries'}
                 {posts > 0 && notes > 0 && ` — ${posts} ${posts === 1 ? 'post' : 'posts'}, ${notes} ${notes === 1 ? 'note' : 'notes'}`}

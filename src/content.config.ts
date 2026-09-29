@@ -103,6 +103,9 @@ const tags = defineCollection({
         // pictures are the point (disc dyes, prints, builds). This is what lets
         // a tag page double as a portfolio without a bespoke collection.
         layout: z.enum(['list', 'grid']).default('list'),
+        // Where else this tag lives: a project's showcase page, its repo. Shown
+        // on the tag page header and the project cards on /tags.
+        links: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
     }),
 });
 
