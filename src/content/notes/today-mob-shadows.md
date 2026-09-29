@@ -4,6 +4,7 @@ date: 2025-09-13T21:41:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 Today: Mob Shadows..

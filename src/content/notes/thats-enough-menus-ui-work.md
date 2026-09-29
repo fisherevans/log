@@ -4,6 +4,7 @@ date: 2025-10-17T23:21:00Z
 tags:
   - project:primortal
   - gamedev
+  - ui
   - pixel-art
 draft: false
 ---

@@ -5,6 +5,7 @@ tags:
   - project:primortal
   - gamedev
   - pixel-art
+  - godot
 draft: false
 ---
 What if pixels were triangles? I did a little experiment to generate isometric renderings from animated pixel art in Godot?

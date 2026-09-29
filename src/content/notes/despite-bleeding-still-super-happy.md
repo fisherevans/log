@@ -4,6 +4,7 @@ date: 2022-03-06T12:21:49Z
 tags:
   - disc-dyes
   - disc-golf
+  - resist
 images:
   - src: https://media.fisher.sh/notes/2022/03/06/despite-bleeding-still-super-happy-1.webp
     alt: "Despite the bleeding... I'm still super happy with this 3-disc series. I reused three one color dye beds: cyan, magenta,"

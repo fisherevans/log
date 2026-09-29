@@ -4,6 +4,8 @@ date: 2025-10-23T00:21:00Z
 tags:
   - project:primortal
   - gamedev
+  - ui
+  - go
 images:
   - src: https://media.fisher.sh/notes/2025/10/23/another-one-those-doesnt-look-2.png
     alt: "Another one of those \u201cdoesn\u2019t look big, but is massive\u201d updates\u2026 \ud83d\ude05"

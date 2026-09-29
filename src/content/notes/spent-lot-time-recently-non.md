@@ -4,6 +4,7 @@ date: 2025-03-04T23:20:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 I spent a lot of time recently on non-visual work recently, which is hard to demo.

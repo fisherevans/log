@@ -4,6 +4,7 @@ date: 2022-03-03T23:18:30Z
 tags:
   - disc-dyes
   - disc-golf
+  - spin-dye
 images:
   - src: https://media.fisher.sh/notes/2022/03/03/man-wanted-pretty-bottom-discs-1.webp
     alt: "Man, I've wanted to pretty up the bottom of my discs since the get-go! I'm digging this worm dip and turntable \ud83e\udd29 These a"

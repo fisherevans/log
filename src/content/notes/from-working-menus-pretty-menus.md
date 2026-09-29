@@ -5,6 +5,7 @@ tags:
   - project:primortal
   - gamedev
   - pixel-art
+  - ui
 draft: false
 ---
 From working menus, to pretty menus 😎

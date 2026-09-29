@@ -4,6 +4,7 @@ date: 2025-08-25T17:13:00Z
 tags:
   - project:primortal
   - gamedev
+  - ui
 draft: false
 ---
 Long break, but eager to get back into the swing of things. Starting small to get back into the groove: a menu!

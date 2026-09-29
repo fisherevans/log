@@ -4,6 +4,7 @@ date: 2025-10-02T23:18:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 images:
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-1.png
     alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"

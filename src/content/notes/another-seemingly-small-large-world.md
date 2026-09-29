@@ -4,6 +4,7 @@ date: 2025-10-19T23:38:00Z
 tags:
   - project:primortal
   - gamedev
+  - lighting
 images:
   - src: https://media.fisher.sh/notes/2025/10/19/another-seemingly-small-large-world-2.png
     alt: "Another seemingly small, but large world editing update - dynamic ambient lighting! Up until now, my lighting layer had "

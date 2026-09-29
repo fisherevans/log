@@ -4,6 +4,8 @@ date: 2023-02-15T11:17:23Z
 tags:
   - disc-dyes
   - disc-golf
+  - stencil
+  - chameleon
 images:
   - src: https://media.fisher.sh/notes/2023/02/15/replacing-used-trusty-now-turns-1.jpg
     alt: "Replacing my used-to-be-trusty-but-now-turns-over @eric_mccabe Truth with a new LucidX chameleon dye. I've done a dye wi"

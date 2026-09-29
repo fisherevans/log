@@ -5,6 +5,8 @@ tags:
   - project:primortal
   - gamedev
   - pixel-art
+  - ui
+  - shaders
 draft: false
 ---
 I thought I’d add a transition effect between menu screen - I tried to emulate older CRT screens, tube TVs changing the channel, and the classic pip boy. There are some mocing scan lines, vignetteing, “flashing”, pixel row dithering, and some other small thing. I like where I ended up, but I’m concern it’s too much? Is it distracting? Or “nice! keep it!”?

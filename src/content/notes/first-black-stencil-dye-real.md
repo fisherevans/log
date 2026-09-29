@@ -4,6 +4,7 @@ date: 2022-11-16T15:02:47Z
 tags:
   - disc-dyes
   - disc-golf
+  - stencil
 images:
   - src: https://media.fisher.sh/notes/2022/11/16/first-black-stencil-dye-real-1.webp
     alt: "This was my first black stencil dye and I'm real happy with it :) This @daftpunk @streamlinediscs  "

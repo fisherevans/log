@@ -4,6 +4,7 @@ date: 2021-10-25T13:34:36Z
 tags:
   - disc-dyes
   - disc-golf
+  - cell-dye
 images:
   - src: https://media.fisher.sh/notes/2021/10/25/first-stab-cell-dye-like-1.jpg
     alt: "Neo Origin - Discmania"

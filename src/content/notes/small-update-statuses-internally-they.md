@@ -4,6 +4,7 @@ date: 2025-09-28T20:15:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 images:
   - src: https://media.fisher.sh/notes/2025/09/28/small-update-statuses-internally-they-2.png
     alt: "Small update to statuses - internally, they are tracked with \u201cstacks\u201d, but visually they are represented with level, 1-3"

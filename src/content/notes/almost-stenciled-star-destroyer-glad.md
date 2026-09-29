@@ -4,6 +4,8 @@ date: 2022-02-15T23:00:25Z
 tags:
   - disc-dyes
   - disc-golf
+  - stencil
+  - glue-bed
 images:
   - src: https://media.fisher.sh/notes/2022/02/15/almost-stenciled-star-destroyer-glad-1.webp
     alt: "I almost stenciled this Star Destroyer - and I'm glad I didn't. I love the swirls in the middle on this one."

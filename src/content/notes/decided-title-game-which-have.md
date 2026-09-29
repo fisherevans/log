@@ -5,6 +5,7 @@ tags:
   - project:primortal
   - gamedev
   - pixel-art
+  - ui
 images:
   - src: https://media.fisher.sh/notes/2025/10/26/decided-title-game-which-have-2.png
     alt: "I\u2019ve decided on a title for my game (which I have been calling Project F). Introducing\u2026 Primortal: Soul Remains"

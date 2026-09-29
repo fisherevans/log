@@ -4,6 +4,7 @@ date: 2025-09-27T23:27:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 I feel like this is a bigger update than most. I mocked up the core game play loop I’m looking for: travel to a planet, battle mobs to get research points, then gather enough elythium to escape back. Once back at HQ, use your research points to upgrade your character. At first, to get to a rough demo to have people try it out and offer feedback on the general idea, I want to trade research points in for new combat skills.

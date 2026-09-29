@@ -4,6 +4,7 @@ date: 2025-10-26T11:34:00Z
 tags:
   - project:primortal
   - gamedev
+  - game-engine
 draft: false
 ---
 **_Scripted entity behaviors!_** Here’s an example of the player remotely controlling another entity by pressing buttons. Once the NPC steps on one of the end-spots, the NPC walks itself back to the start.

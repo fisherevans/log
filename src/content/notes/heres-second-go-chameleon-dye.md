@@ -4,6 +4,7 @@ date: 2023-02-16T12:19:50Z
 tags:
   - disc-dyes
   - disc-golf
+  - chameleon
 images:
   - src: https://media.fisher.sh/notes/2023/02/16/heres-second-go-chameleon-dye-1.jpg
     alt: "Here's a second go at a chameleon dye bed - I pulled it too soon and the colors aren't as deep as I'd like - but I still"

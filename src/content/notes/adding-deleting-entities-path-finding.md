@@ -4,6 +4,7 @@ date: 2025-10-30T23:36:00Z
 tags:
   - project:primortal
   - gamedev
+  - pathfinding
 draft: false
 ---
 **Adding/deleting entities & path-finding improvements**

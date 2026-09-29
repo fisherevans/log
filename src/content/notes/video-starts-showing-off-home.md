@@ -4,6 +4,8 @@ date: 2025-02-17T21:31:00Z
 tags:
   - project:primortal
   - gamedev
+  - tools
+  - level-design
 draft: false
 ---
 This video starts with me “showing off” my home-spun map editor. It did what I needed earlier on - had swap-able swatches, layer rendering controls, copy/paste abilities, entity property management, and more. Then, it shows me opening the same map in TIled, changing the position of some entities, and finally walking around in the edited map.

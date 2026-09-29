@@ -4,6 +4,7 @@ date: 2025-12-08T22:59:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 It’s been a while - ARC Raiders has taken up more of my free time than I’d like to admit… But! I’ve been working on some combat improvements.

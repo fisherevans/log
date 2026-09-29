@@ -4,6 +4,7 @@ date: 2021-10-27T11:19:40Z
 tags:
   - disc-dyes
   - disc-golf
+  - cell-dye
 images:
   - src: https://media.fisher.sh/notes/2021/10/27/2nd-generation-2nd-cell-bed-1.jpg
     alt: "Neo Mutant - Discmania"

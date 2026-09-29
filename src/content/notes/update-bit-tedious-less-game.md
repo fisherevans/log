@@ -4,6 +4,7 @@ date: 2025-03-16T21:28:00Z
 tags:
   - project:primortal
   - gamedev
+  - ui
 draft: false
 ---
 This update was a bit tedious, and less game focused - but hopefully it will let me iterate on my UIs quickly as I flesh out my combat state.

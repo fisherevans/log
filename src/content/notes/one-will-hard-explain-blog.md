@@ -4,6 +4,7 @@ date: 2025-09-10T21:48:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 This one will be hard to explain.. but this blog is for me in the end. I’ve added stances to the skill execution, represented by the black lines with an icon (shield = defending, !!! = vulnerable). Those stances will eventually impact how damage is calculated.

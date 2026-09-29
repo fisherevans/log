@@ -4,6 +4,7 @@ date: 2021-12-17T18:28:29Z
 tags:
   - disc-dyes
   - disc-golf
+  - rainbow
 images:
   - src: https://media.fisher.sh/notes/2021/12/17/first-rainbow-dye-1.webp
     alt: "My first rainbow dye :)"

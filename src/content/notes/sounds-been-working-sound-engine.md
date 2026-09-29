@@ -4,6 +4,7 @@ date: 2025-11-13T22:48:00Z
 tags:
   - project:primortal
   - gamedev
+  - audio
 draft: false
 ---
 Sounds! I’ve been working on my sound engine - something that has barely existed until now. There are two big updates shown in this video:

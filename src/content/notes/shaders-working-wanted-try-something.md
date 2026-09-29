@@ -4,6 +4,7 @@ date: 2025-09-02T09:50:00Z
 tags:
   - project:primortal
   - gamedev
+  - shaders
 images:
   - src: https://media.fisher.sh/notes/2025/09/02/shaders-working-wanted-try-something-2.png
     alt: "With shaders now working, I wanted to try out something funky. I really like playing my GBA games on emulators with simu"

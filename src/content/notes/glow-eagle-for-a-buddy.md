@@ -4,6 +4,8 @@ date: 2023-05-18T09:10:24Z
 tags:
   - disc-dyes
   - disc-golf
+  - stencil
+  - glow
 images:
   - src: https://media.fisher.sh/notes/2023/05/18/glow-eagle-for-a-buddy-1.webp
     alt: "A glow eagle for a buddy - @disco___biscuit stencil"

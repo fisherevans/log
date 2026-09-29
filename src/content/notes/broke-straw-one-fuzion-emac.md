@@ -4,6 +4,7 @@ date: 2021-10-23T21:55:20Z
 tags:
   - disc-dyes
   - disc-golf
+  - resist
 images:
   - src: https://media.fisher.sh/notes/2021/10/23/broke-straw-one-fuzion-emac-1.webp
     alt: "Fuzion EMAC Truth - Dynamic Discs"

@@ -4,6 +4,7 @@ date: 2025-02-16T12:25:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 The first stab at combat. Player skills are on the bottom, opponent skills on on top. Each skill lasts a number of “ticks” - each tick can do something. Currently, the white dots are damage ticks, the black ticks are idle time. The color corresponds to the skill type.

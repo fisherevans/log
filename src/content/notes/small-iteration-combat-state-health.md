@@ -4,6 +4,7 @@ date: 2025-03-18T22:13:00Z
 tags:
   - project:primortal
   - gamedev
+  - combat
 draft: false
 ---
 Small iteration in the combat state. Health is now fluid - damage adjusts a target, but the actual health takes time to reach that target. This means the health bar updates smoothly and it technically allows you to recover from death. I want to add skills that change how quickly (or slowly) the effective health updates.

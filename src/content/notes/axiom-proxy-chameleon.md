@@ -4,6 +4,8 @@ date: 2023-05-18T09:16:29Z
 tags:
   - disc-dyes
   - disc-golf
+  - cell-dye
+  - glue-bed
 images:
   - src: https://media.fisher.sh/notes/2023/05/18/axiom-proxy-chameleon.webp
     alt: "Giving the @mvpdiscsports Axiom proxy a whirl. I've seen @simon_lizotte throw it too well too many times."

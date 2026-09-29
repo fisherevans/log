@@ -5,17 +5,32 @@ import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
 
+// Counts cover posts AND notes - a tag page shows both interleaved, so the
+// index should count what the page will show.
 const posts = await getCollection('posts', ({ data }) => !data.draft);
+const notes = await getCollection('notes', ({ data }) => !data.draft);
 const allTagMeta = await getCollection('tags');
-const tagMetaMap = Object.fromEntries(allTagMeta.map(t => [t.id, t.data]));
+const tagMetaMap = Object.fromEntries(allTagMeta.map((t) => [t.id, t.data]));
 
 const tagCounts = new Map<string, number>();
-for (const post of posts) {
-    for (const tag of post.data.tags) {
-        tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-    }
+for (const e of [...posts, ...notes]) {
+    for (const tag of e.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
 }
-const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const byCount = ([a, an]: [string, number], [b, bn]: [string, number]) => bn - an || a.localeCompare(b);
+// Grouped by prefix: `project:*` tags are a project's whole devlog and read
+// differently from a topic, so they get their own section first. Any other
+// prefix that turns up (`lang:go`, say) becomes a section of its own.
+const groups = new Map<string, [string, number][]>();
+for (const entry of [...tagCounts.entries()].sort(byCount)) {
+    const [tag] = entry;
+    const prefix = tag.includes(':') ? tag.slice(0, tag.indexOf(':')) : '';
+    if (!groups.has(prefix)) groups.set(prefix, []);
+    groups.get(prefix)!.push(entry);
+}
+const sectionTitle = (prefix: string) => (prefix === '' ? 'Topics' : prefix === 'project' ? 'Projects' : prefix);
+const sections = [...groups.entries()].sort(([a], [b]) => (a === 'project' ? -1 : b === 'project' ? 1 : a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)));
+// A project tag shows as its name ("Lost Relics of Kazar"), not "project:lrk".
+const display = (tag: string) => tagMetaMap[tag]?.name?.replace(/^Project:\s*/i, '') ?? (tag.includes(':') ? tag.slice(tag.indexOf(':') + 1) : tag);
 ---
 <!doctype html>
 <html lang="en">
@@ -24,27 +39,33 @@ const tags = [...tagCounts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeC
         <Header />
         <main>
             <h1>tags</h1>
-            <ul class="tag-grid">
-                {tags.map(([tag, count]) => (
-                    <li>
-                        <a class="tag-card" href={`/tags/${tag}/`}>
-                            <span class="tag-card-head">
-                                <span class="tag-name">{tag}</span>
-                                <span class="count">{count} {count === 1 ? 'post' : 'posts'}</span>
-                            </span>
-                            {tagMetaMap[tag]?.description && (
-                                <span class="tag-card-desc">{tagMetaMap[tag].description}</span>
-                            )}
-                        </a>
-                    </li>
-                ))}
-            </ul>
+            {sections.map(([prefix, list]) => (
+                <section class="tag-section">
+                    <h2 class="tag-section-title">{sectionTitle(prefix)} <span class="tag-section-count">{list.length}</span></h2>
+                    <ul class="tag-grid">
+                        {list.map(([tag, count]) => (
+                            <li>
+                                <a class="tag-card" href={`/tags/${tag}/`}>
+                                    <span class="tag-card-head">
+                                        <span class="tag-name">{display(tag)}</span>
+                                        <span class="count">{count} {count === 1 ? 'entry' : 'entries'}</span>
+                                    </span>
+                                    {tagMetaMap[tag]?.description && <span class="tag-card-desc">{tagMetaMap[tag].description}</span>}
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            ))}
         </main>
         <Footer />
         <style>
             /* Responsive card grid: 1 / 2 / 3 columns as width allows (the column
                count falls out of the min track width against the 800px content
                column). */
+            .tag-section { margin: 0 0 2.4rem; }
+            .tag-section-title { font-family: 'DraftingMono', ui-monospace, monospace; font-weight: 400; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.8rem; }
+            .tag-section-count { color: var(--accent); margin-left: 0.4em; }
             .tag-grid {
                 list-style: none;
                 margin: 0;

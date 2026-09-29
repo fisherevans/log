@@ -31,6 +31,21 @@ NOTES = Path(__file__).resolve().parent.parent / 'src/content/notes'
 PUBLIC = 'https://media.fisher.sh'
 TZ = ZoneInfo('America/New_York')
 TAGS = ['disc-dyes', 'disc-golf']
+# Technique tags, from the caption. A reader browsing dyes wants "the stencil
+# ones" or "the cell dyes" more than a manufacturer.
+TECHNIQUE = [
+    (r'stencil', 'stencil'),
+    (r'\bcells?\b|cell[- ]dye|cell bed', 'cell-dye'),
+    (r'glue[- ]bed', 'glue-bed'),
+    (r'spin[- ]dye|turntable|worm dip', 'spin-dye'),
+    (r'shaving cream', 'shaving-cream'),
+    (r'chameleon', 'chameleon'),
+    (r'rainbow', 'rainbow'),
+    (r'\bglow\b', 'glow'),
+    (r'packing tape|straw', 'resist'),
+    (r'sharpie|ink dye', 'ink'),
+    (r'3d print|prusa', '3d-printing'),
+]
 
 # Hand-seeded notes (2026-08) that came from these posts: keep their slug and id.
 # Keyed by a caption prefix. Their /seed/ images are replaced by the R2 originals.
@@ -171,7 +186,11 @@ def main():
         # Local wall-clock time written as UTC: the site treats dates as UTC, so this
         # keeps the URL day equal to the day it was posted while preserving order
         # within a day (fourteen of these landed on 2021-10-24).
-        fm = [f'id: {nid}', f'date: {when.strftime("%Y-%m-%dT%H:%M:%S")}Z', 'tags:'] + [f'  - {t}' for t in TAGS]
+        tags = list(TAGS)
+        for pattern, tag in TECHNIQUE:
+            if re.search(pattern, body, re.I) and tag not in tags:
+                tags.append(tag)
+        fm = [f'id: {nid}', f'date: {when.strftime("%Y-%m-%dT%H:%M:%S")}Z', 'tags:'] + [f'  - {t}' for t in tags]
         if images:
             fm.append('images:')
             for img in images:

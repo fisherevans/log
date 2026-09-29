@@ -32,7 +32,14 @@ NOTES = Path(__file__).resolve().parent.parent / 'src/content/notes'
 PUBLIC = 'https://media.fisher.sh'
 TZ = ZoneInfo('America/New_York')
 TAGS = ['project:primortal', 'gamedev']
-TUMBLR_TAG_MAP = {'pixelart': 'pixel-art'}
+# Tumblr's per-post tags, where they name a topic a reader might browse. The
+# broad ones (gamedev, adventure, game development, game design) are the project
+# itself and are dropped in favour of the project tag.
+TUMBLR_TAG_MAP = {
+    'pixelart': 'pixel-art', 'combat': 'combat', 'menus': 'ui', 'ui': 'ui', 'lighting': 'lighting',
+    'lights': 'lighting', 'shaders': 'shaders', 'audio': 'audio', 'sounds': 'audio', 'tooling': 'tools',
+    'maps': 'level-design', 'game engine': 'game-engine', 'golang': 'go', 'godot': 'godot', 'astar': 'pathfinding',
+}
 
 # Reblogs of other people's posts are theirs, not devlog beats.
 SKIP = {'807943430891323392'}
@@ -168,7 +175,11 @@ def main():
         path = NOTES / f'{slug}.md'
         nid = existing_id(path) or mint_id()
 
-        tags = list(TAGS) + [TUMBLR_TAG_MAP[t] for t in p['tags'] if t in TUMBLR_TAG_MAP]
+        tags = list(TAGS)
+        for t in p['tags']:
+            mapped = TUMBLR_TAG_MAP.get(t)
+            if mapped and mapped not in tags:
+                tags.append(mapped)
         alt = re.sub(r'[*_]|\[([^\]]*)\]\([^)]*\)', r'\1', p['text'].split('\n')[0])[:120] if p['text'] else 'Primortal devlog'
 
         def put(rel: str, suffix: str) -> str:
