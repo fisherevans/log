@@ -22,6 +22,9 @@
   (copies the permalink), an arrow-out-of-tray for Share (the OS share sheet where
   there is one, a copy where there is not). Icons lead, per the UX guidelines.
 
+- **A fold needs five notes, not four.** With two shown, four folds two - a card that
+  hides less than it costs. Five hides three.
+
 ## Why
 
 Picked from a ten-option specimen and a six-variant follow-up

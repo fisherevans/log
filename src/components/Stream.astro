@@ -518,10 +518,11 @@ const playIcon =
     }
 
     /* ---------- load more ---------- */
-    .load-more { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin: 2.2rem 0 1rem; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.82rem; color: var(--muted); }
-    .load-more.top { margin: 0 0 2rem; }
-    .load-more .load-btn { background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 0.4em 1.1em; color: var(--fg); font: inherit; cursor: pointer; }
-    .load-more .load-btn:hover { border-color: var(--accent); color: var(--accent); }
+    /* built by the script, so it never gets Astro's scope attribute: :global */
+    .stream-wrap :global(.load-more) { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin: 2.2rem 0 1rem; font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.82rem; color: var(--muted); }
+    .stream-wrap :global(.load-more.top) { margin: 0 0 2rem; }
+    .stream-wrap :global(.load-btn) { background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 0.4em 1.1em; color: var(--fg); font: inherit; cursor: pointer; }
+    .stream-wrap :global(.load-btn:hover) { border-color: var(--accent); color: var(--accent); }
 
     /* ---------- bursts ---------- */
     /* The fold is a deck: a bright front card with two fading cards behind it,

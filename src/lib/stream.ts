@@ -49,7 +49,9 @@ export const PAGE_SIZE = 20;
 // a week of dye photos reads as one beat instead of drowning everything around
 // it. Posts never fold and always break a run; the tag page never folds at all
 // (that is where you go to see the whole run).
-export const BURST_MIN = 4; // fewer than this and folding hides more than it saves
+// A fold shows BURST_LEAD entries and hides the rest; at four the card would
+// hide two, which is a lot of chrome for very little quiet. Five hides three.
+export const BURST_MIN = 5;
 export const BURST_LEAD = 2;
 // There is deliberately no "gap in days" rule. Measured on the real notes
 // (2026-09-29, 133 same-tag gaps): p50 2d, p75 7d, p90 25d, p95 88d - a working
