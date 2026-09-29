@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import { noteSlug, noteTitle } from '../../lib/notes';
+import BackToStream from '../../components/BackToStream.astro';
 import BaseHead from '../../components/BaseHead.astro';
 import Comments from '../../components/Comments.astro';
 import Footer from '../../components/Footer.astro';
@@ -56,7 +57,7 @@ const images = note.data.images;
     <body>
         <Header />
         <main>
-            <p class="back"><a href="/notes/">&larr; all notes</a></p>
+            <BackToStream />
 
             <div class="note-head">
                 <span class="date"><FormattedDate date={note.data.date} /></span>

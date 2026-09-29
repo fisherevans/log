@@ -106,10 +106,16 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
     .stream :global(.entry) {
         padding-left: var(--item-indent);
         position: relative;
-        /* Off-screen entries skip layout and paint; the intrinsic size keeps
-           the scrollbar honest while they are skipped. */
-        content-visibility: auto;
-        contain-intrinsic-size: auto 420px;
+        /* NO content-visibility here, deliberately. It skips layout for
+           off-screen entries and estimates their height, which breaks
+           scroll restoration: coming back to an entry, the ones above it
+           resolve to their real (taller) sizes as you pass them, pushing the
+           target further down, and each correction chases it - measured
+           landing at the document bottom instead of the entry. It also applies
+           PAINT CONTAINMENT, which clipped the timeline nodes out of the
+           gutter until the gutter became padding.
+           The page is paginated at 20 entries and loads in ~230ms without it,
+           so it was buying very little for two real bugs. */
         --ring-outer: 1.05rem;
         --ring-b: 2px;
         /* entry coordinates (the entry is the containing block) */
@@ -465,6 +471,14 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
     .pager .off { opacity: 0.35; }
     .pager .range { border: none; margin-right: 0.5rem; padding-left: 0; }
 
+    /* The entry you came back to, so returning from a permalink does not drop
+       you into an undifferentiated wall of text. */
+    @keyframes land {
+        0%, 45% { background-color: rgba(229, 120, 6, 0.14); }
+        100% { background-color: transparent; }
+    }
+    .stream :global(.entry.landed .frame) { animation: land 1.8s ease-out; border-radius: 12px; }
+
     /* ---------- full-screen image viewer ---------- */
     #lightbox {
         position: fixed;
@@ -717,6 +731,57 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
             if (e.key === 'ArrowLeft') prevBtn.click();
             if (e.key === 'ArrowRight') nextBtn.click();
         });
+
+        // ---- return to where you were -----------------------------------
+        // The browser's own scroll restoration cannot be trusted here:
+        // `content-visibility: auto` means most entries have an ESTIMATED height
+        // until they are near the viewport, so on a back-navigation the document
+        // is briefly much shorter than it was and the restored offset gets
+        // clamped. Measured: leave from y=2400, come back at y=520.
+        //
+        // So the stream remembers which ENTRY you left from, not a pixel offset,
+        // and restores relative to that element once layout has settled.
+        const RETURN_KEY = 'stream-return';
+        if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+        stream.addEventListener('click', (e) => {
+            const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href]');
+            const entry = (e.target as HTMLElement).closest<HTMLElement>('.entry');
+            if (!a || !entry || a.hasAttribute('data-back')) return;
+            try {
+                sessionStorage.setItem(RETURN_KEY, JSON.stringify({
+                    path: location.pathname + location.search,
+                    id: entry.id,
+                    // where the entry sat in the viewport when you left it
+                    viewportTop: Math.round(entry.getBoundingClientRect().top),
+                }));
+            } catch {}
+        });
+
+        function restoreReturn() {
+            let saved: { path: string; id: string; viewportTop: number } | null = null;
+            try {
+                saved = JSON.parse(sessionStorage.getItem(RETURN_KEY) || 'null');
+            } catch {}
+            if (!saved || saved.path !== location.pathname + location.search) return;
+            sessionStorage.removeItem(RETURN_KEY);
+            const el = document.getElementById(saved.id);
+            if (!el) return;
+            const land = () => {
+                const docTop = el.getBoundingClientRect().top + window.scrollY;
+                window.scrollTo(0, Math.max(0, Math.round(docTop - saved!.viewportTop)));
+            };
+            // Twice: once now, once after layout settles, because entries above
+            // this one resolve their real heights as they come into range.
+            land();
+            requestAnimationFrame(() => { land(); setTimeout(land, 120); });
+            el.classList.add('landed');
+            setTimeout(() => el.classList.remove('landed'), 1800);
+        }
+        restoreReturn();
+        // A browser-button back can serve this page from the bfcache, where the
+        // module script does not re-run - pageshow is the only hook that fires.
+        window.addEventListener('pageshow', (e) => { if (e.persisted) restoreReturn(); });
 
         // ---- year rail scroll-spy (the rail's links work without this)
         const yearLinks = new Map<string, HTMLElement>();

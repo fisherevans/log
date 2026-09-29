@@ -1,6 +1,7 @@
 ---
 import { Image } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
+import BackToStream from '../components/BackToStream.astro';
 import BaseHead from '../components/BaseHead.astro';
 import Comments from '../components/Comments.astro';
 import Footer from '../components/Footer.astro';
@@ -112,6 +113,7 @@ const { id, title, description, date, updatedDate, heroImage, tags, draft } = As
             </div>
         )}
         <main>
+            <BackToStream />
             <!-- data-pagefind-body scopes the search index to post bodies only
                  (so tag pages, /posts, the landing, etc. never appear in results).
                  Drafts omit the marker entirely, which - because some page has it -

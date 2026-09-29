@@ -1,0 +1,18 @@
+---
+// "Back" from a permalink to the stream it came from.
+//
+// A plain link, deliberately. history.back() looked tempting - the browser
+// restores scroll for free - but on a back-navigation the stream comes out of
+// the bfcache and its module script never re-runs, so the stream's own
+// return-to-entry restore is skipped and the browser's (which
+// content-visibility defeats) is what you get. Measured: leave from y=2400,
+// return at y=520. A forward navigation re-runs the script and lands correctly.
+interface Props {
+    label?: string;
+}
+const { label = 'everything' } = Astro.props;
+---
+
+<p class="back">
+    <a href="/posts/" data-back>&larr; {label}</a>
+</p>
