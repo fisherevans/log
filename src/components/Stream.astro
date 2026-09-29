@@ -447,6 +447,9 @@ const playIcon =
         margin: 1rem 0;
     }
     .stream :global(.media-mat iframe), .stream :global(.media-mat video) { display: block; border: 0; background: #000; }
+    /* A <video> carries width/height attributes for its aspect ratio; without
+       this it would lay out at that pixel size and the matte would crop it. */
+    .stream :global(.media-mat video) { width: 100%; max-width: 100%; height: auto; }
 
     /* ---------- YouTube facade ---------- */
     .stream :global(.yt-facade) {
@@ -892,6 +895,12 @@ const playIcon =
         function openBurst(burst: HTMLElement) {
             burst.classList.add('is-open');
             burst.querySelector<HTMLElement>('.burst-more')!.hidden = false;
+            // The folded entries were display:none when the page measured
+            // itself, so every clientWidth/offsetHeight read as 0 and they were
+            // neither sized nor clamped. Measure them now that they have boxes.
+            sizeImages();
+            sizeEmbeds();
+            measure();
             const btn = burst.querySelector<HTMLButtonElement>('.burst-open')!;
             btn.textContent = 'Show fewer';
             btn.setAttribute('aria-expanded', 'true');
