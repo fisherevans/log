@@ -105,16 +105,16 @@ const playIcon =
                                 )}
                                 <div class="burst-actions">
                                     <button type="button" class="burst-open" aria-expanded="false">View the notes</button>
-                                    <a class="burst-tag" href={`/tags/${b.tag}/`}>All of {tagName(b.tag, names)}&nbsp;&rarr;</a>
                                 </div>
                             </div>
                         </div>
                         <div class="burst-more" hidden data-page-size={BURST_PAGE}>
                             {b.rest.map((item) => <StreamEntry item={item} />)}
                             <div class="burst-end">
+                                <span class="burst-cap"></span>
                                 <span class="burst-btns">
-                                    <button type="button" class="burst-page" hidden><Fragment set:html={chevDown} /><span class="lbl"></span></button>
-                                    <button type="button" class="burst-close"><Fragment set:html={chevUp} /><span class="lbl">Hide {tagName(b.tag, names)} notes</span></button>
+                                    <button type="button" class="burst-page" hidden><Fragment set:html={chevDown} /><span class="lbl">Show more</span></button>
+                                    <button type="button" class="burst-close"><Fragment set:html={chevUp} /><span class="lbl">Collapse</span></button>
                                 </span>
                             </div>
                         </div>
@@ -214,10 +214,18 @@ const playIcon =
     .stream :global(.entry.note .head .right) { display: flex; align-items: baseline; gap: 0.9rem; flex: 0 0 auto; }
     /* Four actions on a phone would crush the date into two lines and the
        tag chips into a column; let the actions drop under instead. */
+    /* A phone has no room for date + chips + three worded actions in one row,
+       so the head becomes two: date left with the actions as icons right,
+       then the chips. The words stay in the DOM for screen readers. */
     @media (max-width: 40rem) {
-        .stream :global(.entry.note .head) { flex-wrap: wrap; }
-        .stream :global(.entry.note .head > :first-child) { flex: 1 1 11rem; min-width: 0; }
-        .stream :global(.entry.note .head .right) { margin-left: auto; }
+        .stream :global(.entry.note .head) { flex-wrap: wrap; row-gap: 0.4rem; }
+        .stream :global(.entry.note .head .meta) { display: contents; }
+        .stream :global(.entry.note .head .meta .date) { order: 0; }
+        .stream :global(.entry.note .head .right) { order: 1; margin-left: auto; gap: 1.1rem; }
+        .stream :global(.entry.note .head .meta .chips) { order: 2; flex-basis: 100%; }
+        .stream :global(.act .lbl) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+        .stream :global(.act svg) { margin-right: 0; width: 1.15em; height: 1.15em; }
+        .stream :global(.entry.post .actions .right) { gap: 1.1rem; }
     }
     .stream :global(.entry.post .actions .right) { display: flex; align-items: center; gap: 0.9rem; }
     .stream :global(.entry.note .body) { font-size: 0.97em; line-height: 1.55; }
@@ -652,7 +660,7 @@ const playIcon =
         z-index: -1;
         /* ends where the elbow's straight part ends, so no foot pokes below
            the start of the curve */
-        bottom: calc(1.6rem + 10px);
+        bottom: calc(0.2rem + 1.1rem + 10px);
         width: 1px;
         background: rgba(232, 155, 75, 0.55);
         pointer-events: none;
@@ -661,16 +669,18 @@ const playIcon =
     /* The branch ends by turning right into the controls, which sit centred
        in the column: the line runs to the middle and the pills (opaque) cover
        its end. The set's actions belong to the set, not to the main spine. */
-    .stream :global(.burst-end) { position: relative; height: 3.2rem; display: flex; align-items: center; justify-content: center; padding-left: var(--item-indent); }
-    /* the pair sits on the line's end; its own background covers the gap */
-    .stream :global(.burst-btns) { position: relative; display: flex; gap: 0.5rem; background: var(--bg); padding: 0 0.5rem; flex-wrap: wrap; justify-content: center; }
+    /* a caption over two short buttons; the branch's elbow enters at the
+       buttons' midline, and the pair's own background covers the line's end */
+    .stream :global(.burst-end) { --btn-h: 2.2rem; position: relative; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; padding: 0.6rem 0 0.2rem var(--item-indent); }
+    .stream :global(.burst-cap) { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.78rem; color: var(--muted); background: var(--bg); padding: 0 0.5rem; position: relative; }
+    .stream :global(.burst-btns) { position: relative; display: flex; gap: 0.5rem; background: var(--bg); padding: 0 0.5rem; justify-content: center; height: var(--btn-h); }
     .stream :global(.burst-end)::before {
         content: '';
         position: absolute;
         left: calc(var(--spine-c) - 0.5px);
         top: 0;
         width: calc(50% - var(--spine-c));
-        height: 1.6rem;
+        height: calc(100% - 0.2rem - var(--btn-h) / 2);
         border-left: 1px solid rgba(232, 155, 75, 0.55);
         border-bottom: 1px solid rgba(232, 155, 75, 0.55);
         border-bottom-left-radius: 10px;
@@ -679,6 +689,8 @@ const playIcon =
     .stream :global(.burst-page), .stream :global(.burst-close) {
         display: inline-flex;
         align-items: center;
+        height: var(--btn-h);
+        box-sizing: border-box;
         gap: 0.4em;
         font-family: 'DraftingMono', ui-monospace, monospace;
         font-size: 0.8rem;
@@ -692,7 +704,7 @@ const playIcon =
     .stream :global(.burst-page) { background: var(--accent); border: 1px solid var(--accent); color: var(--bg); font-weight: 600; }
     .stream :global(.burst-page:hover) { background: var(--fg); border-color: var(--fg); }
     .stream :global(.burst-page[hidden]) { display: none; }
-    .stream :global(.burst-close) { background: var(--bg); border: 1px solid rgba(232, 155, 75, 0.55); color: var(--muted); }
+    .stream :global(.burst-close) { background: var(--bg); border: 1px solid var(--rule); color: var(--muted); }
     .stream :global(.burst-close:hover) { color: var(--accent); border-color: var(--accent); }
     /* an expanded burst's card quietens so the run reads as one stretch */
     .stream :global(.burst.is-open .burst-card) { opacity: 0.75; }
@@ -1009,8 +1021,9 @@ const playIcon =
             const pageBtn = more.querySelector<HTMLButtonElement>('.burst-page')!;
             const left = entries.length - shown;
             pageBtn.hidden = left <= 0;
-            pageBtn.querySelector('.lbl')!.textContent = `${Math.min(size, left)} more ${burst.dataset.tagName} notes`;
-            pageBtn.title = `${left} left`;
+            pageBtn.querySelector('.lbl')!.textContent = `Show ${Math.min(size, left)} more`;
+            more.querySelector<HTMLElement>('.burst-cap')!.textContent =
+                left > 0 ? `${left} more ${burst.dataset.tagName} notes` : `all ${entries.length} ${burst.dataset.tagName} notes shown`;
             settle();
         }
         function openBurst(burst: HTMLElement, upTo?: HTMLElement) {
