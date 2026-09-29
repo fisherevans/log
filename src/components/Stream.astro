@@ -14,13 +14,18 @@ interface Props {
     page?: { current: number; last: number; hrefFor: (n: number) => string };
     total?: number;
     pageSize?: number;
+    // The rail links to /posts/YYYY/, which drops any filter the caller applied
+    // - so a tag page asks for it to be left off rather than offering a jump
+    // that silently leaves the tag.
+    showYears?: boolean;
 }
-const { items, years, activeYear, page, total, pageSize = 20 } = Astro.props;
+const { items, years, activeYear, page, total, pageSize = 20, showYears = true } = Astro.props;
 const from = page ? (page.current - 1) * pageSize + 1 : 1;
 const to = page ? Math.min(page.current * pageSize, total ?? items.length) : items.length;
 ---
 
 <div class="stream-wrap">
+    {showYears && (
     <nav class="years" aria-label="Jump to year">
         <span class="years-inner">
             <a class="year" href="/posts/" aria-current={activeYear ? undefined : 'page'}>all</a>
@@ -33,6 +38,7 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
             }
         </span>
     </nav>
+    )}
 
     <div class="stream">
         {items.map((item) => <StreamEntry item={item} />)}

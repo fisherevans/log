@@ -1,7 +1,7 @@
 ---
-// Home: the hero, the latest post, and the last three notes. Deliberately not
-// a shorter copy of /posts - it shows one of each kind at their natural weight
-// and sends you to the stream for the rest.
+// Home: the hero and the single most recent entry, whichever kind it is. Not a
+// shorter copy of /posts - one thing, at its natural weight, and a way through
+// to the rest.
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
@@ -10,10 +10,7 @@ import { buildStream, yearsOf } from '../lib/stream';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 const all = await buildStream();
-const latestPost = all.find((i) => i.kind === 'post');
-const latestNotes = all.filter((i) => i.kind === 'note').slice(0, 3);
-const items = [latestPost, ...latestNotes].filter(Boolean) as typeof all;
-items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
+const items = all.slice(0, 1);
 ---
 
 <!doctype html>
@@ -48,9 +45,9 @@ items.sort((a, b) => b.date.valueOf() - a.date.valueOf());
                 </p>
             </section>
 
-            <Stream items={items} years={yearsOf(all)} />
+            <Stream items={items} years={yearsOf(all)} showYears={false} />
 
-            <p class="browse-all"><a href="/posts/">Everything, oldest to newest &rarr;</a></p>
+            <p class="browse-all"><a href="/posts/">Everything &rarr;</a></p>
         </main>
         <Footer />
     </body>

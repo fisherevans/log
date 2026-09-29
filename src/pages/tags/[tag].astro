@@ -1,220 +1,154 @@
 ---
+// /tags/<tag>/ - everything carrying one tag, posts and notes on one timeline.
+// This is what makes `project:<slug>` a real devlog: the LRK migration turned
+// four lumpy posts into fourteen beats spanning May-August 2013, and they all
+// land here in order.
+//
+// Rendering goes through the same Stream the site's main listing uses, so an
+// entry looks identical wherever you meet it. The one exception is a tag that
+// opts into `layout: grid` in its YAML - a visual tag whose pictures are the
+// point (disc dyes) becomes a gallery instead.
 import { getCollection } from 'astro:content';
+import { noteCover, noteHref, noteTitle } from '../../lib/notes';
 import { postHref } from '../../lib/posts';
-import { buildTimeline, noteCover, noteHref, noteTitle } from '../../lib/notes';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
-import NoteCard from '../../components/NoteCard.astro';
+import Stream from '../../components/Stream.astro';
+import { buildStream, yearsOf } from '../../lib/stream';
 import { SITE_TITLE } from '../../consts';
 
 export async function getStaticPaths() {
-    const allPosts = await getCollection('posts');
-    const allNotes = await getCollection('notes');
     const allTagMeta = await getCollection('tags');
     const tagMetaMap = Object.fromEntries(allTagMeta.map((t) => [t.id, t.data]));
-
-    // A tag page is the union of everything carrying that tag - posts AND
-    // notes. This is what makes `project:<slug>` work as a join key: one tag
-    // page becomes a project's whole timeline, long-form and small updates
-    // interleaved.
+    const posts = await getCollection('posts', ({ data }) => !data.draft);
+    const notes = await getCollection('notes', ({ data }) => !data.draft);
     const tags = new Set<string>();
-    for (const p of allPosts) if (!p.data.draft) p.data.tags.forEach((t) => tags.add(t));
-    for (const n of allNotes) if (!n.data.draft) n.data.tags.forEach((t) => tags.add(t));
-
-    return [...tags].map((tag) => ({
-        params: { tag },
-        props: {
-            posts: allPosts.filter((p) => !p.data.draft && p.data.tags.includes(tag)),
-            notes: allNotes.filter((n) => !n.data.draft && n.data.tags.includes(tag)),
-            meta: tagMetaMap[tag] ?? null,
-        },
-    }));
+    for (const e of [...posts, ...notes]) e.data.tags.forEach((t: string) => tags.add(t));
+    return [...tags].map((tag) => ({ params: { tag }, props: { meta: tagMetaMap[tag] ?? null } }));
 }
 
 const { tag } = Astro.params;
-const { posts, notes, meta } = Astro.props;
-const timeline = buildTimeline(posts, notes);
+const { meta } = Astro.props;
+const all = await buildStream();
+const items = all.filter((i) => (i.entry.data.tags ?? []).includes(tag));
+const posts = items.filter((i) => i.kind === 'post').length;
+const notes = items.length - posts;
 const isGrid = meta?.layout === 'grid';
-// The filter only earns its place when there's actually a mix to filter.
-const showFilter = posts.length > 0 && notes.length > 0;
+// The filter only earns its place when there is actually a mix to filter.
+const showFilter = !isGrid && posts > 0 && notes > 0;
 ---
 
 <!doctype html>
 <html lang="en">
     <head>
-        <BaseHead title={`tag: ${tag} · ${SITE_TITLE}`} description={`posts and notes tagged ${tag}`} />
+        <BaseHead title={`tag: ${tag} · ${SITE_TITLE}`} description={`Posts and notes tagged ${tag}.`} />
+        <style>
+            .back { font-size: 0.9em; margin-bottom: 1.2em; }
+            h1 { margin: 0 0 0.25em; }
+            h1 .hash { color: var(--accent); }
+            .tag-description { color: var(--muted); max-width: 40em; margin: 0 0 1.4rem; }
+            .count { color: var(--muted); font-size: 0.95em; margin: 0 0 1.6rem; }
+
+            .filter { display: flex; gap: 0.4rem; margin: 0 0 1.8rem; }
+            .filter button {
+                font-family: var(--sans);
+                font-size: 0.8rem;
+                font-weight: 600;
+                background: none;
+                border: 1px solid var(--rule);
+                border-radius: 999px;
+                color: var(--muted);
+                padding: 0.4em 0.95em;
+                cursor: pointer;
+                display: inline-flex;
+                gap: 0.45em;
+                align-items: baseline;
+            }
+            .filter button:hover { color: var(--fg); border-color: var(--muted); }
+            .filter button[aria-pressed='true'] { color: var(--fg); border-color: var(--accent); }
+            .filter .count-chip { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.72em; opacity: 0.7; }
+
+            /* Filtering hides entries in place; the stream's own timeline and
+               spacing are untouched. */
+            .tagstream[data-showing='post'] :global(.entry.note) { display: none; }
+            .tagstream[data-showing='note'] :global(.entry.post) { display: none; }
+
+            /* Gallery layout, opt-in per tag. The pictures are the point, so
+               notes become tiles and posts keep a full-width row above them. */
+            .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 0.5rem; }
+            .grid .row { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: 0.9em 0; border-bottom: 1px solid var(--rule); }
+            .grid .row .title-link { font-family: 'Marauder', serif; font-weight: 700; font-size: 1.3rem; color: var(--fg); }
+            .grid .row .date { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.75em; color: var(--muted); }
+            .tile { position: relative; display: block; border-radius: 8px; overflow: hidden; background: var(--mat); border: 1px solid var(--mat-edge); aspect-ratio: 1 / 1; }
+            .tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .tile .tile-fallback { display: flex; align-items: center; justify-content: center; height: 100%; padding: 0.8rem; font-size: 0.8rem; color: var(--muted); text-align: center; }
+            .tile:hover { border-color: var(--accent); }
+        </style>
     </head>
     <body>
         <Header />
         <main>
-            <p class="back"><a href="/tags/">← all tags</a></p>
+            <p class="back"><a href="/tags/">&larr; all tags</a></p>
             <h1><span class="hash">#</span>{meta?.name ?? tag}</h1>
             {meta?.description && <p class="tag-description">{meta.description}</p>}
+            <p class="count">
+                {items.length} {items.length === 1 ? 'entry' : 'entries'}
+                {posts > 0 && notes > 0 && ` — ${posts} ${posts === 1 ? 'post' : 'posts'}, ${notes} ${notes === 1 ? 'note' : 'notes'}`}
+            </p>
 
             {
                 showFilter && (
                     <div class="filter" role="group" aria-label="Filter entries">
-                        <button type="button" data-filter="all" class="active">
-                            All <span class="count">{timeline.length}</span>
-                        </button>
-                        <button type="button" data-filter="post">
-                            Posts <span class="count">{posts.length}</span>
-                        </button>
-                        <button type="button" data-filter="note">
-                            Notes <span class="count">{notes.length}</span>
-                        </button>
+                        <button data-filter="all" aria-pressed="true">All <span class="count-chip">{items.length}</span></button>
+                        <button data-filter="post" aria-pressed="false">Posts <span class="count-chip">{posts}</span></button>
+                        <button data-filter="note" aria-pressed="false">Notes <span class="count-chip">{notes}</span></button>
                     </div>
                 )
             }
 
-            <div id="timeline" data-showing="all" class:list={{ grid: isGrid }}>
-                {
-                    timeline.map((item) =>
-                        item.kind === 'post' ? (
-                            <div class="row" data-kind="post">
-                                <a class="title-link" href={postHref(item.entry)}>
-                                    {item.entry.data.title}
+            {
+                isGrid ? (
+                    <div class="grid">
+                        {items.map((item) =>
+                            item.kind === 'post' ? (
+                                <div class="row">
+                                    <a class="title-link" href={postHref(item.entry)}>{item.entry.data.title}</a>
+                                    <span class="date"><FormattedDate date={item.date} /></span>
+                                </div>
+                            ) : (
+                                <a class="tile" href={noteHref(item.entry)}>
+                                    {noteCover(item.entry) ? (
+                                        <img src={noteCover(item.entry)!.src} alt={noteCover(item.entry)!.alt ?? ''} loading="lazy" decoding="async" />
+                                    ) : (
+                                        <span class="tile-fallback">{noteTitle(item.entry, 60)}</span>
+                                    )}
                                 </a>
-                                <span class="date">
-                                    <FormattedDate date={item.entry.data.date} />
-                                </span>
-                            </div>
-                        ) : isGrid ? (
-                            <a class="tile" data-kind="note" href={noteHref(item.entry)}>
-                                {noteCover(item.entry) ? (
-                                    <img
-                                        src={noteCover(item.entry)!.src}
-                                        alt={noteCover(item.entry)!.alt ?? ''}
-                                        loading="lazy"
-                                        decoding="async"
-                                    />
-                                ) : (
-                                    <span class="tile-text">{noteTitle(item.entry, 90)}</span>
-                                )}
-                            </a>
-                        ) : (
-                            <div class="note-wrap" data-kind="note">
-                                <NoteCard note={item.entry} />
-                            </div>
-                        ),
-                    )
-                }
-            </div>
+                            ),
+                        )}
+                    </div>
+                ) : (
+                    <div class="tagstream" data-showing="all">
+                        <Stream items={items} years={yearsOf(all)} showYears={false} />
+                    </div>
+                )
+            }
         </main>
         <Footer />
 
-        <script is:inline>
-            (() => {
-                const tl = document.getElementById('timeline');
-                if (!tl) return;
-                const buttons = document.querySelectorAll('.filter button');
-                buttons.forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        const want = btn.getAttribute('data-filter');
-                        tl.setAttribute('data-showing', want);
-                        buttons.forEach((b) => b.classList.toggle('active', b === btn));
-                    });
+        <script>
+            // The filter is a data attribute plus CSS: no re-render, no URL
+            // change, and the back button stays clean.
+            const stream = document.querySelector<HTMLElement>('.tagstream');
+            document.querySelectorAll<HTMLButtonElement>('[data-filter]').forEach((b) => {
+                b.addEventListener('click', () => {
+                    if (stream) stream.dataset.showing = b.dataset.filter!;
+                    document
+                        .querySelectorAll<HTMLButtonElement>('[data-filter]')
+                        .forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
                 });
-            })();
+            });
         </script>
-
-        <style>
-            .back { font-size: 0.9em; margin-bottom: 1.5em; }
-            .hash { color: var(--accent); font-weight: 800; }
-            .tag-description {
-                color: var(--muted);
-                font-style: italic;
-                margin: -0.5em 0 1.5em;
-            }
-
-            .filter {
-                display: flex;
-                gap: 0.4em;
-                margin: 0 0 1.8em;
-                flex-wrap: wrap;
-            }
-            .filter button {
-                background: var(--code-bg);
-                border: 1px solid var(--rule);
-                color: var(--muted);
-                border-radius: 999px;
-                padding: 0.35em 0.9em;
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.75rem;
-                letter-spacing: 0.04em;
-                cursor: pointer;
-            }
-            .filter button:hover { color: var(--fg); }
-            .filter button.active {
-                color: var(--fg);
-                border-color: var(--accent);
-            }
-            .filter .count { opacity: 0.6; margin-left: 0.35em; }
-
-            /* The filter is pure CSS off a data attribute - no re-render, no
-               URL change, back button stays clean. */
-            #timeline[data-showing='post'] [data-kind='note'],
-            #timeline[data-showing='note'] [data-kind='post'] {
-                display: none;
-            }
-
-            .row {
-                padding: 0.85em 0;
-                border-bottom: 1px solid var(--rule);
-                display: flex;
-                justify-content: space-between;
-                align-items: baseline;
-                gap: 1em;
-                flex-wrap: wrap;
-            }
-            .title-link { color: var(--fg); }
-            .date {
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.78em;
-                color: var(--muted);
-                letter-spacing: 0.03em;
-                white-space: nowrap;
-            }
-
-            /* Grid (gallery) layout, opt-in per tag via `layout: grid` in the
-               tag's YAML. Notes become image tiles; posts keep their rows and
-               sit above the grid, which is why the container is a plain block
-               and only the tiles are gridded. */
-            #timeline.grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
-                gap: 0.5rem;
-            }
-            #timeline.grid .row {
-                grid-column: 1 / -1;
-            }
-            .tile {
-                display: block;
-                aspect-ratio: 1 / 1;
-                border-radius: 8px;
-                overflow: hidden;
-                background: var(--code-bg);
-                border: 1px solid var(--rule);
-                border-bottom: 1px solid var(--rule);
-            }
-            .tile img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                display: block;
-                transition: transform 0.18s ease;
-            }
-            .tile:hover img { transform: scale(1.04); }
-            .tile-text {
-                display: flex;
-                align-items: center;
-                height: 100%;
-                padding: 0.9em;
-                color: var(--muted);
-                font-size: 0.85em;
-            }
-        </style>
     </body>
 </html>
