@@ -22,3 +22,15 @@
 A tag page is now a real filtered timeline, which only pays off if the tags say
 something a reader would browse for. "The stencil ones" and "the combat notes"
 are browsable; "58 disc-dyes" alone is not.
+
+## Follow-up, same day
+
+- **The index is restyled.** Projects are cards in the deck's idiom - name, `52
+  entries · 2025 - 2026`, description, a strip of the newest previews with play
+  badges. Topics are a ruled two-column list with the count in the margin. Neither
+  is a prose link any more: the old cards inherited the site's highlighter-swipe
+  hover, whose text colour is meant for text *on* orange, so a hovered name went
+  invisible on both themes.
+- **A project's tag page says "project" and the project's name**, not
+  `#Project: Primortal`. Metadata files cannot carry a colon, so `project:lrk`
+  lives in `project-lrk.yaml`; both pages now look the tag up by either spelling.

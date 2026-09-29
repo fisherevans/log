@@ -23,7 +23,8 @@ import { SITE_TITLE } from '../../consts';
 
 export async function getStaticPaths() {
     const allTagMeta = await getCollection('tags');
-    const tagMetaMap = Object.fromEntries(allTagMeta.map((t) => [t.id, t.data]));
+    // `project:lrk` is `project-lrk.yaml` on disk (no colons in file names)
+    const tagMetaMap = Object.fromEntries(allTagMeta.flatMap((t) => [[t.id, t.data], [t.id.replace(/^project-/, 'project:'), t.data]]));
     const posts = await getCollection('posts', ({ data }) => !data.draft);
     const notes = await getCollection('notes', ({ data }) => !data.draft);
     const tags = new Set<string>();
@@ -48,6 +49,7 @@ const showFilter = posts > 0 && notes > 0;
         <style>
             .back { font-size: 0.9em; margin-bottom: 1.2em; }
             h1 { margin: 0 0 0.25em; }
+            .eyebrow { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 0 0 0.2rem; }
             h1 .hash { color: var(--accent); }
             .tag-description { color: var(--muted); max-width: 40em; margin: 0 0 1.4rem; }
             .count { color: var(--muted); font-size: 0.95em; margin: 0 0 1.6rem; }
@@ -82,7 +84,14 @@ const showFilter = posts > 0 && notes > 0;
         <Header />
         <main>
             <BackToStream fallback="/tags/" label="all tags" />
-            <h1><span class="hash">#</span>{meta?.name ?? tag}</h1>
+            {tag.startsWith('project:') ? (
+                <>
+                    <p class="eyebrow">project</p>
+                    <h1>{(meta?.name ?? tag).replace(/^Project:\s*/i, '')}</h1>
+                </>
+            ) : (
+                <h1><span class="hash">#</span>{meta?.name ?? tag}</h1>
+            )}
             {meta?.description && <p class="tag-description">{meta.description}</p>}
             <p class="count">
                 {items.length} {items.length === 1 ? 'entry' : 'entries'}

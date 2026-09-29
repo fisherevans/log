@@ -4,13 +4,18 @@ import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
 import { SITE_TITLE } from '../../consts';
+import { buildStream, previewOf } from '../../lib/stream';
+import { fmtDate } from '../../lib/search';
+import { cfImage, isMediaUrl } from '../../../plugins/media-urls.mjs';
 
 // Counts cover posts AND notes - a tag page shows both interleaved, so the
 // index should count what the page will show.
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const notes = await getCollection('notes', ({ data }) => !data.draft);
 const allTagMeta = await getCollection('tags');
-const tagMetaMap = Object.fromEntries(allTagMeta.map((t) => [t.id, t.data]));
+// Metadata files cannot carry a colon in their name, so `project:lrk` lives in
+// `project-lrk.yaml`: index by both spellings.
+const tagMetaMap = Object.fromEntries(allTagMeta.flatMap((t) => [[t.id, t.data], [t.id.replace(/^project-/, 'project:'), t.data]]));
 
 const tagCounts = new Map<string, number>();
 for (const e of [...posts, ...notes]) {
@@ -30,6 +35,19 @@ for (const entry of [...tagCounts.entries()].sort(byCount)) {
 const sectionTitle = (prefix: string) => (prefix === '' ? 'Topics' : prefix === 'project' ? 'Projects' : prefix);
 const sections = [...groups.entries()].sort(([a], [b]) => (a === 'project' ? -1 : b === 'project' ? 1 : a === '' ? 1 : b === '' ? -1 : a.localeCompare(b)));
 // A project tag shows as its name ("Lost Relics of Kazar"), not "project:lrk".
+// A project card carries a strip of its newest previews, like a burst card,
+// and the span of dates it covers.
+const all = await buildStream();
+const itemsOf = (tag: string) => all.filter((i) => (i.entry.data.tags ?? []).includes(tag));
+const previews = (tag: string) => itemsOf(tag).map(previewOf).filter(Boolean).slice(0, 5) as NonNullable<ReturnType<typeof previewOf>>[];
+const spanOf = (tag: string) => {
+    const items = itemsOf(tag);
+    if (!items.length) return '';
+    const a = items[items.length - 1].date, b = items[0].date;
+    const y = (d: Date) => d.getUTCFullYear();
+    return y(a) === y(b) ? String(y(a)) : `${y(a)} - ${y(b)}`;
+};
+const thumb = (src: string) => (isMediaUrl(src) ? cfImage(src, 200) : src);
 const display = (tag: string) => tagMetaMap[tag]?.name?.replace(/^Project:\s*/i, '') ?? (tag.includes(':') ? tag.slice(tag.indexOf(':') + 1) : tag);
 ---
 <!doctype html>
@@ -42,93 +60,92 @@ const display = (tag: string) => tagMetaMap[tag]?.name?.replace(/^Project:\s*/i,
             {sections.map(([prefix, list]) => (
                 <section class="tag-section">
                     <h2 class="tag-section-title">{sectionTitle(prefix)} <span class="tag-section-count">{list.length}</span></h2>
-                    <ul class="tag-grid">
-                        {list.map(([tag, count]) => (
-                            <li>
-                                <a class="tag-card" href={`/tags/${tag}/`}>
-                                    <span class="tag-card-head">
-                                        <span class="tag-name">{display(tag)}</span>
-                                        <span class="count">{count} {count === 1 ? 'entry' : 'entries'}</span>
-                                    </span>
-                                    {tagMetaMap[tag]?.description && <span class="tag-card-desc">{tagMetaMap[tag].description}</span>}
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
+                    {prefix === 'project' ? (
+                        <ul class="project-grid">
+                            {list.map(([tag, count]) => (
+                                <li>
+                                    <a class="project-card" href={`/tags/${tag}/`}>
+                                        <span class="project-name">{display(tag)}</span>
+                                        <span class="project-meta">{count} {count === 1 ? 'entry' : 'entries'} <span class="sep">·</span> {spanOf(tag)}</span>
+                                        {tagMetaMap[tag]?.description && <span class="project-desc">{tagMetaMap[tag].description}</span>}
+                                        {previews(tag).length > 0 && (
+                                            <span class="project-strip">
+                                                {previews(tag).map((p) => (
+                                                    <span class={p.video ? 'thumb video' : 'thumb'}>
+                                                        <img src={thumb(p.src)} alt="" loading="lazy" decoding="async" />
+                                                    </span>
+                                                ))}
+                                            </span>
+                                        )}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <ul class="topic-list">
+                            {list.map(([tag, count]) => (
+                                <li>
+                                    <a class="topic-row" href={`/tags/${tag}/`}>
+                                        <span class="topic-head">
+                                            <span class="topic-name">{display(tag)}</span>
+                                            <span class="count">{count}</span>
+                                        </span>
+                                        {tagMetaMap[tag]?.description && <span class="topic-desc">{tagMetaMap[tag].description}</span>}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </section>
             ))}
         </main>
         <Footer />
         <style>
-            /* Responsive card grid: 1 / 2 / 3 columns as width allows (the column
-               count falls out of the min track width against the 800px content
-               column). */
-            .tag-section { margin: 0 0 2.4rem; }
-            .tag-section-title { font-family: 'DraftingMono', ui-monospace, monospace; font-weight: 400; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.8rem; }
+            h1 { margin: 0 0 1.6rem; }
+            .tag-section { margin: 0 0 2.6rem; }
+            .tag-section-title { font-family: 'DraftingMono', ui-monospace, monospace; font-weight: 400; font-size: 0.85rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin: 0 0 0.9rem; }
             .tag-section-count { color: var(--accent); margin-left: 0.4em; }
-            .tag-grid {
-                list-style: none;
-                margin: 0;
-                padding: 0;
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
-                gap: 0.9em;
-            }
-            .tag-grid li {
-                margin: 0;
-                padding: 0;
-            }
-            .tag-grid li::before { content: none; }
+            ul { list-style: none; margin: 0; padding: 0; }
+            li { margin: 0; padding: 0; }
+            li::before { content: none; }
+            /* Cards and rows are links but not prose links: no highlighter
+               swipe (which paints the name in the on-orange text colour with
+               nothing orange behind it - the unreadable hover), just the
+               accent on the name. */
+            .project-card, .topic-row { text-decoration: none; color: var(--fg); border-bottom: none; }
+            .project-card:hover, .topic-row:hover, .project-card:focus-visible, .topic-row:focus-visible { background: none; box-shadow: none; border-bottom-color: transparent; color: var(--fg); outline: none; }
 
-            .tag-card {
-                display: flex;
-                flex-direction: column;
-                gap: 0.35em;
-                height: 100%;
-                box-sizing: border-box;
-                padding: 0.9em 1em;
-                background: var(--code-bg);
-                border: 1px solid var(--rule);
-                border-radius: 10px;
-                color: var(--fg);
-                text-decoration: none;
-                transition:
-                    border-color 0.15s,
-                    background 0.15s;
+            /* ---- projects: a deck-style card with its newest previews ---- */
+            .project-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+            .project-card {
+                display: flex; flex-direction: column; gap: 0.35rem; height: 100%; box-sizing: border-box;
+                padding: 1rem 1.2rem 1.1rem; border: 1.5px solid var(--rule); border-radius: 12px; background: var(--bg);
+                transition: border-color 0.15s;
             }
-            /* Override the global link-highlight hover (orange wash + side bars) -
-               on a card we just want the border to pick up the accent. */
-            .tag-card:hover {
-                background: var(--code-bg);
-                border-color: var(--accent);
-                box-shadow: none;
-            }
-            .tag-card-head {
-                display: flex;
-                align-items: baseline;
-                justify-content: space-between;
-                gap: 0.5em;
-            }
-            .tag-name {
-                font-family: 'Marauder', serif;
-                font-weight: 700;
-                font-variation-settings: 'opsz' 18;
-                font-size: 1.2rem;
-                color: var(--fg);
-            }
-            .tag-card:hover .tag-name {
-                color: var(--hover);
-            }
-            .count {
-                color: var(--muted);
-                font-family: 'DraftingMono', ui-monospace, monospace;
-                font-size: 0.72em;
-                white-space: nowrap;
-            }
-            .tag-card-desc {
-                color: var(--muted);
-                font-size: 0.9em;
-                line-height: 1.45;
+            .project-card:hover, .project-card:focus-visible { border-color: var(--accent); }
+            .project-name { font-family: 'Marauder', serif; font-weight: 700; font-size: 1.35rem; line-height: 1.15; color: var(--fg); }
+            .project-card:hover .project-name { color: var(--accent); }
+            .project-meta { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.78rem; color: var(--muted); }
+            .project-meta .sep { margin: 0 0.4em; opacity: 0.5; }
+            .project-desc { color: var(--muted); font-size: 0.92em; line-height: 1.45; margin-top: 0.15rem; }
+            .project-strip { display: flex; gap: 0.35rem; margin-top: 0.7rem; }
+            .thumb { position: relative; display: block; width: 2.9rem; height: 2.9rem; border-radius: 6px; border: 1px solid var(--mat-edge); background: var(--mat); overflow: hidden; flex: 0 0 auto; }
+            .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .thumb.video::after { content: ''; position: absolute; inset: 0; margin: auto; width: 1.2rem; height: 1.2rem; border-radius: 50%; background: rgba(5, 5, 5, 0.7) no-repeat center / 0.55rem url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 5v14l11-7z' fill='%23fff'/%3E%3C/svg%3E"); }
+
+            /* ---- topics: a ruled list, count in the margin ---- */
+            .topic-list { border-top: 1px solid var(--rule); }
+            .topic-list li { border-bottom: 1px solid var(--rule); }
+            .topic-row { display: block; padding: 0.7rem 0.2rem; }
+            .topic-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+            .topic-name { font-family: 'Marauder', serif; font-weight: 700; font-size: 1.1rem; color: var(--fg); }
+            .topic-row:hover .topic-name { color: var(--accent); }
+            .count { font-family: 'DraftingMono', ui-monospace, monospace; font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+            .count::after { content: ' entries'; }
+            .topic-desc { display: block; color: var(--muted); font-size: 0.9em; line-height: 1.45; margin-top: 0.1rem; max-width: 40em; }
+            @media (min-width: 40rem) {
+                .topic-list { columns: 2; column-gap: 2.5rem; }
+                .topic-list li { break-inside: avoid; }
             }
         </style>
     </body>
