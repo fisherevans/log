@@ -103,6 +103,9 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
         width: 1px;
         background: var(--rule);
     }
+    /* Scroll anchoring keeps the view stable when content above changes size,
+       which is exactly what fights an explicit restore. */
+    .stream.is-restoring { overflow-anchor: none; }
     .stream :global(.entry) {
         padding-left: var(--item-indent);
         position: relative;
@@ -767,14 +770,39 @@ const to = page ? Math.min(page.current * pageSize, total ?? items.length) : ite
             sessionStorage.removeItem(RETURN_KEY);
             const el = document.getElementById(saved.id);
             if (!el) return;
-            const land = () => {
+            const target = () => {
                 const docTop = el.getBoundingClientRect().top + window.scrollY;
-                window.scrollTo(0, Math.max(0, Math.round(docTop - saved!.viewportTop)));
+                return Math.max(0, Math.round(docTop - saved!.viewportTop));
             };
-            // Twice: once now, once after layout settles, because entries above
-            // this one resolve their real heights as they come into range.
-            land();
-            requestAnimationFrame(() => { land(); setTimeout(land, 120); });
+            // Hold the position until it stops moving. Media above the target
+            // (a poster frame, an image) resolves its height after the first
+            // paint and shifts everything below it, and the browser's scroll
+            // anchoring then nudges us again - so a fixed number of corrections
+            // lands short. Re-assert until two readings agree, then stop.
+            // ...but never fight the reader. Any deliberate scroll input ends
+            // the hold immediately, otherwise a 1.5s correction loop would drag
+            // them back while they are already moving.
+            let aborted = false;
+            const stop = () => { aborted = true; };
+            const opts = { passive: true, once: true } as AddEventListenerOptions;
+            window.addEventListener('wheel', stop, opts);
+            window.addEventListener('touchstart', stop, opts);
+            window.addEventListener('keydown', stop, opts);
+
+            let settled = 0;
+            let last = -1;
+            const hold = () => {
+                if (aborted) return;
+                const t = target();
+                if (Math.abs(t - window.scrollY) > 1) window.scrollTo(0, t);
+                settled = t === last ? settled + 1 : 0;
+                last = t;
+                if (settled < 3 && performance.now() - startedAt < 1500) requestAnimationFrame(hold);
+            };
+            const startedAt = performance.now();
+            stream!.classList.add('is-restoring');
+            hold();
+            setTimeout(() => stream!.classList.remove('is-restoring'), 1600);
             el.classList.add('landed');
             setTimeout(() => el.classList.remove('landed'), 1800);
         }

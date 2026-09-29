@@ -6,6 +6,7 @@ description: If you have one, I'd love to visit it. I might even bookmark it.
 tags:
   - opinion
 hasVideo: false
+featured: true
 draft: false
 ---
 Do you have one? I want to visit it.

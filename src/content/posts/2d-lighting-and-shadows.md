@@ -10,6 +10,7 @@ tags:
   - project:lrk
 hasVideo: false
 updatedDate: 2026-06-03
+featured: true
 draft: false
 ---
 Shadows make the world go 'round. Thankfully 2d shadow casting is pretty easy.

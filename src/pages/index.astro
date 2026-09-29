@@ -11,6 +11,9 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 const all = await buildStream();
 const items = all.slice(0, 1);
+// Hand-picked evergreens for a first-time reader - not "popular", not
+// automatic. Newest first so the list has an order that isn't arbitrary.
+const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
 ---
 
 <!doctype html>
@@ -22,6 +25,27 @@ const items = all.slice(0, 1);
             .hero h1 { margin: 0 0 0.35em; }
             .hero .lede { font-size: 1.12em; line-height: 1.6; color: var(--fg); max-width: 34em; }
             .hero .followline { font-size: 1.02em; color: var(--muted); max-width: 34em; margin: 1.3rem 0 0; }
+            /* Evergreens, deliberately quieter than the latest entry: this is
+               a pointer, not a second helping of the stream. */
+            .featured { margin-top: 2.8rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); }
+            .featured__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.2rem; }
+            .featured__list li { padding: 0; }
+            .featured__list li::before { content: none; }
+            .featured__title {
+                color: var(--fg);
+                font-family: 'Marauder', serif;
+                font-weight: 700;
+                font-variation-settings: 'opsz' 20;
+                font-size: 1.35rem;
+                line-height: 1.2;
+            }
+            .featured__title:hover {
+                color: var(--hover);
+                background-color: var(--hover-bg);
+                box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
+            }
+            .featured__desc { margin: 0.35em 0 0; color: var(--muted); font-size: 0.97em; line-height: 1.55; }
+
             .browse-all { margin-top: 2.4rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); text-align: center; }
             .browse-all a { font-size: 1.02rem; }
         </style>
@@ -45,7 +69,24 @@ const items = all.slice(0, 1);
                 </p>
             </section>
 
+            <p class="eyebrow">Latest</p>
             <Stream items={items} years={yearsOf(all)} showYears={false} />
+
+            {
+                featured.length > 0 && (
+                    <section class="featured">
+                        <p class="eyebrow">Start here</p>
+                        <ul class="featured__list">
+                            {featured.map((f) => (
+                                <li>
+                                    <a class="featured__title" href={f.href}>{f.entry.data.title}</a>
+                                    {f.entry.data.description && <p class="featured__desc">{f.entry.data.description}</p>}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )
+            }
 
             <p class="browse-all"><a href="/posts/">Everything &rarr;</a></p>
         </main>

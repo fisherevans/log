@@ -29,6 +29,10 @@ const posts = defineCollection({
                 heroImage: z.optional(image()),
                 tags: z.array(z.string()).default([]),
                 hasVideo: z.boolean().default(false),
+                // Evergreen, hand-picked: shown on the home page under the
+                // latest entry. Not "popular" and not automatic - it is an
+                // editorial choice about what a first-time reader should see.
+                featured: z.boolean().default(false),
                 draft: z.boolean().default(false),
             })
             // A published post must carry a stable `id` - comments key on it, so a

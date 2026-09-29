@@ -66,6 +66,10 @@ content:
         type: date
         options:
           format: 'yyyy-MM-dd'
+      - name: featured
+        label: Featured on the home page
+        type: boolean
+        default: false
       - name: draft
         label: Draft (hide from listings + RSS)
         type: boolean
