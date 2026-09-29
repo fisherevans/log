@@ -86,6 +86,18 @@ export function groupBursts(items: StreamItem[]): StreamBlock[] {
     return blocks;
 }
 
+// The /posts page an entry is on, with its anchor - the fallback for a
+// permalink's back link when there is no remembered stream to return to (a
+// shared URL, a search hit). Page 1 is /posts/, the rest /posts/page/N/.
+export function hrefInStream(blocks: StreamBlock[], entryId: string): string {
+    const idx = blocks.findIndex((b) =>
+        b.kind === 'entry' ? b.item.entry.id === entryId : [...b.lead, ...b.rest].some((i) => i.entry.id === entryId),
+    );
+    if (idx < 0) return '/posts/';
+    const n = Math.floor(idx / PAGE_SIZE) + 1;
+    return `${n === 1 ? '/posts/' : `/posts/page/${n}/`}#e-${entryId}`;
+}
+
 export function blockSize(b: StreamBlock): number {
     return b.kind === 'entry' ? 1 : b.lead.length + b.rest.length;
 }

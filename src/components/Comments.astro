@@ -17,7 +17,27 @@ const { postId } = Astro.props;
     )
 }
 
+<script>
+    // A "Comment" call-to-action in the stream links here with #comments. The
+    // thread renders client-side after load, so the section's height settles
+    // late; scroll to it now and again once the thread is in, and flash it so
+    // the eye knows where it was sent.
+    const sec = document.getElementById('comments');
+    if (sec && location.hash === '#comments') {
+        const go = () => sec.scrollIntoView({ block: 'start' });
+        go();
+        setTimeout(go, 700);
+        sec.classList.add('flash');
+        setTimeout(() => sec.classList.remove('flash'), 2200);
+    }
+</script>
+
 <style>
+    @keyframes comments-flash {
+        0% { box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--accent) 45%, transparent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+        100% { box-shadow: 0 0 0 0.35rem transparent; background: transparent; }
+    }
+    .comments.flash { animation: comments-flash 2.2s ease-out; border-radius: 10px; }
     .comments {
         /* Reply connector lines: a touch lighter than --rule so the tree reads
            as a continuous spine without the near-invisible #34302a guesswork. */

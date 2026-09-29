@@ -1,18 +1,42 @@
 ---
-// "Back" from a permalink to the stream it came from.
+// "Back" from a permalink (or a tag page) to wherever the reader came from.
 //
-// A plain link, deliberately. history.back() looked tempting - the browser
-// restores scroll for free - but on a back-navigation the stream comes out of
-// the bfcache and its module script never re-runs, so the stream's own
-// return-to-entry restore is skipped and the browser's (which
-// content-visibility defeats) is what you get. Measured: leave from y=2400,
-// return at y=520. A forward navigation re-runs the script and lands correctly.
+// The stream remembers the entry you left from in sessionStorage (see
+// Stream.astro, RETURN_KEY) - the path you were on, a label for it, and the
+// entry - so this link can point back at *that* page rather than always at
+// /posts. With nothing remembered (a shared URL, a search hit) it falls back to
+// `fallback`: for a permalink that is the /posts page the entry actually sits
+// on, anchored, so the stream lands on it and highlights it either way.
+//
+// A plain link, deliberately, not history.back(): on a back-navigation the
+// stream comes out of the bfcache and its module script never re-runs, so its
+// own return-to-entry restore is skipped. A forward navigation re-runs it.
 interface Props {
+    fallback?: string;
     label?: string;
+    // The stream element id (e-<entry id>) this page is the permalink of. When
+    // set, only a memory of leaving from this very entry is honoured.
+    entryId?: string;
 }
-const { label = 'everything' } = Astro.props;
+const { fallback = '/posts/', label = 'everything', entryId } = Astro.props;
 ---
 
 <p class="back">
-    <a href="/posts/" data-back>&larr; {label}</a>
+    <a href={fallback} data-back data-entry={entryId}>&larr; <span>{label}</span></a>
 </p>
+
+<script>
+    const a = document.querySelector<HTMLAnchorElement>('a[data-back]');
+    if (a) {
+        try {
+            const saved = JSON.parse(sessionStorage.getItem('stream-return') || 'null');
+            const fresh = saved && Date.now() - (saved.ts || 0) < 30 * 60 * 1000;
+            const mine = !a.dataset.entry || saved?.id === a.dataset.entry;
+            const elsewhere = saved && saved.path !== location.pathname + location.search;
+            if (fresh && mine && elsewhere) {
+                a.href = `${saved.path}#${saved.id}`;
+                if (saved.from) a.querySelector('span')!.textContent = saved.from;
+            }
+        } catch {}
+    }
+</script>

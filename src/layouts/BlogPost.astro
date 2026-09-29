@@ -8,9 +8,9 @@ import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 
-type Props = CollectionEntry<'posts'>['data'];
+type Props = CollectionEntry<'posts'>['data'] & { backHref?: string; entryKey?: string };
 
-const { id, title, description, date, updatedDate, heroImage, tags, draft } = Astro.props;
+const { id, title, description, date, updatedDate, heroImage, tags, draft, backHref, entryKey } = Astro.props;
 ---
 
 <html lang="en">
@@ -113,7 +113,7 @@ const { id, title, description, date, updatedDate, heroImage, tags, draft } = As
             </div>
         )}
         <main>
-            <BackToStream />
+            <BackToStream fallback={backHref} entryId={entryKey ? `e-${entryKey}` : undefined} />
             <!-- data-pagefind-body scopes the search index to post bodies only
                  (so tag pages, /posts, the landing, etc. never appear in results).
                  Drafts omit the marker entirely, which - because some page has it -

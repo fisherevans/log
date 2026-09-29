@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import { mediaSrcSet, DEFAULT_SIZES } from '../../../plugins/media-urls.mjs';
 import { noteSlug, noteTitle } from '../../lib/notes';
+import { buildStream, groupBursts, hrefInStream } from '../../lib/stream';
 import BackToStream from '../../components/BackToStream.astro';
 import BaseHead from '../../components/BaseHead.astro';
 import Comments from '../../components/Comments.astro';
@@ -17,6 +18,7 @@ export async function getStaticPaths() {
 
 const { note } = Astro.props;
 const { Content } = await render(note);
+const backHref = hrefInStream(groupBursts(await buildStream()), note.id);
 // No title in frontmatter, so the tab/meta text is derived from the body.
 const derived = noteTitle(note, 90);
 const images = note.data.images;
@@ -59,7 +61,7 @@ const images = note.data.images;
     <body>
         <Header />
         <main>
-            <BackToStream />
+            <BackToStream fallback={backHref} entryId={`e-${note.id}`} />
 
             <div class="note-head">
                 <span class="date"><FormattedDate date={note.data.date} /></span>

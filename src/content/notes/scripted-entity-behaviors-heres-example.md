@@ -6,17 +6,17 @@ tags:
   - gamedev
 draft: false
 ---
-**_Scripted entity behaviors!_ ** Here’s an example of the player remotely controlling another entity by pressing buttons. Once the NPC steps on one of the end-spots, the NPC walks itself back to the start.
+**_Scripted entity behaviors!_** Here’s an example of the player remotely controlling another entity by pressing buttons. Once the NPC steps on one of the end-spots, the NPC walks itself back to the start.
 
-Since my XenoLog posts a week ago, ** _I’ve been busy re-writing my entire entity control system_ ** for the over world game state. It’s taken 5,000+ lines of code over 100+ files, but it’s been worth it! Entities no longer implement a single interface, and they no longer interact directly with the dozen or so sub-systems that make up the over-world state.
+Since my XenoLog posts a week ago, **_I’ve been busy re-writing my entire entity control system_** for the over world game state. It’s taken 5,000+ lines of code over 100+ files, but it’s been worth it! Entities no longer implement a single interface, and they no longer interact directly with the dozen or so sub-systems that make up the over-world state.
 
 The entity system was revamped, and now maintains 5 independent components for each entity:
 
-- ** Position **: Where they are, and how they’re moving
-- ** Behavior **: Automatic updates the entity state every tick: player controls, NPC wandering “AI”, scripted motion, etc.
-- ** Renderer **: What sprites/lights/animations to render
-- ** Occupation **: Which tiles they are “in”, important during movement
-- ** Presence**: How they engage with other entities (i.e. can the be interacted with? do they block ingress into an occupied tile?)
+- **Position**: Where they are, and how they’re moving
+- **Behavior**: Automatic updates the entity state every tick: player controls, NPC wandering “AI”, scripted motion, etc.
+- **Renderer**: What sprites/lights/animations to render
+- **Occupation**: Which tiles they are “in”, important during movement
+- **Presence**: How they engage with other entities (i.e. can the be interacted with? do they block ingress into an occupied tile?)
 
 On top of that, all changes to entities and other game state components go through a new Event & Effect dispatcher, decoupling triggers and side effects. This allowed me to implement a Plan system with which I can queue up combinations of serial and parallel effects in whatever sequence I want. At the moment, the system supports:
 

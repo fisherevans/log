@@ -6,6 +6,7 @@
 // anything built with innerHTML).
 import type { StreamItem } from '../lib/stream';
 import StreamEntry from './StreamEntry.astro';
+import Pager from './Pager.astro';
 import { groupBursts, type StreamBlock } from '../lib/stream';
 import { fmtDate } from '../lib/search';
 
@@ -55,6 +56,8 @@ const span = (a: StreamItem[]) => {
     </nav>
     )}
 
+    {page && page.last > 1 && page.current > 1 && <Pager page={page} from={from} to={to} total={total ?? to} />}
+
     <div class="stream">
         {blocks.map((b) =>
             b.kind === 'entry' ? (
@@ -83,31 +86,10 @@ const span = (a: StreamItem[]) => {
         )}
     </div>
 
-    {
-        page && page.last > 1 && (
-            <nav class="pager" aria-label="Pagination">
-                <span class="range">{from}&ndash;{to} of {total}</span>
-                {page.current > 1 ? (
-                    <a href={page.hrefFor(page.current - 1)}>&larr; Newer</a>
-                ) : (
-                    <span class="off">&larr; Newer</span>
-                )}
-                {Array.from({ length: page.last }, (_, i) => i + 1).map((n) =>
-                    n === page.current ? (
-                        <span class="cur" aria-current="page">{n}</span>
-                    ) : (
-                        <a href={page.hrefFor(n)}>{n}</a>
-                    ),
-                )}
-                {page.current < page.last ? (
-                    <a href={page.hrefFor(page.current + 1)}>Older &rarr;</a>
-                ) : (
-                    <span class="off">Older &rarr;</span>
-                )}
-            </nav>
-        )
-    }
+    {page && page.last > 1 && <Pager page={page} from={from} to={to} total={total ?? to} />}
 </div>
+
+
 
 <div id="lightbox" hidden>
     <button class="lb-close" type="button">Close &times;</button>
@@ -188,6 +170,14 @@ const span = (a: StreamItem[]) => {
         margin: 0 0 0.3em;
     }
     .stream :global(.entry.note .head .right) { display: flex; align-items: baseline; gap: 0.9rem; flex: 0 0 auto; }
+    /* Four actions on a phone would crush the date into two lines and the
+       tag chips into a column; let the actions drop under instead. */
+    @media (max-width: 40rem) {
+        .stream :global(.entry.note .head) { flex-wrap: wrap; }
+        .stream :global(.entry.note .head > :first-child) { flex: 1 1 11rem; min-width: 0; }
+        .stream :global(.entry.note .head .right) { margin-left: auto; }
+    }
+    .stream :global(.entry.post .actions .right) { display: flex; align-items: center; gap: 0.9rem; }
     .stream :global(.entry.note .body) { font-size: 0.97em; line-height: 1.55; }
     .stream :global(.entry.note .body > p) { margin: 0.75em 0; }
     .stream :global(.entry.note .body > :first-child) { margin-top: 0; }
@@ -212,6 +202,11 @@ const span = (a: StreamItem[]) => {
     /* Media gets its own limit - several embeds is not long PROSE, so the
        prose clamp never fires and the note ends up the tallest thing here. */
     .stream :global(.entry.note.is-media-clamped .body .media-extra) { display: none; }
+    /* A condensed note keeps its first piece of body media above the cut -
+       Tumblr's rule, and the right one for a devlog: the eye-catching thing
+       shows, the prose clamps beneath it, "Show more" opens the rest. */
+    .stream :global(.entry.note.is-clamped.media-leads .body) { display: flex; flex-direction: column; }
+    .stream :global(.entry.note.is-clamped.media-leads .body > .lead-media) { order: -1; margin-top: 0; margin-bottom: 0.9rem; }
 
     /* Caption order. The gap belongs to the photo, not the body - put it on
        the body and a note with no images carries a phantom 16px under its date. */
@@ -516,39 +511,6 @@ const span = (a: StreamItem[]) => {
     /* an expanded burst's card fades so the run reads as one stretch */
     .stream :global(.burst.is-open .burst-card) { opacity: 0.7; }
 
-    /* ---------- pager ---------- */
-    .pager {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.4rem;
-        margin: 2.6rem 0 0;
-        padding-top: 1.4rem;
-        border-top: 1px solid var(--rule);
-        flex-wrap: wrap;
-        font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.75rem;
-    }
-    .pager a, .pager .cur, .pager .off {
-        border: 1px solid var(--rule);
-        border-radius: 6px;
-        padding: 0.3em 0.7em;
-        color: var(--muted);
-        text-decoration: none;
-    }
-    .pager a:hover { color: var(--fg); border-color: var(--muted); background: none; box-shadow: none; }
-    .pager .cur { color: var(--bg); background: var(--accent); border-color: var(--accent); }
-    .pager .off { opacity: 0.35; }
-    .pager .range { border: none; margin-right: 0.5rem; padding-left: 0; }
-
-    /* The entry you came back to, so returning from a permalink does not drop
-       you into an undifferentiated wall of text. */
-    @keyframes land {
-        0%, 45% { background-color: rgba(229, 120, 6, 0.14); }
-        100% { background-color: transparent; }
-    }
-    .stream :global(.entry.landed .frame) { animation: land 1.8s ease-out; border-radius: 12px; }
-
     /* ---------- full-screen image viewer ---------- */
     #lightbox {
         position: fixed;
@@ -630,6 +592,13 @@ const span = (a: StreamItem[]) => {
                 }
                 n.classList.toggle('is-clamped', prose > PROSE_MAX);
                 const media = Array.from(body.children).filter(hasMedia) as HTMLElement[];
+                // Long text with media after it: lift the first media above the
+                // cut and let the clip grow to fit it plus a few lines of prose.
+                const clip = n.querySelector<HTMLElement>('.clip');
+                media.forEach((el, i) => el.classList.toggle('lead-media', i === 0));
+                const leads = prose > PROSE_MAX && media.length > 0 && !n.querySelector('.note-images');
+                n.classList.toggle('media-leads', leads);
+                if (clip) clip.style.maxHeight = leads ? `${media[0].offsetHeight + 9 * 16}px` : '';
                 media.forEach((el, i) => el.classList.toggle('media-extra', i > 0));
                 n.classList.toggle('is-media-clamped', media.length > 1);
                 const btn = n.querySelector<HTMLButtonElement>('.act.more');
@@ -649,8 +618,11 @@ const span = (a: StreamItem[]) => {
                 const opening = !note.classList.contains('is-open');
                 note.classList.toggle('is-open', opening);
                 note.classList.toggle('is-media-clamped', !opening);
-                if (opening) note.classList.remove('is-clamped');
-                else measure();
+                if (opening) {
+                    note.classList.remove('is-clamped');
+                    const clip = note.querySelector<HTMLElement>('.clip');
+                    if (clip) clip.style.maxHeight = '';
+                } else measure();
                 b.textContent = opening ? 'Show less' : b.dataset.openLabel || 'Show more';
                 if (!opening) note.scrollIntoView({ block: 'nearest' });
             });
@@ -845,8 +817,12 @@ const span = (a: StreamItem[]) => {
             const entry = (e.target as HTMLElement).closest<HTMLElement>('.entry');
             if (!a || !entry || a.hasAttribute('data-back')) return;
             try {
+                const p = location.pathname;
+                const from = p.startsWith('/posts') ? 'everything' : p.startsWith('/tags/') ? '#' + decodeURIComponent(p.split('/')[2]) : p === '/' ? 'home' : 'back';
                 sessionStorage.setItem(RETURN_KEY, JSON.stringify({
                     path: location.pathname + location.search,
+                    from,
+                    ts: Date.now(),
                     id: entry.id,
                     // where the entry sat in the viewport when you left it
                     viewportTop: Math.round(entry.getBoundingClientRect().top),
@@ -854,22 +830,12 @@ const span = (a: StreamItem[]) => {
             } catch {}
         });
 
-        function restoreReturn() {
-            let saved: { path: string; id: string; viewportTop: number } | null = null;
-            try {
-                saved = JSON.parse(sessionStorage.getItem(RETURN_KEY) || 'null');
-            } catch {}
-            if (!saved || saved.path !== location.pathname + location.search) return;
-            sessionStorage.removeItem(RETURN_KEY);
-            const el = document.getElementById(saved.id);
-            if (!el) return;
-            // Left from inside a burst? It folded again on reload - unfold it
-            // first, or the target has no box to scroll to.
-            const fold = el.closest<HTMLElement>('.burst');
-            if (fold && !fold.classList.contains('is-open')) openBurst(fold);
+        // Scroll so `el` sits `viewportTop` px down the viewport, and keep it
+        // there until layout stops moving (see the comments inside).
+        function holdAt(el: HTMLElement, viewportTop: number) {
             const target = () => {
                 const docTop = el.getBoundingClientRect().top + window.scrollY;
-                return Math.max(0, Math.round(docTop - saved!.viewportTop));
+                return Math.max(0, Math.round(docTop - viewportTop));
             };
             // Hold the position until it stops moving. Media above the target
             // (a poster frame, an image) resolves its height after the first
@@ -902,6 +868,33 @@ const span = (a: StreamItem[]) => {
             setTimeout(() => stream!.classList.remove('is-restoring'), 1600);
             el.classList.add('landed');
             setTimeout(() => el.classList.remove('landed'), 1800);
+        }
+
+        function restoreReturn() {
+            let saved: { path: string; id: string; viewportTop: number } | null = null;
+            try {
+                saved = JSON.parse(sessionStorage.getItem(RETURN_KEY) || 'null');
+            } catch {}
+            if (!saved || saved.path !== location.pathname + location.search) {
+                // Nothing remembered for this page, but a #e-<id> hash (the
+                // permalink's fallback back-link) still names an entry: unfold
+                // it if a burst hides it, centre it, and mark it.
+                const hashed = /^#e-/.test(location.hash) ? document.getElementById(location.hash.slice(1)) : null;
+                if (hashed) {
+                    const fold = hashed.closest<HTMLElement>('.burst');
+                    if (fold && !fold.classList.contains('is-open')) openBurst(fold);
+                    holdAt(hashed, Math.round(window.innerHeight * 0.22));
+                }
+                return;
+            }
+            sessionStorage.removeItem(RETURN_KEY);
+            const el = document.getElementById(saved.id);
+            if (!el) return;
+            // Left from inside a burst? It folded again on reload - unfold it
+            // first, or the target has no box to scroll to.
+            const fold = el.closest<HTMLElement>('.burst');
+            if (fold && !fold.classList.contains('is-open')) openBurst(fold);
+            holdAt(el, saved.viewportTop);
         }
         restoreReturn();
         // A browser-button back can serve this page from the bfcache, where the

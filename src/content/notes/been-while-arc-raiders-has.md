@@ -14,9 +14,9 @@ It’s been a while - ARC Raiders has taken up more of my free time than I’d l
 - Based on thresholds of how many stacks are applied, the status is in level 1, 2, or 3 - indicated by the dots below it. As the level changes, a “upwards” or “downwards” animation is shown on top of it.
 - Statuses trigger their effects every 4 combat ticks (starting from the time they are applied). This is indicated by the “rotating” and flashing border.
 
-** Move “Animations”: ** Not to be confused with actually animating my sprites, hehe - I added a flexible system for adding sprite _transformations_ as skills are triggered. This was a relatively cheap way to add some much needed visual feedback for combat.
+**Move “Animations”:** Not to be confused with actually animating my sprites, hehe - I added a flexible system for adding sprite _transformations_ as skills are triggered. This was a relatively cheap way to add some much needed visual feedback for combat.
 
-** Tempo**: Combat doesn’t have to be real time, but if you queue moves fast enough, it is. If you’re able to keep moves queued you increase your tempo, which adds a damage bonus. This used to be a tick counter, but I’ve changed it to a more abstract gauge.
+**Tempo**: Combat doesn’t have to be real time, but if you queue moves fast enough, it is. If you’re able to keep moves queued you increase your tempo, which adds a damage bonus. This used to be a tick counter, but I’ve changed it to a more abstract gauge.
 
 Overall, I’m trying to focus on adding some more feedback elements (animations/sounds) to help the player understand if their actions are doing what they want. Combat is a tricky thing to balance and tune. I’m eager to get sounds working - and then I think I’ll be at the point where I’d be happy to get some play testing and feedback on it.
 

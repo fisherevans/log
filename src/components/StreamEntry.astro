@@ -56,7 +56,10 @@ const shareIcon =
                     <div class="prose excerpt"><Content /></div>
                     <div class="actions">
                         <a class="act cta" href={item.href}>Read post <span class="arrow">&rarr;</span></a>
-                        <button class="act share" type="button">Share<Fragment set:html={shareIcon} /></button>
+                        <span class="right">
+                            <a class="act" href={`${item.href}#comments`}>Comment</a>
+                            <button class="act share" type="button">Share<Fragment set:html={shareIcon} /></button>
+                        </span>
                     </div>
                 </>
             ) : (
@@ -76,6 +79,7 @@ const shareIcon =
                         </div>
                         <span class="right">
                             <a class="act" href={item.href}><span class="lead">&rsaquo;</span> Open note</a>
+                            <a class="act" href={`${item.href}#comments`}>Comment</a>
                             <button class="act share" type="button">Share<Fragment set:html={shareIcon} /></button>
                         </span>
                     </div>

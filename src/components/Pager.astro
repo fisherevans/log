@@ -1,0 +1,68 @@
+---
+// Pagination for the stream. Drawn under the list, and from page 2 on above it
+// too - a page change lands you at the top, and without this the only way back
+// a page was to scroll to the bottom again.
+interface Props {
+    page: { current: number; last: number; hrefFor: (n: number) => string };
+    from: number;
+    to: number;
+    total: number;
+}
+const { page, from, to, total } = Astro.props;
+---
+
+<nav class="pager" aria-label="Pagination">
+                <span class="range">{from}&ndash;{to} of {total}</span>
+                {page.current > 1 ? (
+                    <a href={page.hrefFor(page.current - 1)}>&larr; Newer</a>
+                ) : (
+                    <span class="off">&larr; Newer</span>
+                )}
+                {Array.from({ length: page.last }, (_, i) => i + 1).map((n) =>
+                    n === page.current ? (
+                        <span class="cur" aria-current="page">{n}</span>
+                    ) : (
+                        <a href={page.hrefFor(n)}>{n}</a>
+                    ),
+                )}
+                {page.current < page.last ? (
+                    <a href={page.hrefFor(page.current + 1)}>Older &rarr;</a>
+                ) : (
+                    <span class="off">Older &rarr;</span>
+                )}
+            </nav>
+
+<style>
+    .pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        margin: 2.6rem 0 0;
+        padding-top: 1.4rem;
+        border-top: 1px solid var(--rule);
+        flex-wrap: wrap;
+        font-family: 'DraftingMono', ui-monospace, monospace;
+        font-size: 0.75rem;
+    }
+    .pager a, .pager .cur, .pager .off {
+        border: 1px solid var(--rule);
+        border-radius: 6px;
+        padding: 0.3em 0.7em;
+        color: var(--muted);
+        text-decoration: none;
+    }
+    .pager a:hover { color: var(--fg); border-color: var(--muted); background: none; box-shadow: none; }
+    .pager .cur { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+    .pager .off { opacity: 0.35; }
+    .pager .range { border: none; margin-right: 0.5rem; padding-left: 0; }
+
+    /* The entry you came back to, so returning from a permalink does not drop
+       you into an undifferentiated wall of text. */
+    @keyframes land {
+        0%, 45% { background-color: rgba(229, 120, 6, 0.14); }
+        100% { background-color: transparent; }
+    }
+    .stream :global(.entry.landed .frame) { animation: land 1.8s ease-out; border-radius: 12px; }
+
+</style>

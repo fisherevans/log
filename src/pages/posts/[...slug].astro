@@ -2,6 +2,7 @@
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import { postSlug } from '../../lib/posts';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { buildStream, groupBursts, hrefInStream } from '../../lib/stream';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('posts');
@@ -14,8 +15,9 @@ type Props = CollectionEntry<'posts'>;
 
 const post = Astro.props;
 const { Content } = await render(post);
+const backHref = hrefInStream(groupBursts(await buildStream()), post.id);
 ---
 
-<BlogPost {...post.data}>
+<BlogPost {...post.data} backHref={backHref} entryKey={post.id}>
 	<Content />
 </BlogPost>

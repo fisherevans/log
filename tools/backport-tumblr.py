@@ -43,17 +43,16 @@ STOP = {'a', 'an', 'the', 'of', 'on', 'in', 'to', 'my', 'i', 'and', 'this', 'som
 
 def to_markdown(frag: str) -> str:
     """The export bodies use p, br, b/strong, i, a, ul/ol/li and the odd div."""
-    s = frag.replace('\n', ' ')
+    s = frag.replace('\n', ' ').replace('&nbsp;', ' ')
     s = re.sub(r'<h1>\s*</h1>', '', s)
     # "<b>H</b>ere" - Tumblr's editor bolds a stray first letter; that is noise
     s = re.sub(r'<(b|strong)>(\w)</\1>(?=\w)', r'\2', s)
-    s = re.sub(r'<(b|strong)>(.*?)</\1>', lambda m: f'**{m.group(2).strip()}**', s, flags=re.S)
-    s = re.sub(r'<i>(.*?)</i>', lambda m: f'_{m.group(1).strip()}_', s, flags=re.S)
     # "<b>Statuses:</b>I tried" - a closing ** glued to a letter never closes in
-    # CommonMark, so give emphasis a space on either side when it lacks one.
-    s = re.sub(r'(\*\*|_)(?=\w)', r'\1', s)
-    s = re.sub(r'(\S)(\*\*[^*]+\*\*)(?=\w)', r'\1 \2 ', s)
-    s = re.sub(r'(\*\*[^*]+\*\*)(?=\w)', r'\1 ', s)
+    # CommonMark, so emphasis gets a space on whichever side touches a word.
+    def emph(mark):
+        return lambda m: (m.group(1) + ' ' if m.group(1) else '') + f'{mark}{m.group(3).strip()}{mark}' + (' ' if m.group(4) else '')
+    s = re.sub(r'(\w?)<(b|strong)>(.*?)</\2>(?=(\w?))', emph('**'), s, flags=re.S)
+    s = re.sub(r'(\w?)<(i)>(.*?)</\2>(?=(\w?))', emph('_'), s, flags=re.S)
     s = re.sub(r'<a [^>]*href="([^"]+)"[^>]*>(.*?)</a>', lambda m: f'[{m.group(2)}]({m.group(1)})', s, flags=re.S)
     s = re.sub(r'<br\s*/?>', '  \n', s)
 

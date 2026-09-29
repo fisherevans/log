@@ -20,12 +20,12 @@ In the game, a **“Primortal”** is the physical and metaphysical essence of a
 - Primal: relating to the most essential or powerful forces in nature or behavior.
 - Mortal suffix: a life that is subject to death
 
-**“Soul Remains” ** is a play on words in a few ways:
+**“Soul Remains”** is a play on words in a few ways:
 
-- The game explores what a life is, and what happens when you die - does your ** soul remain **?
-- You are the last remaining person in your circle - all your friends and family have died. You are the ** soul remaining ** person in your life.
-- As a result of this trauma, the character disassociates - what ** remains ** in the world is their ** soul ** - wandering through life (until you find a new family and come to terms with the past)
-- As you capture Primortals in the game, there’s a moral and ethical question around the practice. Does their ** soul remain**? Trapped in some prison?
+- The game explores what a life is, and what happens when you die - does your **soul remain**?
+- You are the last remaining person in your circle - all your friends and family have died. You are the **soul remaining** person in your life.
+- As a result of this trauma, the character disassociates - what **remains** in the world is their **soul** - wandering through life (until you find a new family and come to terms with the past)
+- As you capture Primortals in the game, there’s a moral and ethical question around the practice. Does their **soul remain**? Trapped in some prison?
 
 Here’s a snapshot of the title card, in all its glory:
 
