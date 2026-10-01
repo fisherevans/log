@@ -7,17 +7,17 @@ tags:
   - combat
 images:
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-1.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-2.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-3.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-4.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-5.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
   - src: https://media.fisher.sh/notes/2025/10/02/not-whole-lot-show-mostly-6.png
-    alt: "Not a whole lot to show - I\u2019ve mostly been working on refactoring and clean up. I\u2019ve been refining my player load out de"
+    alt: "Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out de"
 draft: false
 ---
 Not a whole lot to show - I’ve mostly been working on refactoring and clean up. I’ve been refining my player load out design and “Primortal” archetypes. I originally wanted:

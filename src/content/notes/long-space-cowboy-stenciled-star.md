@@ -7,11 +7,11 @@ tags:
   - stencil
 images:
   - src: https://media.fisher.sh/notes/2022/01/23/long-space-cowboy-stenciled-star-1.webp
-    alt: "So long, space cowboy... This stenciled Star Roc3 is \ud83d\udd25. If I wasn't so loyal to my EMAC Truth, this would have been inst"
+    alt: "So long, space cowboy... This stenciled Star Roc3 is 🔥. If I wasn't so loyal to my EMAC Truth, this would have been inst"
   - src: https://media.fisher.sh/notes/2022/01/23/long-space-cowboy-stenciled-star-2.webp
-    alt: "So long, space cowboy... This stenciled Star Roc3 is \ud83d\udd25. If I wasn't so loyal to my EMAC Truth, this would have been inst"
+    alt: "So long, space cowboy... This stenciled Star Roc3 is 🔥. If I wasn't so loyal to my EMAC Truth, this would have been inst"
   - src: https://media.fisher.sh/notes/2022/01/23/long-space-cowboy-stenciled-star-3.webp
-    alt: "So long, space cowboy... This stenciled Star Roc3 is \ud83d\udd25. If I wasn't so loyal to my EMAC Truth, this would have been inst"
+    alt: "So long, space cowboy... This stenciled Star Roc3 is 🔥. If I wasn't so loyal to my EMAC Truth, this would have been inst"
 draft: false
 ---
 So long, space cowboy... This stenciled Star Roc3 is 🔥. If I wasn't so loyal to my EMAC Truth, this would have been instantly bagged!

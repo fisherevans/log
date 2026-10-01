@@ -6,9 +6,9 @@ tags:
   - disc-golf
 images:
   - src: https://media.fisher.sh/notes/2021/11/26/wife-told-get-myself-early-1.webp
-    alt: "My wife told me to get myself an early Christmas present... My first project was to organize my dissolved dyes \ud83d\ude04"
+    alt: "My wife told me to get myself an early Christmas present... My first project was to organize my dissolved dyes 😄"
   - src: https://media.fisher.sh/notes/2021/11/26/wife-told-get-myself-early-3.webp
-    alt: "My wife told me to get myself an early Christmas present... My first project was to organize my dissolved dyes \ud83d\ude04"
+    alt: "My wife told me to get myself an early Christmas present... My first project was to organize my dissolved dyes 😄"
 draft: false
 ---
 My wife told me to get myself an early Christmas present... My first project was to organize my dissolved dyes 😄

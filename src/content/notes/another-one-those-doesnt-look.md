@@ -8,7 +8,7 @@ tags:
   - go
 images:
   - src: https://media.fisher.sh/notes/2025/10/23/another-one-those-doesnt-look-2.png
-    alt: "Another one of those \u201cdoesn\u2019t look big, but is massive\u201d updates\u2026 \ud83d\ude05"
+    alt: "Another one of those “doesn’t look big, but is massive” updates… 😅"
 draft: false
 ---
 Another one of those “doesn’t look big, but is massive” updates… 😅

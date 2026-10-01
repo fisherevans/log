@@ -6,7 +6,7 @@ tags:
   - gamedev
 images:
   - src: https://media.fisher.sh/notes/2026/03/05/finally-replaced-animech-sprites-animations-1.png
-    alt: "I finally replaced my Animech sprites and animations with something I\u2019m happy with! I\u2019ve been using a placeholder up unt"
+    alt: "I finally replaced my Animech sprites and animations with something I’m happy with! I’ve been using a placeholder up unt"
 draft: false
 ---
 I finally replaced my Animech sprites and animations with something I’m happy with! I’ve been using a placeholder up until now. It’s actually a fusion of 2 or 3 assets I bought on itch.io that I heavily modified to match the style I wanted.

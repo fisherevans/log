@@ -6,9 +6,9 @@ tags:
   - gamedev
 images:
   - src: https://media.fisher.sh/notes/2025/11/05/marks-first-time-custom-game-2.png
-    alt: "Today marks the first time that my custom game engine was used to actually create a game-like over-world experience! I\u2019m"
+    alt: "Today marks the first time that my custom game engine was used to actually create a game-like over-world experience! I’m"
   - src: https://media.fisher.sh/notes/2025/11/05/marks-first-time-custom-game-3.png
-    alt: "Today marks the first time that my custom game engine was used to actually create a game-like over-world experience! I\u2019m"
+    alt: "Today marks the first time that my custom game engine was used to actually create a game-like over-world experience! I’m"
 draft: false
 ---
 Today marks the first time that my custom game engine was used to actually create a game-like over-world experience! I’m working on building out the initial game loop for my first play-test build, and I can only do that thanks to the recent work I’ve done on my entity control system.

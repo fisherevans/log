@@ -219,7 +219,10 @@ def main():
             fm.append('images:')
             for img in images:
                 fm.append(f'  - src: {img["src"]}')
-                fm.append(f'    alt: {json.dumps(img["alt"])}')
+                # ensure_ascii=False: json.dumps would write emoji as \ud83d\ude05
+                # surrogate escapes, which js-yaml tolerates but Go's yaml.v3 (scribe)
+                # rejects outright - one such file takes the whole editor down.
+                fm.append(f'    alt: {json.dumps(img["alt"], ensure_ascii=False)}')
         fm.append('draft: false')
 
         content = p['text']
