@@ -6,6 +6,7 @@ collections:
             date: date
             description: description
             draft: draft
+            featured: featured
             heroImage: heroImage
             tags: tags
             title: title
