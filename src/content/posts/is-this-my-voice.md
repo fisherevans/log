@@ -8,15 +8,19 @@ id: QM78tKF7Gh
 ---
 These words you're reading, they have my name attached to them.
 
-If I'm being honest, I don't know how to feel about that. Does it feel like I wrote them? To you? or me?
+And, if I'm being honest, I don't know how to feel about that.
 
-Did I type out every letter? Am I still the author if not? And even if so, am I bound by their meaning?
+Does it feel like I wrote them? To you? To me?
 
-I struggle putting my name on things, especially words that express beliefs, opinions, or ideas. Once my name is tied to something written down, it feels like a commitment. It feels like I am saying: this represents me. Permanently. Once it's out there, it can be shared out of context and be poorly quoted. Readers can build up assumptions about who I am, which might not be true.
+Did I type out every letter? Nope. Am I still the author? If so, am I bound by the meaning of these words in the same way I would be if I had typed them out letter by letter?
+
+I struggle putting my name on things, especially words that express beliefs, opinions, or ideas. Once my name is tied to something written down, it feels like a commitment. It feels like I am saying: this represents me. Permanently.
+
+Once it's out there, it can be shared out of context. I can be misquoted. Readers can build up assumptions about who I am, which might not be true.
 
 That has always made writing difficult for me.
 
-AI has made my relationship with writing both easier, and much more complicated.
+AI has made my relationship with writing both easier and much more complicated.
 
 If something helps me write, whether that is a friend, a professional editor, Grammarly, or an LLM, how much of the result is still mine? At what point does assistance become authorship? Do I need to identify AI as a co-author every time it touches something I eventually publish?
 
@@ -40,7 +44,7 @@ But knowing that doesn't make the feeling disappear.
 
 When I'm writing, I can get stuck on a sentence because I don't know if that's *exactly* what I mean. Then I get stuck on the structure because I don't know if that's the order I want to make the argument. Then I start wondering if the argument is even right.
 
-Eventually, I'll spend twenty minutes word-smithing a paragraph, and I still not feel like it represents me.
+Eventually, I'll spend twenty minutes word-smithing a paragraph, and I still won't feel like it represents me.
 
 Speaking feels different.
 
@@ -50,13 +54,13 @@ Especially when I don't think anyone is listening.
 
 Something changed for me when voice dictation got good enough that I stopped fighting it.
 
-I talk to my agents constantly now. I probably dictate tens of thousands of words in a normal week.
+Voice dictation went from a joke, to nearly perfect in a matter of months. On average, I dictate over 10,000 words a day, mostly to my coding agents.
 
 And at some point I realized I was practicing something I had never really practiced before: expressing half-formed thoughts out loud.
 
 I have always had entire conversations in my head. I argue with myself. I imagine someone disagreeing with me and then argue against the disagreement. I rehearse conversations that will probably never happen.
 
-Now I can actually say those things.
+Now I can actually say those things, out loud.
 
 There is something freeing about talking into a void where there is no expectation that another person is judging the first version of the thought.
 
@@ -88,7 +92,7 @@ Most importantly, I have it preserve my own words and phrases as much as possibl
 
 The output isn't the blog post.
 
-It's a draft. Sometimes barely that.
+It's a draft. Sometimes barely that. An outline, with some choice quotes.
 
 It's something I can disagree with.
 
@@ -96,11 +100,9 @@ And that turns out to be extremely useful for me.
 
 ## Criticism is easier than creation
 
-I am very good at reacting to things.
+I am very quick to react to things. Often times too quick, and too critical.
 
-Maybe too good.
-
-My first instinct when I read an argument is usually to look for the hole in it. Where does this break? What assumption did this person make? What's missing? What would make this sentence more accurate?
+My first instinct when I read an argument is usually to look for the hole in it. Where does this break? What assumption did this person make? What's missing? What would make this sentence more accurate? What ambiguities need to be clarified?
 
 Ten times out of ten, the first sentence an agent writes for me will contain something I want to change.
 
