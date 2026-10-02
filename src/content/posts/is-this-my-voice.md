@@ -12,17 +12,17 @@ And, if I'm being honest, I don't know how to feel about that.
 
 Does it feel like I wrote them? To you? To me?
 
-Did I type out every letter? Nope. Am I still the author? If so, am I bound by the meaning of these words in the same way I would be if I had typed them out letter by letter?
+Did I type out every letter? Nope. Am I still the author? If so, am I bound by the meaning of these words in the same way I would be if I had hand-typed each letter?
 
 I struggle putting my name on things, especially words that express beliefs, opinions, or ideas. Once my name is tied to something written down, it feels like a commitment. It feels like I am saying: this represents me. Permanently.
 
-Once it's out there, it can be shared out of context. I can be misquoted. Readers can build up assumptions about who I am, which might not be true.
+Once it's out there, it can be shared out of context. I can be misquoted. Readers can build up assumptions about who I am that might not be true.
 
 That has always made writing difficult for me.
 
-AI has made my relationship with writing both easier and much more complicated.
+If someone (or something) helps me write, how much of the end result is still mine? Does that change if it was a friend who gave me feedback, or a professional editor? What about spell check? Grammarly? An LLM?
 
-If something helps me write, whether that is a friend, a professional editor, Grammarly, or an LLM, how much of the result is still mine? At what point does assistance become authorship? Do I need to identify AI as a co-author every time it touches something I eventually publish?
+At what point does assistance become authorship? Do I need to identify AI as a co-author every time it touches something I eventually publish?
 
 I really don't know.
 
