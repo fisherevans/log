@@ -52,21 +52,25 @@ Especially when I don't think anyone is listening.
 
 ## Talking into the void
 
-I have always had entire conversations in my head. I argue with myself. I imagine someone disagreeing with me and then argue against the disagreement. I rehearse conversations that will probably never happen.
+I have always had entire conversations in my head. I argue with myself. I imagine some vague persona disagreeing with me and then argue against the disagreement. I rehearse psuedo conversations that will probably never happen.
 
-It's how I process my thoughts. Form my opinions. 
+It's how I process my thoughts. How I form my opinions. I'm pretty sure that's just human nature. 
 
-But discussing those same nuanced topics with others has always spiked my anxiety. Because of how polarized and reactionary society is these days, expressing a thought outloud begins to feel like defining your identity. It feels like people think less of you if you try to see something from another point of view that disagrees with their own beliefs. 
+But actually discussing those same nuanced topics with others has always spiked my anxiety. Because of how polarized and reactionary society is these days; expressing a thought outloud begins to feel like defining your identity. I can't help but feel like some people think less of you if you try to see something from another point, especially if that alternative view disagrees with their own beliefs. 
 
-So I didn't. I've shied away from those conversations.
+So I don't. I've shied away from those conversations.
 
 And then came agents and voice dictation. 
 
 Voice dictation went from a joke, to nearly perfect, in a matter of months. It was suddenly good enough that I didn't need to constantly fight it for it to be useful.  These days, I dictate up to 10,000 words a day, mostly to my coding agents.
 
+At work and at home, I use voice dictation to instruct my agents. I speak outloud, freely, about nuanced and technical problems. I ideate out loud. I debate the pros and cons of a decision verbally, and conversationally.
+
+And I have no fear of judgement. 
+
 And at some point I realized I was practicing something I had never really practiced before: expressing half-formed thoughts out loud.
 
-Now I can actually say those things, out loud.
+Now I can actually argue against my own beliefs, out loud, without others feeling like their own beliefs are being attacked.
 
 There is something freeing about talking into a void where there is no expectation that another person is judging the first version of the thought.
 
@@ -84,15 +88,15 @@ And for whatever reason, my brain seems much more comfortable doing that than st
 
 ## Ramble
 
-I ended up building a tool around this that I call Ramble.
+I ended up building a tool around this exact process that I call Ramble.
 
-The goal isn't to build some facsimile of me that can manufacture blog posts while I go do something else.
+The goal isn't to build some facsimile of me that can manufacture blog posts while I go do something else. It isn't too build some replacement for human conversation. 
 
 The goal is almost the opposite.
 
-I want to give myself a way to produce source material.
+I want to give myself a way to put my thoughts into words. I wanted a way to be challenged without being worried that I'm being attacked. 
 
-I talk for twenty minutes, or an hour, or however long I have something to say. Ramble takes that material and organizes it. It can pull together the things I repeated. It can group ideas that belong together. It can point out where I contradicted myself or where there is an obvious counterargument I never addressed.
+I can talk for twenty minutes, or an hour, or however long I have something to say. Ramble takes that material and organizes it. It can pull together the things I repeated. It can group ideas that belong together. It can point out where I contradicted myself or where there is an obvious counterargument I never addressed.
 
 Most importantly, I have it preserve my own words and phrases as much as possible.
 
