@@ -12,7 +12,7 @@ And, if I'm being honest, I don't know how to feel about that.
 
 Does it feel like I wrote them? To you? To me?
 
-Did I type out every letter? Nope. Am I still the author? If so, am I bound by the meaning of these words in the same way I would be if I had hand-typed each letter?
+Did I type out every letter? Nope. Am I still the author? If so, am I bound by the meaning of these words in the same way I would be if I had hand-typed each letter? It's what's written down less authentic or legitimate depending on how is written?
 
 I struggle putting my name on things, especially words that express beliefs, opinions, or ideas. Once my name is tied to something written down, it feels like a commitment. It feels like I am saying: this represents me. Permanently.
 
@@ -38,11 +38,11 @@ If I say something confidently and change my mind later, some part of my brain t
 
 Rationally, ***I know that's nonsense.***
 
-Opinions change. Knowledge changes. People learn things. Being able to say, "I thought this before, and now I think something different" is a good thing.
+Knowledge grows. Opinions change. Feelings evolve. People learn things. Being able to say, "I thought this before, and now I think something different" is a good thing.
 
-But knowing that doesn't make the feeling disappear.
+But knowing that doesn't make the feeling of sharing my thoughts disappear.
 
-When I'm writing, I can get stuck on a sentence because I don't know if that's *exactly* what I mean. Then I get stuck on the structure because I don't know if that's the order I want to make the argument. Then I start wondering if the argument is even right.
+When I'm writing, I can get stuck on a sentence because I don't know if that's *exactly* what I mean. Then I get stuck on the structure because I don't know if that's the order I want to make the argument. Then I start wondering if the argument is even valid. If my opinion is "right."
 
 Eventually, I'll spend twenty minutes word-smithing a paragraph, and I still won't feel like it represents me.
 
@@ -52,13 +52,13 @@ Especially when I don't think anyone is listening.
 
 ## Talking into the void
 
-Something changed for me when voice dictation got good enough that I stopped fighting it.
-
-Voice dictation went from a joke, to nearly perfect in a matter of months. On average, I dictate over 10,000 words a day, mostly to my coding agents.
+Voice dictation went from a joke, to nearly perfect, in a matter of months. It was suddenly good enough that I didn't need to constantly fight it for it to be useful.  These days, I dictate up to 10,000 words a day, mostly to my coding agents.
 
 And at some point I realized I was practicing something I had never really practiced before: expressing half-formed thoughts out loud.
 
 I have always had entire conversations in my head. I argue with myself. I imagine someone disagreeing with me and then argue against the disagreement. I rehearse conversations that will probably never happen.
+
+But discussing those same nuanced topics with others always spiked my anxiety. Because of how polarized and reactionary society is these days, expressing a thought outloud begins to feel like defining your identity. It feels like people think less of you if you try to see something
 
 Now I can actually say those things, out loud.
 
