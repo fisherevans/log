@@ -52,13 +52,19 @@ Especially when I don't think anyone is listening.
 
 ## Talking into the void
 
+I have always had entire conversations in my head. I argue with myself. I imagine someone disagreeing with me and then argue against the disagreement. I rehearse conversations that will probably never happen.
+
+It's how I process my thoughts. Form my opinions. 
+
+But discussing those same nuanced topics with others has always spiked my anxiety. Because of how polarized and reactionary society is these days, expressing a thought outloud begins to feel like defining your identity. It feels like people think less of you if you try to see something from another point of view that disagrees with their own beliefs. 
+
+So I didn't. I've shied away from those conversations.
+
+And then came agents and voice dictation. 
+
 Voice dictation went from a joke, to nearly perfect, in a matter of months. It was suddenly good enough that I didn't need to constantly fight it for it to be useful.  These days, I dictate up to 10,000 words a day, mostly to my coding agents.
 
 And at some point I realized I was practicing something I had never really practiced before: expressing half-formed thoughts out loud.
-
-I have always had entire conversations in my head. I argue with myself. I imagine someone disagreeing with me and then argue against the disagreement. I rehearse conversations that will probably never happen.
-
-But discussing those same nuanced topics with others always spiked my anxiety. Because of how polarized and reactionary society is these days, expressing a thought outloud begins to feel like defining your identity. It feels like people think less of you if you try to see something
 
 Now I can actually say those things, out loud.
 
