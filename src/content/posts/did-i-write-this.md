@@ -1,6 +1,7 @@
 ---
 title: Did I write this?
 date: 2026-10-07
+description: Rambling into the void has helped me explore my thoughts and ideas. But it's also made it harder to know when the words still feel like mine.
 tags:
   - opinion
 hasVideo: false
@@ -12,7 +13,7 @@ The words you're reading right now have my name attached to them.
 
 That has always been difficult for me.
 
-I've never been particularly comfortable putting my thoughts into words. Especially not for other people. Saying what I think feels like committing to it. Writing it down feels even more burdensome. Once it's published, it feels fixed. Like I've created a version of myself that I'm now responsible for defending.
+I've never been particularly comfortable putting my thoughts into words. Especially not when writing for other people. Saying what I think feels like committing to it. Writing it down feels even more burdensome. Once it's published, it feels fixed. Like I've created a version of myself that I'm now responsible for defending.
 
 Lately, though, I've been writing more.
 
