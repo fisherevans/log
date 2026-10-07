@@ -192,7 +192,6 @@ const playIcon =
 
     /* ---------- notes ---------- */
     .stream :global(.entry.note) { margin-top: 2.8rem; margin-bottom: 2.8rem; }
-    .stream :global(.chip.project) { border-color: rgba(232, 155, 75, 0.55); }
     .stream :global(.entry.note .meta)::before {
         content: '';
         position: absolute;
@@ -341,21 +340,9 @@ const playIcon =
     .stream :global(.excerpt > :last-child) { margin-bottom: 0; }
 
     /* ---------- meta + actions ---------- */
-    .stream :global(.meta) { display: flex; flex-wrap: wrap; gap: 0.45em 0.9em; align-items: baseline; font-size: 0.85em; }
-    .stream :global(.date.rel) {
-        font-family: 'DraftingMono', ui-monospace, monospace;
-        font-size: 0.76em;
-        color: var(--muted);
-        letter-spacing: 0.03em;
-        border-bottom: 1px dotted transparent;
-        cursor: help;
-    }
-    .stream :global(.date.rel:hover), .stream :global(.date.rel:focus-visible) {
-        color: var(--fg);
-        border-bottom-color: var(--rule);
-        outline: none;
-    }
-    .stream :global(.chips) { display: flex; flex-wrap: wrap; gap: 0.3em; }
+    /* The meta row itself (.meta, .date.rel, .chips, .chip.project) is in
+       global.css: the home page's featured list draws the same row outside
+       this component. Only the stream's own spacing stays here. */
     .stream :global(.actions) { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.8rem; margin-top: 1.1em; }
     .stream :global(.entry.post .actions .right) { margin-left: auto; }
     .stream :global(.act) {
@@ -751,6 +738,8 @@ const playIcon =
 </style>
 
 <script>
+    import { upgradeRelTimes } from '../scripts/reltime';
+
     const stream = document.querySelector<HTMLElement>('.stream');
     if (stream) {
         // ---- delegated clicks: one listener per control class, so entries that
@@ -779,19 +768,6 @@ const playIcon =
               )
             : null;
 
-        // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
-        const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-        const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
-            ['year', 365 * 24 * 3600], ['month', 30 * 24 * 3600], ['week', 7 * 24 * 3600],
-            ['day', 24 * 3600], ['hour', 3600], ['minute', 60],
-        ];
-        function relative(iso: string): string {
-            const secs = (Date.parse(iso) - Date.now()) / 1000;
-            const abs = Math.abs(secs);
-            if (abs < 60) return 'just now';
-            for (const [unit, size] of UNITS) if (abs >= size) return rtf.format(Math.round(secs / size), unit);
-            return 'just now';
-        }
         // Everything that has to run per entry lives in enhance(root) so a page
         // appended by load-more gets the same treatment as the first one.
         // Click handling is delegated at the document, for the same reason.
@@ -824,13 +800,7 @@ const playIcon =
             });
         });
         // ---- relative timestamps (absolute in the HTML, so no-JS still reads)
-        root.querySelectorAll<HTMLTimeElement>('time.rel').forEach((t) => {
-            const abs = t.dataset.abs!;
-            const rel = relative(t.dateTime);
-            t.textContent = rel;
-            // Phones have no hover, so a tap toggles to the absolute date.
-            t.addEventListener('click', () => { t.textContent = t.textContent === rel ? abs : rel; });
-        });
+        upgradeRelTimes(root);
         root.querySelectorAll('.entry').forEach((el) => spy?.observe(el));
         }
 

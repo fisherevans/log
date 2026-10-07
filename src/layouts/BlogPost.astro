@@ -98,7 +98,9 @@ const meta = await tagMeta();
                 height: 0.95em;
                 flex: none;
             }
-            .post-title .meta {
+            /* Named .tagrow, not .meta: this is the chips alone, not the
+               stream's date + chips meta line that global.css styles. */
+            .post-title .tagrow {
                 margin-top: 0.85em;
                 display: flex;
                 flex-wrap: wrap;
@@ -140,7 +142,7 @@ const meta = await tagMeta();
                         )}
                     </div>
                     {(tags && tags.length > 0) && (
-                        <div class="meta">
+                        <div class="tagrow">
                             {tags?.map((tag) => <a class={isProjectTag(tag) ? 'chip project' : 'chip'} href={`/tags/${tag}/`}>{tagName(tag, meta)}</a>)}
                         </div>
                     )}

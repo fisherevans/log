@@ -419,6 +419,28 @@ a.chip:hover, a.chip:focus-visible {
     box-shadow: none;
 }
 
+/* An entry's meta row: the mono relative date, then its tag chips. Drawn by
+ * the stream (Stream.astro / StreamEntry.astro) and by the home page's
+ * featured list, which sits outside the stream root - so it lives here rather
+ * than in either of them. The relative date is written by
+ * src/scripts/reltime.ts after load; the HTML carries the absolute one. */
+.meta { display: flex; flex-wrap: wrap; gap: 0.45em 0.9em; align-items: baseline; font-size: 0.85em; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.3em; }
+.meta .chip.project { border-color: rgba(232, 155, 75, 0.55); }
+.date.rel {
+    font-family: 'DraftingMono', ui-monospace, monospace;
+    font-size: 0.76em;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+    border-bottom: 1px dotted transparent;
+    cursor: help;
+}
+.date.rel:hover, .date.rel:focus-visible {
+    color: var(--fg);
+    border-bottom-color: var(--rule);
+    outline: none;
+}
+
 /* Small uppercase eyebrow label (e.g. "Latest post", "Older posts", section
  * kickers on /follow). Sans, not the code font - reads as a header. */
 .eyebrow {

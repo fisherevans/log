@@ -7,6 +7,8 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import Stream from '../components/Stream.astro';
 import { buildStream, yearsOf } from '../lib/stream';
+import { tagMeta, tagName, isProjectTag } from '../lib/tags';
+import { fmtDate } from '../lib/search';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 
 const all = await buildStream();
@@ -14,6 +16,11 @@ const items = all.slice(0, 1);
 // Hand-picked evergreens for a first-time reader - not "popular", not
 // automatic. Newest first so the list has an order that isn't arbitrary.
 const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
+const meta = await tagMeta();
+// Same absolute date the stream renders: it is the fallback in the HTML, and
+// what a tap on the relative date puts back.
+const longDate = (d: Date) =>
+    d.toLocaleDateString('en-us', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 ---
 
 <!doctype html>
@@ -26,11 +33,32 @@ const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
             .hero .lede { font-size: 1.12em; line-height: 1.6; color: var(--fg); max-width: 34em; }
             .hero .followline { font-size: 1.02em; color: var(--muted); max-width: 34em; margin: 1.3rem 0 0; }
             /* Evergreens, deliberately quieter than the latest entry: this is
-               a pointer, not a second helping of the stream. */
-            .featured { margin-top: 2.8rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); }
-            .featured__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.2rem; }
-            .featured__list li { padding: 0; }
-            .featured__list li::before { content: none; }
+               a pointer, not a second helping of the stream. It borrows the
+               stream's left rhythm (same spine x, same indent) and its meta
+               row, so the page reads as one column - but each row gets a
+               hairline in the gutter instead of a node, and no card. A list
+               that knows about the timeline, not a second timeline. */
+            .featured {
+                margin-top: 2.8rem;
+                padding-top: 1.6rem;
+                border-top: 1px solid var(--rule);
+                --spine-x: 0.75rem;
+                --item-indent: 1.9rem;
+            }
+            .featured__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.9rem; }
+            .featured__list li { position: relative; padding: 0 0 0 var(--item-indent); }
+            .featured__list li::before {
+                content: '';
+                position: absolute;
+                left: var(--spine-x);
+                top: 0.32em;
+                bottom: 0.1em;
+                width: 1px;
+                /* the global bullet sets font-size, and the offsets above are
+                   in em - without this they are measured against that, not the row */
+                font-size: inherit;
+                background: var(--rule);
+            }
             .featured__title {
                 color: var(--fg);
                 font-family: 'Marauder', serif;
@@ -44,7 +72,8 @@ const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
                 background-color: var(--hover-bg);
                 box-shadow: 0.15em 0 0 var(--hover-bg), -0.15em 0 0 var(--hover-bg);
             }
-            .featured__desc { margin: 0.35em 0 0; color: var(--muted); font-size: 0.97em; line-height: 1.55; }
+            .featured .meta { margin: 0.5em 0 0; }
+            .featured__desc { margin: 0.5em 0 0; color: var(--muted); font-size: 0.97em; line-height: 1.55; }
 
             .browse-all { margin-top: 2.4rem; padding-top: 1.6rem; border-top: 1px solid var(--rule); text-align: center; }
             .browse-all a { font-size: 1.02rem; }
@@ -80,6 +109,22 @@ const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
                             {featured.map((f) => (
                                 <li>
                                     <a class="featured__title" href={f.href}>{f.entry.data.title}</a>
+                                    <div class="meta">
+                                        <time
+                                            class="date rel"
+                                            datetime={f.date.toISOString()}
+                                            title={longDate(f.date)}
+                                            data-abs={longDate(f.date)}
+                                            tabindex="0"
+                                        >{fmtDate(f.date)}</time>
+                                        {(f.entry.data.tags ?? []).length > 0 && (
+                                            <span class="chips">
+                                                {(f.entry.data.tags ?? []).map((t) => (
+                                                    <a class={isProjectTag(t) ? 'chip project' : 'chip'} href={`/tags/${t}/`}>{tagName(t, meta)}</a>
+                                                ))}
+                                            </span>
+                                        )}
+                                    </div>
                                     {f.entry.data.description && <p class="featured__desc">{f.entry.data.description}</p>}
                                 </li>
                             ))}
@@ -91,5 +136,12 @@ const featured = all.filter((i) => i.kind === 'post' && i.entry.data.featured);
             <p class="browse-all"><a href="/posts/">Everything &rarr;</a></p>
         </main>
         <Footer />
+        <script>
+            // The featured rows sit outside the stream root, so Stream.astro's
+            // own pass never reaches them. Same module, same vocabulary.
+            import { upgradeRelTimes } from '../scripts/reltime';
+            const featured = document.querySelector('.featured');
+            if (featured) upgradeRelTimes(featured);
+        </script>
     </body>
 </html>
