@@ -4,7 +4,7 @@ date: 2026-10-07
 tags:
   - opinion
 hasVideo: false
-featured: false
+featured: true
 draft: false
 id: QM78tKF7Gh
 ---

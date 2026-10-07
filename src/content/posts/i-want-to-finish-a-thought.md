@@ -5,6 +5,7 @@ description: 'Better AI models change the shape of my work: less waiting, less c
 tags:
   - opinion
 hasVideo: false
+featured: true
 draft: false
 id: SQJhGRrAhB
 ---

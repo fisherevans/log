@@ -1,15 +1,15 @@
 ---
-id: nLzzUwANLa
 title: Dungeon Generation
 date: 2014-05-18
-description: "Algorithmic dungeon generation: random rooms, hallway carving, and
-  the trade-offs between layout styles."
+description: 'Algorithmic dungeon generation: random rooms, hallway carving, and the trade-offs between layout styles.'
 tags:
   - gamedev
   - procgen
 hasVideo: false
 updatedDate: 2026-06-03
+featured: true
 draft: false
+id: nLzzUwANLa
 ---
 I delve in the world of 'Procedurally Generated' map generation.
 

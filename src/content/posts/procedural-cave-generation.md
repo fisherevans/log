@@ -1,15 +1,15 @@
 ---
-id: IEGwziypOL
 title: Procedural Cave Generation
 date: 2014-05-20
-description: A cellular-automata approach to procedurally generating organic
-  cave systems for 2D games.
+description: A cellular-automata approach to procedurally generating organic cave systems for 2D games.
 tags:
   - gamedev
   - procgen
 hasVideo: false
 updatedDate: 2026-06-03
+featured: true
 draft: false
+id: IEGwziypOL
 ---
 What's better than procedural generation with an organic twist?
 
