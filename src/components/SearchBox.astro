@@ -53,7 +53,7 @@ const { index, dateMap } = Astro.props;
 <script type="application/json" id="post-dates" set:html={JSON.stringify(dateMap)} />
 <script type="application/json" id="posts-index" set:html={JSON.stringify(index)} />
 <script is:inline>
-    (() => {
+    function initSearch() {
         const bar = document.getElementById('searchbar');
         const input = document.getElementById('search-input');
         const clearBtn = document.getElementById('search-clear');
@@ -127,5 +127,10 @@ const { index, dateMap } = Astro.props;
         clearBtn.addEventListener('click', () => {
             input.value = ''; bar.classList.remove('has-query'); token++; showListing(); input.focus();
         });
-    })();
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initSearch, { once: true });
+    } else {
+        initSearch();
+    }
 </script>
