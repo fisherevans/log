@@ -6,7 +6,7 @@
 
 ## What changed
 
-Blog (`/`): `astro` 6.4 -> 7.4.2, `@astrojs/mdx` -> 8.1, `@astrojs/rss`/`@astrojs/sitemap` patch bumps, `sharp` 0.34 -> 0.35.5, `dompurify` 3.4.10 -> 3.4.17, `marked` -> 18.1. Astro 7 made Sätteri the default Markdown processor, and our `rehypePlugins` need the unified pipeline, so `@astrojs/markdown-remark` is now an explicit dependency. Astro 7 refuses to run below Node 22.23.4; `engines` moves to match.
+Blog (`/`): `astro` 6.4 -> 7.4.2, `@astrojs/mdx` -> 8.1, `@astrojs/rss`/`@astrojs/sitemap` patch bumps, `sharp` 0.34 -> 0.35.5, `dompurify` 3.4.10 -> 3.4.17, `marked` -> 18.1. Astro 7 made Sätteri the default Markdown processor, and our `rehypePlugins` need the unified pipeline, so `@astrojs/markdown-remark` is now an explicit dependency. Astro 7 refuses to run below Node 22.23.4, and CF Pages otherwise builds on its default 22.16.0. A new `.nvmrc` pins 24.22.0: CF installs it with node-build, which has no 22.23.4 definition yet (that broke the first projects.fisher.sh push), and Astro skips its version gate on Node 24+.
 
 Comments Worker (`comments/`): the declared runtime dependency is now `@atproto/oauth-client` (the code only ever imported that core; `@atproto/oauth-client-node` was declared but cannot run on Workers and dragged undici into the tree). Dev tooling: `wrangler` 3 -> 4, `vitest` 2 -> 4, and `@cloudflare/vitest-pool-workers` (deprecated) -> `@cloudflare/vitest-plugin`, which moved the pool config into a `cloudflareTest()` Vite plugin and the test env typing onto the global `Cloudflare.Env`.
 
