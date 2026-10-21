@@ -29,7 +29,7 @@ comments/
     http.ts          # JSON + CORS + error helpers
     ids.ts           # stable id minting
     env.ts           # Env bindings type
-  test/              # vitest-pool-workers suite (runs against local D1)
+  test/              # @cloudflare/vitest-plugin suite (runs against local D1)
 ```
 
 ## API surface
@@ -88,14 +88,14 @@ production.
 ## Tests
 
 ```
-npm test          # vitest-pool-workers, against a fresh local D1 with migrations applied
+npm test          # vitest + @cloudflare/vitest-plugin, against a fresh local D1 with migrations applied
 npm run typecheck # tsc --noEmit
 ```
 
 ## Bluesky OAuth (identity only)
 
 `atproto.ts` runs the ATProto OAuth dance (handle resolution -> PDS discovery ->
-PAR -> DPoP-bound tokens) via `@atproto/oauth-client-node`, used purely for
+PAR -> DPoP-bound tokens) via the runtime-agnostic `@atproto/oauth-client` core (the `-node` variant pulls undici and does not run on Workers), used purely for
 identity - no posting, no write scope. On a successful callback it captures the
 DID + profile, mints a Worker session (`session.ts`), and redirects back to the
 blog. Comment create then reads the session cookie.
